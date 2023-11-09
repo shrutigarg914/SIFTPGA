@@ -3,6 +3,8 @@
 
 import sys
 from PIL import Image, ImageOps
+import numpy as np
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -39,4 +41,9 @@ if __name__ == "__main__":
         addrs = list(range(len(pixels)))
         m.image_memory.write(addrs, pixels)
         result = m.output_memory.read(addrs)
-        print(type(result))
+        im_res = np.asarray(result).reshape((128, 128))
+        print(result, h, w)
+        plt.imshow(im_res, cmap='gray', vmin=0, vmax=48)
+        plt.show()
+        # use matplotlib to visualise the greyscale image we get back
+        # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.imshow.html

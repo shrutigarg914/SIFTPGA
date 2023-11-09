@@ -6,7 +6,7 @@ module top_level(
   input wire uart_rxd,
   output logic uart_txd
   );
-  // logic sys_rst, tx, rx;
+  logic tx, rx;
   // assign sys_rst = btn[0];
   assign tx = uart_txd;
   assign rx = uart_rxd;
@@ -24,7 +24,7 @@ module top_level(
     .image_memory_addr(image_addr), 
     .image_memory_din(), 
     .image_memory_dout(pixel_value), 
-    .image_memory_we(1'b0)
+    .image_memory_we(1'b0),
   
     .output_memory_clk(clk_100mhz), 
     .output_memory_addr(write_address), 
