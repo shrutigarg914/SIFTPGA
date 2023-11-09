@@ -1,5 +1,5 @@
+# modified version of the following manta example script
 # https://github.com/fischermoseley/manta/blob/main/examples/nexys_a7/video_sprite_uart/send_image.py
-# a manta example script
 
 import sys
 from PIL import Image, ImageOps
@@ -34,7 +34,9 @@ if __name__ == "__main__":
                 pixels.append(color)
 
         from manta import Manta
-        m = Manta('manta.yaml')
+        m = Manta('final.yaml')
 
         addrs = list(range(len(pixels)))
-        m.image_mem.write(addrs, pixels)
+        m.image_memory.write(addrs, pixels)
+        result = m.output_memory.read(addrs)
+        print(type(result))

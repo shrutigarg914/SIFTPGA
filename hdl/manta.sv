@@ -1,7 +1,7 @@
 `default_nettype none
 `timescale 1ns/1ps
 /*
-This module was generated with Manta v0.0.5 on 05 Nov 2023 at 10:43:25 by ritug
+This module was generated with Manta v0.0.5 on 08 Nov 2023 at 19:41:48 by ritug
 
 If this breaks or if you've got spicy formal verification memes, contact fischerm [at] mit.edu
 
@@ -20,7 +20,14 @@ manta manta_inst (
     .image_memory_addr(image_memory_addr), 
     .image_memory_din(image_memory_din), 
     .image_memory_dout(image_memory_dout), 
-    .image_memory_we(image_memory_we));
+    .image_memory_we(image_memory_we), 
+    
+    
+    .output_memory_clk(output_memory_clk), 
+    .output_memory_addr(output_memory_addr), 
+    .output_memory_din(output_memory_din), 
+    .output_memory_dout(output_memory_dout), 
+    .output_memory_we(output_memory_we));
 
 */
 
@@ -34,7 +41,13 @@ module manta (
     input wire [13:0] image_memory_addr,
     input wire [11:0] image_memory_din,
     output reg [11:0] image_memory_dout,
-    input wire image_memory_we);
+    input wire image_memory_we,
+    
+    input wire output_memory_clk,
+    input wire [13:0] output_memory_addr,
+    input wire [11:0] output_memory_din,
+    output reg [11:0] output_memory_dout,
+    input wire output_memory_we);
 
 
     uart_rx #(.CLOCKS_PER_BAUD(33)) urx (
@@ -80,21 +93,47 @@ module manta (
         .user_dout(image_memory_dout),
         .user_we(image_memory_we),
     
+        .addr_o(image_memory_output_memory_addr),
+        .data_o(image_memory_output_memory_data),
+        .rw_o(image_memory_output_memory_rw),
+        .valid_o(image_memory_output_memory_valid));
+    reg [15:0] image_memory_output_memory_addr;
+    reg [15:0] image_memory_output_memory_data;
+    reg image_memory_output_memory_rw;
+    reg image_memory_output_memory_valid;
+    
+    block_memory #(
+        .WIDTH(12),
+        .DEPTH(16384)
+    ) output_memory (
+        .clk(clk),
+    
+        .addr_i(image_memory_output_memory_addr),
+        .data_i(image_memory_output_memory_data),
+        .rw_i(image_memory_output_memory_rw),
+        .valid_i(image_memory_output_memory_valid),
+    
+        .user_clk(output_memory_clk),
+        .user_addr(output_memory_addr),
+        .user_din(output_memory_din),
+        .user_dout(output_memory_dout),
+        .user_we(output_memory_we),
+    
         .addr_o(),
-        .data_o(image_memory_btx_data),
-        .rw_o(image_memory_btx_rw),
-        .valid_o(image_memory_btx_valid));
+        .data_o(output_memory_btx_data),
+        .rw_o(output_memory_btx_rw),
+        .valid_o(output_memory_btx_valid));
 
     
-    reg [15:0] image_memory_btx_data;
-    reg image_memory_btx_rw;
-    reg image_memory_btx_valid;
+    reg [15:0] output_memory_btx_data;
+    reg output_memory_btx_rw;
+    reg output_memory_btx_valid;
     bridge_tx btx (
         .clk(clk),
     
-        .data_i(image_memory_btx_data),
-        .rw_i(image_memory_btx_rw),
-        .valid_i(image_memory_btx_valid),
+        .data_i(output_memory_btx_data),
+        .rw_i(output_memory_btx_rw),
+        .valid_i(output_memory_btx_valid),
     
         .data_o(btx_utx_data),
         .start_o(btx_utx_start),
@@ -317,6 +356,176 @@ module bridge_rx (
                 assert(byte_num == $past(byte_num) || byte_num == $past(byte_num) + 1 || byte_num == 0);
         end
 `endif // FORMAL
+endmodule
+
+module block_memory (
+    input wire clk,
+
+    // input port
+    input wire [15:0] addr_i,
+    input wire [15:0] data_i,
+    input wire rw_i,
+    input wire valid_i,
+
+    // output port
+    output reg [15:0] addr_o,
+    output reg [15:0] data_o,
+    output reg rw_o,
+    output reg valid_o,
+
+    // BRAM itself
+    input wire user_clk,
+    input wire [ADDR_WIDTH-1:0] user_addr,
+    input wire [WIDTH-1:0] user_din,
+    output reg [WIDTH-1:0] user_dout,
+    input wire user_we);
+
+    parameter BASE_ADDR = 0;
+    parameter WIDTH = 0;
+    parameter DEPTH = 0;
+    localparam ADDR_WIDTH = $clog2(DEPTH);
+
+    // ugly typecasting, but just computes ceil(WIDTH / 16)
+    localparam N_BRAMS = int'($ceil(real'(WIDTH) / 16.0));
+    localparam MAX_ADDR = BASE_ADDR + (DEPTH * N_BRAMS);
+
+    // Port A of BRAMs
+    reg [N_BRAMS-1:0][ADDR_WIDTH-1:0] addra = 0;
+    reg [N_BRAMS-1:0][15:0] dina = 0;
+    reg [N_BRAMS-1:0][15:0] douta;
+    reg [N_BRAMS-1:0] wea = 0;
+
+    // Port B of BRAMs
+    reg [N_BRAMS-1:0][15:0] dinb;
+    reg [N_BRAMS-1:0][15:0] doutb;
+    assign dinb = user_din;
+
+    // kind of a hack to part select from a 2d array that's been flattened to 1d
+    reg [(N_BRAMS*16)-1:0] doutb_flattened;
+    assign doutb_flattened = doutb;
+    assign user_dout = doutb_flattened[WIDTH-1:0];
+
+    // Pipelining
+    reg [2:0][15:0] addr_pipe = 0;
+    reg [2:0][15:0] data_pipe = 0;
+    reg [2:0] valid_pipe = 0;
+    reg [2:0] rw_pipe = 0;
+
+    always @(posedge clk) begin
+        addr_pipe[0] <= addr_i;
+        data_pipe[0] <= data_i;
+        valid_pipe[0] <= valid_i;
+        rw_pipe[0] <= rw_i;
+
+        addr_o <= addr_pipe[2];
+        data_o <= data_pipe[2];
+        valid_o <= valid_pipe[2];
+        rw_o <= rw_pipe[2];
+
+        for(int i=1; i<3; i=i+1) begin
+            addr_pipe[i] <= addr_pipe[i-1];
+            data_pipe[i] <= data_pipe[i-1];
+            valid_pipe[i] <= valid_pipe[i-1];
+            rw_pipe[i] <= rw_pipe[i-1];
+        end
+
+        // throw BRAM operations into the front of the pipeline
+        wea <= 0;
+        if( (valid_i) && (addr_i >= BASE_ADDR) && (addr_i <= MAX_ADDR)) begin
+            wea[(addr_i - BASE_ADDR) % N_BRAMS]   <= rw_i;
+            addra[(addr_i - BASE_ADDR) % N_BRAMS] <= (addr_i - BASE_ADDR) / N_BRAMS;
+            dina[(addr_i - BASE_ADDR) % N_BRAMS]  <= data_i;
+        end
+
+        // pull BRAM reads from the back of the pipeline
+        if( (valid_pipe[2]) && (addr_pipe[2] >= BASE_ADDR) && (addr_pipe[2] <= MAX_ADDR)) begin
+            data_o <= douta[(addr_pipe[2] - BASE_ADDR) % N_BRAMS];
+        end
+    end
+
+    // generate the BRAMs
+    genvar i;
+    generate
+        for(i=0; i<N_BRAMS; i=i+1) begin
+            dual_port_bram #(
+                .RAM_WIDTH(16),
+                .RAM_DEPTH(DEPTH)
+                ) bram_full_width_i (
+
+                // port A is controlled by the bus
+                .clka(clk),
+                .addra(addra[i]),
+                .dina(dina[i]),
+                .douta(douta[i]),
+                .wea(wea[i]),
+
+                // port B is exposed to the user
+                .clkb(user_clk),
+                .addrb(user_addr),
+                .dinb(dinb[i]),
+                .doutb(doutb[i]),
+                .web(user_we));
+        end
+    endgenerate
+endmodule
+//  Xilinx True Dual Port RAM, Read First, Dual Clock
+//  This code implements a parameterizable true dual port memory (both ports can read and write).
+//  The behavior of this RAM is when data is written, the prior memory contents at the write
+//  address are presented on the output port.  If the output data is
+//  not needed during writes or the last read value is desired to be retained,
+//  it is suggested to use a no change RAM as it is more power efficient.
+//  If a reset or enable is not necessary, it may be tied off or removed from the code.
+
+//  Modified from the xilinx_true_dual_port_read_first_2_clock_ram verilog language template.
+
+module dual_port_bram #(
+    parameter RAM_WIDTH = 0,
+    parameter RAM_DEPTH = 0
+    ) (
+    input wire [$clog2(RAM_DEPTH-1)-1:0] addra,
+    input wire [$clog2(RAM_DEPTH-1)-1:0] addrb,
+    input wire [RAM_WIDTH-1:0] dina,
+    input wire [RAM_WIDTH-1:0] dinb,
+    input wire clka,
+    input wire clkb,
+    input wire wea,
+    input wire web,
+    output wire [RAM_WIDTH-1:0] douta,
+    output wire [RAM_WIDTH-1:0] doutb
+    );
+
+    // The following code either initializes the memory values to a specified file or to all zeros to match hardware
+    generate
+        integer i;
+        initial begin
+            for (i = 0; i < RAM_DEPTH; i = i + 1)
+                BRAM[i] = {RAM_WIDTH{1'b0}};
+        end
+    endgenerate
+
+    reg [RAM_WIDTH-1:0] BRAM [RAM_DEPTH-1:0];
+    reg [RAM_WIDTH-1:0] ram_data_a = {RAM_WIDTH{1'b0}};
+    reg [RAM_WIDTH-1:0] ram_data_b = {RAM_WIDTH{1'b0}};
+
+    always @(posedge clka) begin
+        if (wea) BRAM[addra] <= dina;
+        ram_data_a <= BRAM[addra];
+    end
+
+    always @(posedge clkb) begin
+        if (web) BRAM[addrb] <= dinb;
+        ram_data_b <= BRAM[addrb];
+    end
+
+    // Add a 2 clock cycle read latency to improve clock-to-out timing
+    reg [RAM_WIDTH-1:0] douta_reg = {RAM_WIDTH{1'b0}};
+    reg [RAM_WIDTH-1:0] doutb_reg = {RAM_WIDTH{1'b0}};
+
+    always @(posedge clka) douta_reg <= ram_data_a;
+    always @(posedge clkb) doutb_reg <= ram_data_b;
+
+    assign douta = douta_reg;
+    assign doutb = doutb_reg;
 endmodule
 
 module block_memory (

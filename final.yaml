@@ -4,6 +4,11 @@ cores:
     type: block_memory
     width: 12
     depth: 16384
+  
+  output_memory:
+    type: block_memory
+    width: 12
+    depth: 16384
 
 uart:
   port: "COM6"

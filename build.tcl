@@ -28,9 +28,6 @@ read_xdc ./xdc/top_level.xdc
 set_part $partNum
 
 # Read in all IP
-read_ip ./ip/multiplier/multiplier.xci
-read_ip ./ip/add/add.xci
-read_ip ./ip/inv_sqrt/inv_sqrt.xci
 generate_target all [get_ips]
 synth_ip [get_ips]
 

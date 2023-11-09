@@ -14,7 +14,7 @@ module top_level(
 
   logic [$clog2(128*128)-1:0] image_addr;
 
-  manta inpt_img (
+  manta uart (
     .clk(clk_100mhz),
 
     .rx(rx),
@@ -25,6 +25,12 @@ module top_level(
     .image_memory_din(), 
     .image_memory_dout(pixel_value), 
     .image_memory_we(1'b0)
+  
+    .output_memory_clk(clk_100mhz), 
+    .output_memory_addr(write_address), 
+    .output_memory_din(greyscale), 
+    .output_memory_dout(), 
+    .output_memory_we(1'b1)
   );
 
   logic [11:0] pixel_value;
@@ -33,20 +39,8 @@ module top_level(
   // lol i can't just do this math here
   // FIX THIS:?
   assign greyscale = pixel_r + pixel_g + pixel_b;
-  // logic [] write_address
-
-  manta output_img (
-    .clk(clk_100mhz),
-
-    .rx(rx),
-    .tx(tx),
-    
-    .image_memory_clk(clk_100mhz), 
-    .image_memory_addr(image_addr), 
-    .image_memory_din(greyscale), 
-    .image_memory_dout(), 
-    .image_memory_we(1'b1)
-  );
+  logic [$clog2(128*128)-1:0] write_address;
+  assign write_address = (image_addr==0) ? image_addr : image_addr - 1;
 
   always_ff @(posedge clk_100mhz) begin
     if (image_addr < 128*128) begin
