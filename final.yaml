@@ -1,0 +1,12 @@
+---
+cores:
+  image_memory:
+    type: block_memory
+    width: 12
+    depth: 16384
+
+uart:
+  port: "COM6"
+  baudrate: 3000000
+  clock_freq: 100000000
+
