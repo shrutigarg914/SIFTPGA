@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2023.1 (lin64) Build 3865809 Sun May  7 15:04:56 MDT 2023
-| Date         : Thu Nov  9 00:54:56 2023
+| Date         : Thu Nov  9 02:00:52 2023
 | Host         : worker running 64-bit Ubuntu 20.04.6 LTS
 | Command      : report_timing -file obj/post_synth_timing.rpt
 | Design       : top_level
@@ -44,7 +44,7 @@ Slack (MET) :             5.192ns  (required time - arrival time)
                          FDRE                                         r  uart/brx/FSM_onehot_state_reg[1]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.456     3.376 f  uart/brx/FSM_onehot_state_reg[1]/Q
-                         net (fo=5, unplaced)         0.993     4.369    uart/brx/FSM_onehot_state_reg[1]_0
+                         net (fo=5, unplaced)         0.993     4.369    uart/brx/FSM_onehot_state_reg_n_0_[1]
                          LUT6 (Prop_lut6_I0_O)        0.295     4.664 f  uart/brx/FSM_onehot_state[0]_i_3/O
                          net (fo=4, unplaced)         0.926     5.590    uart/urx/valid_o_reg_0
                          LUT6 (Prop_lut6_I0_O)        0.124     5.714 f  uart/urx/valid_o_i_1/O

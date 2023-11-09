@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 -------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version     : Vivado v.2023.1 (lin64) Build 3865809 Sun May  7 15:04:56 MDT 2023
-| Date             : Thu Nov  9 00:55:11 2023
+| Date             : Thu Nov  9 02:01:07 2023
 | Host             : worker running 64-bit Ubuntu 20.04.6 LTS
 | Command          : report_power -file obj/post_route_power.rpt
 | Design           : top_level
@@ -30,10 +30,10 @@ Table of Contents
 ----------
 
 +--------------------------+--------------+
-| Total On-Chip Power (W)  | 0.107        |
+| Total On-Chip Power (W)  | 0.106        |
 | Design Power Budget (W)  | Unspecified* |
 | Power Budget Margin (W)  | NA           |
-| Dynamic (W)              | 0.035        |
+| Dynamic (W)              | 0.034        |
 | Device Static (W)        | 0.073        |
 | Effective TJA (C/W)      | 4.9          |
 | Max Ambient (C)          | 84.5         |
@@ -53,18 +53,18 @@ Table of Contents
 | On-Chip                 | Power (W) | Used     | Available | Utilization (%) |
 +-------------------------+-----------+----------+-----------+-----------------+
 | Clocks                  |     0.003 |        3 |       --- |             --- |
-| Slice Logic             |    <0.001 |      802 |       --- |             --- |
-|   LUT as Logic          |    <0.001 |      246 |     32600 |            0.75 |
-|   CARRY4                |    <0.001 |       12 |      8150 |            0.15 |
+| Slice Logic             |    <0.001 |      772 |       --- |             --- |
+|   LUT as Logic          |    <0.001 |      225 |     32600 |            0.69 |
+|   CARRY4                |    <0.001 |        8 |      8150 |            0.10 |
 |   Register              |    <0.001 |      392 |     65200 |            0.60 |
 |   F7/F8 Muxes           |    <0.001 |        2 |     32600 |           <0.01 |
 |   LUT as Shift Register |    <0.001 |       36 |      9600 |            0.38 |
 |   Others                |     0.000 |       22 |       --- |             --- |
-| Signals                 |    <0.001 |      613 |       --- |             --- |
+| Signals                 |    <0.001 |      587 |       --- |             --- |
 | Block RAM               |     0.030 |       16 |        75 |           21.33 |
-| I/O                     |    <0.001 |        3 |       210 |            1.43 |
+| I/O                     |    <0.001 |        4 |       210 |            1.90 |
 | Static Power            |     0.073 |          |           |                 |
-| Total                   |     0.107 |          |           |                 |
+| Total                   |     0.106 |          |           |                 |
 +-------------------------+-----------+----------+-----------+-----------------+
 
 
@@ -141,11 +141,10 @@ Table of Contents
 +------------------------------------+-----------+
 | Name                               | Power (W) |
 +------------------------------------+-----------+
-| top_level                          |     0.035 |
-|   uart                             |     0.034 |
-|     image_memory                   |     0.001 |
+| top_level                          |     0.034 |
+|   uart                             |     0.033 |
 |     output_memory                  |     0.031 |
-|       genblk1[0].bram_full_width_i |     0.031 |
+|       genblk1[0].bram_full_width_i |     0.030 |
 +------------------------------------+-----------+
 
 
