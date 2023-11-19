@@ -117,6 +117,12 @@ module top_level(
     .busy_out()
   );
 
+  // TODO: Figure out how to signal collecting kernel pixels from BRAM, to waiting for blur module + storing result, to increasing center addr
+  // Notes: Need to read 9 pixels, one at a time from BRAM (which takes 2 cycles each) to gather all kernel data
+  // Blur module takes 4 cycles
+  // Increasing the center address may take up to 4 cycles
+  // In total, should pipeline this so that each pixel of the pyramid takes 9*2=18 cycles? HOW???
+
   always_ff @(posedge clk_100mhz) begin
     if (sys_rst) begin
       center_addr_x <= 0;
@@ -125,6 +131,11 @@ module top_level(
       pyramid_level <= 0;
       pyramid_done <= 0;
     end else begin
+      // Collect Kernel Pixels
+
+      // Wait for blur module
+
+      // Increase center addr
       if (center_addr_x < WIDTH) begin // Inc X
         center_addr_x <= center_addr_x + 1;
       end else begin

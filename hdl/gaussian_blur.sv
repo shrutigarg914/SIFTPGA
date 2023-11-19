@@ -129,24 +129,4 @@ module gaussian #(parameter WIDTH = 8) (
 
 endmodule
 
-module gaussian_top #(
-    parameter WIDTH=128, HEIGHT=128) (
-    input wire clk_in,
-    input wire rst_in,
-    input wire [7:0] data_in,
-    input wire [3:0] index_in, // index of 3x3 where top left is 0, bottom right is 8
-    output logic [7:0] data_out,
-    output logic data_valid_out,
-    );
-
-    always_ff@(posedge clk_in) begin
-        if(rst_in) begin
-
-        end else begin
-            
-        end
-    end
-
-endmodule
-
 `default_nettype wire
