@@ -60,13 +60,14 @@ module top_level(
 
 
   // BUILDING THE GAUSSIAN PYRAMID
-  
 
-  //two-port BRAM used to hold gaussian pyramid
+
+  // two-port BRAM used to hold gaussian pyramid
+  // NOTE: DOUBLE THIS to use for both DOG and gradient
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
     .RAM_DEPTH(WIDTH*HEIGHT)) //there are WIDTH*HEIGHT entries for full frame
-    frame_buffer (
+    gaussain_pyramid_buffer (
     .addra(hcount_rec + WIDTH*vcount_rec), //pixels are stored using this math
     .clka(clk_100mhz),
     .wea(data_valid_rec),
