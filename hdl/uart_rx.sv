@@ -58,5 +58,4 @@ module uart_rx (
         valid_o <= ( (zero_baud_counter) && (state == STOP_BIT) );
 
 endmodule
-
 `default_nettype wire

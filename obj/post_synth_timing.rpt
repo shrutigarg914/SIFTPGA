@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2023.1 (lin64) Build 3865809 Sun May  7 15:04:56 MDT 2023
-| Date         : Mon Nov 20 16:49:45 2023
+| Date         : Mon Nov 20 17:15:15 2023
 | Host         : worker running 64-bit Ubuntu 20.04.6 LTS
 | Command      : report_timing -file obj/post_synth_timing.rpt
 | Design       : top_level
@@ -12,16 +12,16 @@ Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanc
 
 Timing Report
 
-Slack (MET) :             5.813ns  (required time - arrival time)
-  Source:                 btn1_db/counter_reg[1]/C
+Slack (MET) :             5.391ns  (required time - arrival time)
+  Source:                 urx/baud_counter_reg[3]/C
                             (rising edge-triggered cell FDRE clocked by gclk  {rise@0.000ns fall@4.000ns period=10.000ns})
-  Destination:            btn1_db/counter_reg[0]/R
+  Destination:            urx/baud_counter_reg[0]/R
                             (rising edge-triggered cell FDRE clocked by gclk  {rise@0.000ns fall@4.000ns period=10.000ns})
   Path Group:             gclk
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (gclk rise@10.000ns - gclk rise@0.000ns)
-  Data Path Delay:        3.574ns  (logic 0.875ns (24.482%)  route 2.699ns (75.518%))
-  Logic Levels:           2  (LUT4=1 LUT6=1)
+  Data Path Delay:        3.996ns  (logic 1.025ns (25.651%)  route 2.971ns (74.349%))
+  Logic Levels:           3  (LUT4=2 LUT5=1)
   Clock Path Skew:        -0.145ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    2.660ns = ( 12.660 - 10.000 ) 
     Source Clock Delay      (SCD):    2.920ns
@@ -40,16 +40,18 @@ Slack (MET) :             5.813ns  (required time - arrival time)
     N15                  IBUF (Prop_ibuf_I_O)         1.440     1.440 r  clk_100mhz_IBUF_inst/O
                          net (fo=1, unplaced)         0.800     2.240    clk_100mhz_IBUF
                          BUFG (Prop_bufg_I_O)         0.096     2.336 r  clk_100mhz_IBUF_BUFG_inst/O
-                         net (fo=44, unplaced)        0.584     2.920    btn1_db/clk_100mhz_IBUF_BUFG
-                         FDRE                                         r  btn1_db/counter_reg[1]/C
+                         net (fo=83, unplaced)        0.584     2.920    urx/clk_100mhz_IBUF_BUFG
+                         FDRE                                         r  urx/baud_counter_reg[3]/C
   -------------------------------------------------------------------    -------------------
-                         FDRE (Prop_fdre_C_Q)         0.456     3.376 r  btn1_db/counter_reg[1]/Q
-                         net (fo=2, unplaced)         0.752     4.128    btn1_db/counter_reg[1]
-                         LUT4 (Prop_lut4_I1_O)        0.295     4.423 f  btn1_db/counter[0]_i_3/O
-                         net (fo=1, unplaced)         1.111     5.534    btn1_db/counter[0]_i_3_n_0
-                         LUT6 (Prop_lut6_I0_O)        0.124     5.658 r  btn1_db/counter[0]_i_1/O
-                         net (fo=20, unplaced)        0.836     6.494    btn1_db/current0
-                         FDRE                                         r  btn1_db/counter_reg[0]/R
+                         FDRE (Prop_fdre_C_Q)         0.456     3.376 f  urx/baud_counter_reg[3]/Q
+                         net (fo=3, unplaced)         0.759     4.135    urx/baud_counter[3]
+                         LUT4 (Prop_lut4_I1_O)        0.321     4.456 r  urx/valid_o_i_4/O
+                         net (fo=1, unplaced)         0.902     5.358    urx/valid_o_i_4_n_0
+                         LUT4 (Prop_lut4_I1_O)        0.124     5.482 r  urx/valid_o_i_2/O
+                         net (fo=5, unplaced)         0.477     5.959    urx/valid_o_i_2_n_0
+                         LUT5 (Prop_lut5_I4_O)        0.124     6.083 r  urx/state[3]_i_1/O
+                         net (fo=18, unplaced)        0.833     6.916    urx/state[3]_i_1_n_0
+                         FDRE                                         r  urx/baud_counter_reg[0]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock gclk rise edge)      10.000    10.000 r  
@@ -58,16 +60,16 @@ Slack (MET) :             5.813ns  (required time - arrival time)
     N15                  IBUF (Prop_ibuf_I_O)         1.370    11.370 r  clk_100mhz_IBUF_inst/O
                          net (fo=1, unplaced)         0.760    12.130    clk_100mhz_IBUF
                          BUFG (Prop_bufg_I_O)         0.091    12.221 r  clk_100mhz_IBUF_BUFG_inst/O
-                         net (fo=44, unplaced)        0.439    12.660    btn1_db/clk_100mhz_IBUF_BUFG
-                         FDRE                                         r  btn1_db/counter_reg[0]/C
+                         net (fo=83, unplaced)        0.439    12.660    urx/clk_100mhz_IBUF_BUFG
+                         FDRE                                         r  urx/baud_counter_reg[0]/C
                          clock pessimism              0.115    12.775    
                          clock uncertainty           -0.035    12.740    
-                         FDRE (Setup_fdre_C_R)       -0.433    12.307    btn1_db/counter_reg[0]
+                         FDRE (Setup_fdre_C_R)       -0.433    12.307    urx/baud_counter_reg[0]
   -------------------------------------------------------------------
                          required time                         12.307    
-                         arrival time                          -6.494    
+                         arrival time                          -6.916    
   -------------------------------------------------------------------
-                         slack                                  5.813    
+                         slack                                  5.391    
 
 
 
