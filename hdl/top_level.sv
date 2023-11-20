@@ -60,34 +60,23 @@ module top_level(
 
 
   // BUILDING THE GAUSSIAN PYRAMID
-  // Locating pyramid address STAGE 3
-  parameter WIDTH = 128;
-  parameter HEIGHT = 128;
-  parameter BIT_DEPTH = 8;
-  logic [7:0] center_addr_x;
-  logic [7:0] center_addr_y;
-  logic [7:0] lookup_addr;
-  logic lookup_valid;
-  logic [2:0] pyramid_level; // layer in gaussian pyramid
-  logic [2:0] blur_level; // horizontal location of current image in gaussian pyramid
-  logic pyramid_done; // if we are done building the pyramid, stop increasing above addresses and stop writing to BRAM
-  logic [7:0] resize_in;
-  logic pyramid_location_ready;
 
-  // TEMP
-  logic [BIT_DEPTH:0] pixel_in;
-  logic data_valid_rec;
-
+  // BRAMS to hold reference images at each level
+  logic data_valid_in_0;
+  logic [BIT_DEPTH:0] pixel_in_0;
   logic [BIT_DEPTH:0] pixel_out_0; // pixel out from original image
-  //two-port BRAM used to hold image from uart.
+
+  //two-port BRAM used to hold images on first octave
+  // Two halves will hold two separate images so we can write new blurred images while
+  // still using old blurred image for gaussian blur
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
-    .RAM_DEPTH(WIDTH*HEIGHT)) //there are WIDTH*HEIGHT entries for full frame
+    .RAM_DEPTH(WIDTH*HEIGHT*2)) //there are WIDTH*HEIGHT entries for full frame
     frame_buffer (
     .addra(image_addr), // TODO: TEMP
     .clka(clk_100mhz),
-    .wea(data_valid_rec), // TODO: TEMP
-    .dina(pixel_in), // TODO: TEMP
+    .wea(data_valid_rec),
+    .dina(pixel_in0),
     .ena(1'b1),
     .regcea(1'b1),
     .rsta(sys_rst),
@@ -104,10 +93,10 @@ module top_level(
 
   logic resize1_data_valid_in;
   logic [BIT_DEPTH:0] pixel_out_1; // pixel out from first downsized image
-  //two-port BRAM used to hold the first downsized images
+  //two-port BRAM used to hold images on the second octave
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
-    .RAM_DEPTH((WIDTH / 2) * (HEIGHT / 2)))
+    .RAM_DEPTH((WIDTH / 2) * (HEIGHT / 2) * 2))
     resize_buffer (
     .addra(center_addr_x + center_addr_y * HEIGHT / 2),
     .clka(clk_100mhz),
@@ -129,12 +118,12 @@ module top_level(
 
   logic resize2_data_valid_in;
   logic [BIT_DEPTH:0] pixel_out_2; // pixel out from second downsized image
-  //two-port BRAM used to hold the first downsized images
+  //two-port BRAM used to hold images on the third octave
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
-    .RAM_DEPTH((WIDTH / 2) * (HEIGHT / 2)))
+    .RAM_DEPTH((WIDTH / 4) * (HEIGHT / 4) * 2))
     resize_buffer (
-    .addra(center_addr_x + center_addr_y * HEIGHT / 2),
+    .addra(center_addr_x + center_addr_y * HEIGHT / 4),
     .clka(clk_100mhz),
     .wea(resize2_data_valid_in),
     .dina(resize_in),
@@ -154,12 +143,12 @@ module top_level(
 
   logic resize3_data_valid_in;
   logic [BIT_DEPTH:0] pixel_out_3; // pixel out from third downsized image
-  //two-port BRAM used to hold the first downsized images
+  //two-port BRAM used to hold images on the 4th octave
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
-    .RAM_DEPTH((WIDTH / 2) * (HEIGHT / 2)))
+    .RAM_DEPTH((WIDTH / 8) * (HEIGHT / 8) * 2))
     resize_buffer (
-    .addra(center_addr_x + center_addr_y * HEIGHT / 2),
+    .addra(center_addr_x + center_addr_y * HEIGHT / 8),
     .clka(clk_100mhz),
     .wea(resize3_data_valid_in),
     .dina(resize_in),
@@ -201,7 +190,21 @@ module top_level(
     .busy_out()
   );
 
+  // Locating pyramid address STAGE 3
+  parameter WIDTH = 128;
+  parameter HEIGHT = 128;
+  parameter BIT_DEPTH = 8;
+  logic [7:0] center_addr_x;
+  logic [7:0] center_addr_y;
+  logic [7:0] lookup_addr;
+  logic lookup_valid;
+  logic [2:0] pyramid_level; // layer in gaussian pyramid
+  logic [2:0] blur_level; // horizontal location of current image in gaussian pyramid
+  logic pyramid_done; // if we are done building the pyramid, stop increasing above addresses and stop writing to BRAM
+  logic pyramid_location_ready;
+
   // Gathering kernel data STAGE 1
+  logic active_half; // 0 for currently using first half as old image, second half to store new image, 1 for opposite
   logic kernel_data_ready;
   logic [1:0] kernel_x;
   logic [1:0] kernel_y;
@@ -242,7 +245,7 @@ module top_level(
   // Blur module takes 4 cycles
   // Increasing the center address may take up to 4 cycles
   // Up to some amount of time for image resizing on each inc pyramid level
-  // In total, should pipeline this so that each pixel of the pyramid takes 9*2=18 cycles? HOW???
+  // In total, should pipeline this so that each pixel of the pyramid takes 9*2=18 cycles?
 
   always_ff @(posedge clk_100mhz) begin
     if (sys_rst) begin
@@ -273,6 +276,8 @@ module top_level(
       end
 
       // TODO: SAVE OUTPUT TO PYRAMID
+
+      // TODO: Simultaneously save blurred pixels to pyramid and back to BRAM to use for next blurred image
 
       // Increase center addr
       if (blur_data_valid_out) begin
