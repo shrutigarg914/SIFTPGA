@@ -19,6 +19,15 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
                         output logic error_out,
                         output logic busy_out);
 
+  // shared info
+  parameter WIDTH = 128;
+  parameter HEIGHT = 128;
+  parameter BIT_DEPTH = 8;
+  logic [7:0] center_addr_x;
+  logic [7:0] center_addr_y;
+  logic [7:0] lookup_addr;
+  logic lookup_valid;
+
   // TODO: Write logic for accepting data in and storing in first image BRAM
   always_ff @(posedge clk_in) begin
     if (rst_in) begin
@@ -40,7 +49,7 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
     .RAM_DEPTH(WIDTH*HEIGHT*2)) //there are WIDTH*HEIGHT entries for full frame
     frame_buffer (
-    .addra(image_addr), // TODO: TEMP
+    .addra(center_addr_x + center_addr_y * HEIGHT),
     .clka(clk_in),
     .wea(data_valid_rec),
     .dina(pixel_in0),
@@ -158,13 +167,6 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
   );
 
   // Locating pyramid address STAGE 3
-  parameter WIDTH = 128;
-  parameter HEIGHT = 128;
-  parameter BIT_DEPTH = 8;
-  logic [7:0] center_addr_x;
-  logic [7:0] center_addr_y;
-  logic [7:0] lookup_addr;
-  logic lookup_valid;
   logic [2:0] pyramid_level; // layer in gaussian pyramid
   logic [2:0] blur_level; // horizontal location of current image in gaussian pyramid
   logic pyramid_location_ready;
@@ -243,7 +245,7 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
 
       // TODO: SAVE OUTPUT TO PYRAMID
 
-      // TODO: Simultaneously save blurred pixels to pyramid and back to BRAM to use for next blurred image
+      // TODO: Simultaneously output blurred pixels to pyramid and save back to BRAM to use for next blurred image
 
       // TODO: Add downsizing (cries)
 
