@@ -39,6 +39,36 @@ module top_level(
         pause <= pause + 1'b1;
       end
     end
+  end
+
+
+  // BUILDING THE GAUSSIAN PYRAMID
+
+
+  // two-port BRAM used to hold gaussian pyramid
+  // NOTE: DOUBLE THIS to use for both DOG and gradient
+  xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
+    .RAM_DEPTH(WIDTH*HEIGHT)) //there are WIDTH*HEIGHT entries for full frame
+    gaussain_pyramid_buffer (
+    .addra(hcount_rec + WIDTH*vcount_rec), //pixels are stored using this math
+    .clka(clk_100mhz),
+    .wea(data_valid_rec),
+    .dina(pixel_data_rec),
+    .ena(1'b1),
+    .regcea(1'b1),
+    .rsta(sys_rst),
+    .douta(), //never read from this side
+    .addrb(lookup_addr), // lookup pixel
+    .dinb(16'b0),
+    .clkb(clk_100mhz),
+    .web(1'b0),
+    .enb(valid_addr),
+    .rstb(sys_rst),
+    .regceb(1'b1),
+    .doutb(frame_buff_raw)
+  );
+  
 endmodule // top_level
 
 `default_nettype wire

@@ -14,9 +14,28 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
                         output logic[7:0] address_out,
                         output logic data_valid_out,
 
+                        output logic pyramid_done, // if we are done building the pyramid, stop increasing above addresses and stop writing to BRAM
+
                         output logic error_out,
                         output logic busy_out);
+
+  // shared info
+  parameter WIDTH = 128;
+  parameter HEIGHT = 128;
+  parameter BIT_DEPTH = 8;
+  logic [7:0] center_addr_x;
+  logic [7:0] center_addr_y;
+  logic [7:0] lookup_addr;
+  logic lookup_valid;
+
   // TODO: Write logic for accepting data in and storing in first image BRAM
+  always_ff @(posedge clk_in) begin
+    if (rst_in) begin
+
+    end else if (~data_in_done) begin
+
+    end
+  end
 
   // BRAMS to hold reference images at each level
   logic data_valid_in_0;
@@ -30,20 +49,20 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
     .RAM_DEPTH(WIDTH*HEIGHT*2)) //there are WIDTH*HEIGHT entries for full frame
     frame_buffer (
-    .addra(image_addr), // TODO: TEMP
-    .clka(clk_100mhz),
+    .addra(center_addr_x + center_addr_y * HEIGHT),
+    .clka(clk_in),
     .wea(data_valid_rec),
     .dina(pixel_in0),
     .ena(1'b1),
     .regcea(1'b1),
-    .rsta(sys_rst),
+    .rsta(rst_in),
     .douta(), //never read from this side
     .addrb(lookup_addr), // lookup pixel
     .dinb(16'b0),
-    .clkb(clk_100mhz),
+    .clkb(clk_in),
     .web(1'b0),
     .enb(lookup_valid),
-    .rstb(sys_rst),
+    .rstb(rst_in),
     .regceb(1'b1),
     .doutb(pixel_out_0)
   );
@@ -56,19 +75,19 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
     .RAM_DEPTH((WIDTH / 2) * (HEIGHT / 2) * 2))
     resize_buffer (
     .addra(center_addr_x + center_addr_y * HEIGHT / 2),
-    .clka(clk_100mhz),
+    .clka(clk_in),
     .wea(resize1_data_valid_in),
     .dina(resize_in),
     .ena(1'b1),
     .regcea(1'b1),
-    .rsta(sys_rst),
+    .rsta(rst_in),
     .douta(), //never read from this side
     .addrb(lookup_addr), // lookup pixel
     .dinb(16'b0),
-    .clkb(clk_100mhz),
+    .clkb(clk_in),
     .web(1'b0),
     .enb(lookup_valid),
-    .rstb(sys_rst),
+    .rstb(rst_in),
     .regceb(1'b1),
     .doutb(pixel_out_1)
   );
@@ -81,19 +100,19 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
     .RAM_DEPTH((WIDTH / 4) * (HEIGHT / 4) * 2))
     resize_buffer (
     .addra(center_addr_x + center_addr_y * HEIGHT / 4),
-    .clka(clk_100mhz),
+    .clka(clk_in),
     .wea(resize2_data_valid_in),
     .dina(resize_in),
     .ena(1'b1),
     .regcea(1'b1),
-    .rsta(sys_rst),
+    .rsta(rst_in),
     .douta(), //never read from this side
     .addrb(lookup_addr), // lookup pixel
     .dinb(16'b0),
-    .clkb(clk_100mhz),
+    .clkb(clk_in),
     .web(1'b0),
     .enb(lookup_valid),
-    .rstb(sys_rst),
+    .rstb(rst_in),
     .regceb(1'b1),
     .doutb(pixel_out_2)
   );
@@ -106,19 +125,19 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
     .RAM_DEPTH((WIDTH / 8) * (HEIGHT / 8) * 2))
     resize_buffer (
     .addra(center_addr_x + center_addr_y * HEIGHT / 8),
-    .clka(clk_100mhz),
+    .clka(clk_in),
     .wea(resize3_data_valid_in),
     .dina(resize_in),
     .ena(1'b1),
     .regcea(1'b1),
-    .rsta(sys_rst),
+    .rsta(rst_in),
     .douta(), //never read from this side
     .addrb(lookup_addr), // lookup pixel
     .dinb(16'b0),
-    .clkb(clk_100mhz),
+    .clkb(clk_in),
     .web(1'b0),
     .enb(lookup_valid),
-    .rstb(sys_rst),
+    .rstb(rst_in),
     .regceb(1'b1),
     .doutb(pixel_out_3)
   );
@@ -135,8 +154,8 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
   gaussian #(
       .WIDTH(BIT_DEPTH))
     blur (
-    .clk_in(clk_100mhz),
-    .rst_in(sys_rst),
+    .clk_in(clk_in),
+    .rst_in(rst_in),
     .r0_data_in(row1),
     .r1_data_in(row2),
     .r2_data_in(row3),
@@ -148,16 +167,8 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
   );
 
   // Locating pyramid address STAGE 3
-  parameter WIDTH = 128;
-  parameter HEIGHT = 128;
-  parameter BIT_DEPTH = 8;
-  logic [7:0] center_addr_x;
-  logic [7:0] center_addr_y;
-  logic [7:0] lookup_addr;
-  logic lookup_valid;
   logic [2:0] pyramid_level; // layer in gaussian pyramid
   logic [2:0] blur_level; // horizontal location of current image in gaussian pyramid
-  logic pyramid_done; // if we are done building the pyramid, stop increasing above addresses and stop writing to BRAM
   logic pyramid_location_ready;
 
   // Gathering kernel data STAGE 1
@@ -204,14 +215,14 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
   // Up to some amount of time for image resizing on each inc pyramid level
   // In total, should pipeline this so that each pixel of the pyramid takes 9*2=18 cycles?
 
-  always_ff @(posedge clk_100mhz) begin
-    if (sys_rst) begin
+  always_ff @(posedge clk_in) begin
+    if (rst_in) begin
       center_addr_x <= 0;
       center_addr_y <= 0;
       blur_level <= 0;
       pyramid_level <= 0;
       pyramid_done <= 0;
-    end else begin
+    end else if (data_in_done) begin
       // Collect Kernel Pixels (stage 1)
       if (pyramid_location_ready) begin // TODO: Add check that uart collection BRAM is ready
 
@@ -234,7 +245,7 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
 
       // TODO: SAVE OUTPUT TO PYRAMID
 
-      // TODO: Simultaneously save blurred pixels to pyramid and back to BRAM to use for next blurred image
+      // TODO: Simultaneously output blurred pixels to pyramid and save back to BRAM to use for next blurred image
 
       // TODO: Add downsizing (cries)
 
