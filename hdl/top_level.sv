@@ -66,26 +66,19 @@ module top_level(
   logic [7:0] center_addr_x;
   logic [7:0] center_addr_y;
   logic [7:0] lookup_addr;
-  logic lookup_valid;
   logic [2:0] pyramid_level; // layer in gaussian pyramid
   logic [2:0] blur_level; // horizontal location of current image in gaussian pyramid
   logic pyramid_done; // if we are done building the pyramid, stop increasing above addresses and stop writing to BRAM
-  logic [7:0] resize_in;
 
-  // TEMP
-  logic [BIT_DEPTH:0] pixel_in;
-  logic data_valid_rec;
-
-  logic [BIT_DEPTH:0] pixel_out_0; // pixel out from original image
   //two-port BRAM used to hold image from uart.
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
     .RAM_DEPTH(WIDTH*HEIGHT)) //there are WIDTH*HEIGHT entries for full frame
     frame_buffer (
-    .addra(image_addr), // TODO: TEMP
+    .addra(hcount_rec + WIDTH*vcount_rec), //pixels are stored using this math
     .clka(clk_100mhz),
-    .wea(data_valid_rec), // TODO: TEMP
-    .dina(pixel_in), // TODO: TEMP
+    .wea(data_valid_rec),
+    .dina(pixel_data_rec),
     .ena(1'b1),
     .regcea(1'b1),
     .rsta(sys_rst),
@@ -94,88 +87,13 @@ module top_level(
     .dinb(16'b0),
     .clkb(clk_100mhz),
     .web(1'b0),
-    .enb(lookup_valid),
+    .enb(valid_addr),
     .rstb(sys_rst),
     .regceb(1'b1),
-    .doutb(pixel_out_0)
+    .doutb(frame_buff_raw)
   );
 
-  logic resize1_data_valid_in;
-  logic [BIT_DEPTH:0] pixel_out_1; // pixel out from first downsized image
-  //two-port BRAM used to hold the first downsized images
-  xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
-    .RAM_DEPTH((WIDTH / 2) * (HEIGHT / 2)))
-    resize_buffer (
-    .addra(center_addr_x + center_addr_y * HEIGHT / 2),
-    .clka(clk_100mhz),
-    .wea(resize1_data_valid_in),
-    .dina(resize_in),
-    .ena(1'b1),
-    .regcea(1'b1),
-    .rsta(sys_rst),
-    .douta(), //never read from this side
-    .addrb(lookup_addr), // lookup pixel
-    .dinb(16'b0),
-    .clkb(clk_100mhz),
-    .web(1'b0),
-    .enb(lookup_valid),
-    .rstb(sys_rst),
-    .regceb(1'b1),
-    .doutb(pixel_out_1)
-  );
-
-  logic resize2_data_valid_in;
-  logic [BIT_DEPTH:0] pixel_out_2; // pixel out from second downsized image
-  //two-port BRAM used to hold the first downsized images
-  xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
-    .RAM_DEPTH((WIDTH / 2) * (HEIGHT / 2)))
-    resize_buffer (
-    .addra(center_addr_x + center_addr_y * HEIGHT / 2),
-    .clka(clk_100mhz),
-    .wea(resize2_data_valid_in),
-    .dina(resize_in),
-    .ena(1'b1),
-    .regcea(1'b1),
-    .rsta(sys_rst),
-    .douta(), //never read from this side
-    .addrb(lookup_addr), // lookup pixel
-    .dinb(16'b0),
-    .clkb(clk_100mhz),
-    .web(1'b0),
-    .enb(lookup_valid),
-    .rstb(sys_rst),
-    .regceb(1'b1),
-    .doutb(pixel_out_2)
-  );
-
-  logic resize3_data_valid_in;
-  logic [BIT_DEPTH:0] pixel_out_3; // pixel out from third downsized image
-  //two-port BRAM used to hold the first downsized images
-  xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
-    .RAM_DEPTH((WIDTH / 2) * (HEIGHT / 2)))
-    resize_buffer (
-    .addra(center_addr_x + center_addr_y * HEIGHT / 2),
-    .clka(clk_100mhz),
-    .wea(resize3_data_valid_in),
-    .dina(resize_in),
-    .ena(1'b1),
-    .regcea(1'b1),
-    .rsta(sys_rst),
-    .douta(), //never read from this side
-    .addrb(lookup_addr), // lookup pixel
-    .dinb(16'b0),
-    .clkb(clk_100mhz),
-    .web(1'b0),
-    .enb(lookup_valid),
-    .rstb(sys_rst),
-    .regceb(1'b1),
-    .doutb(pixel_out_3)
-  );
-
-  // STAGE 2
+  parameter BIT_DEPTH = 8;
   logic[BIT_DEPTH*3-1:0] row1;
   logic[BIT_DEPTH*3-1:0] row2;
   logic[BIT_DEPTH*3-1:0] row3;
@@ -199,15 +117,10 @@ module top_level(
     .busy_out()
   );
 
-  // pipeline stages
-  logic kernel_data_ready; // STAGE 1
-  logic pyramid_location_ready; // STAGE 3
-
   // TODO: Figure out how to signal collecting kernel pixels from BRAM, to waiting for blur module + storing result, to increasing center addr
   // Notes: Need to read 9 pixels, one at a time from BRAM (which takes 2 cycles each) to gather all kernel data
   // Blur module takes 4 cycles
   // Increasing the center address may take up to 4 cycles
-  // Up to some amount of time for image resizing on each inc pyramid level
   // In total, should pipeline this so that each pixel of the pyramid takes 9*2=18 cycles? HOW???
 
   always_ff @(posedge clk_100mhz) begin
@@ -235,12 +148,12 @@ module top_level(
             blur_level <= blur_level + 1;
           end else begin
             blur_level <= 0;
-            if (pyramid_level < 4) begin  // Inc pyramid level
-              pyramid_level <= pyramid_level + 1;
-            end else begin
-              pyramid_level <= 0;
-              pyramid_done <= 1;
-            end
+              if (pyramid_level < 4) begin  // Inc pyramid level
+                pyramid_level <= pyramid_level + 1;
+              end else begin
+                pyramid_level <= 0;
+                pyramid_done <= 1;
+          end
           end
         end
       end
@@ -251,7 +164,7 @@ module top_level(
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
     .RAM_DEPTH(WIDTH*HEIGHT)) //there are WIDTH*HEIGHT entries for full frame
-    gaussain_pyramid_buffer (
+    frame_buffer (
     .addra(hcount_rec + WIDTH*vcount_rec), //pixels are stored using this math
     .clka(clk_100mhz),
     .wea(data_valid_rec),

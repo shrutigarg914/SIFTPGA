@@ -19,20 +19,41 @@ module tx_tb;
         .tx(tx));
 
     always begin
-        #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
+        #5;  // every 5 ns switch...so period of clock is 10 ns...100 MHz clock
         clk = !clk;
     end
 
     //initial block...this is our test simulation
     initial begin
         $dumpfile("tx.vcd"); //file to store value change dump (vcd)
-        $dumpvars(0,tx_tb); //store everything at the current level and below
+        $dumpvars(0, tx_tb); //store everything at the current level and below
         $display("Starting Sim"); //print nice message
         clk = 0; //initialize clk (super important)
-        #10  //wait a little bit of time at beginning
-        
-        #100;
-        $display("Finishing Sim"); //print nice message
+        #100;  //wait a little bit of time at beginning
+        data_i = 8'b0101_0100;
+        start_i = 1;
+        #10;
+        // start_i = 0;
+        while (!done_o) begin
+            #10;
+            data_i = 8'b1111_1111;
+            // $display("%b    %b", done_o, data_i);
+        end
+        #10;
+        // start_i = 1;
+        #10;
+        start_i = 0;
+        while (!done_o) begin
+            #10;
+            data_i = 8'b1111_1111;
+            // $display("%b    %b", done_o, data_i);
+        end
+
+        // data_i = 8'b1111_1111;
+        // while (!done_o) begin
+        //     #10;
+        // end
+        $display("Sent!"); //print nice message
         $finish;
 
     end
