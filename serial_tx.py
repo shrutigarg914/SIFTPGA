@@ -1,5 +1,6 @@
 import serial
 import time
+import struct
 s = serial.Serial(port='COM6', baudrate=3000000, bytesize=8)
 print("setup ready")
 # time.sleep(10)
