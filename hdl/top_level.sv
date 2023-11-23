@@ -68,7 +68,7 @@ module top_level(
     .regcea(1'b1),
     .rsta(sys_rst),
     .douta(), //never read from this side
-    .addrb(read_pixel_addr),//transformed lookup pixel
+    .addrb(read_pixel_addr),// transformed lookup pixel
     .dinb(),
     .clkb(clk_100mhz),
     .web(1'b0),
@@ -111,14 +111,11 @@ module top_level(
 
 
   logic [7:0] pixel_out;
-  logic [13:0] read_pixel_addr;
+  logic [14:0] read_pixel_addr;
   logic sending_img, send_pixel;
   logic [3:0] counter;
-  assign led[1] = btn_edge;
-  assign led[2] = sending_img;
-  assign led[4:3] = counter;
-  assign led[5] = done_o;
-  assign led[6] = send_pixel;
+  assign led[1] = sending_img;
+  assign led[15:2] = read_pixel_addr;
   logic old_done_o;
   // assign led[15:5] = read_pixel_addr[10:0];
 
@@ -131,27 +128,27 @@ module top_level(
       counter <= 0;
     end else begin
       if (full_image_received) begin
-      if (btn_edge & ~sending_img) begin
-        sending_img <=1'b1;
-        counter <= 0;
-        read_pixel_addr <= 0;
-      end
-      if (sending_img) begin
-        if (done_o & ~old_done_o) begin 
-          counter <=0;
-          read_pixel_addr<=read_pixel_addr+1;
-          send_pixel<= 1'b0;
-        end else if (counter==2'b10) begin
-          data_i<=pixel_out;
-          counter<= counter + 1;
-          send_pixel <= 1'b1;
-        end else if(counter==2'b11) begin
-          send_pixel <=1'b0;
-        end else begin
-          counter <= counter + 1;
+        if (btn_edge & ~sending_img) begin
+          sending_img <=1'b1;
+          counter <= 0;
+          read_pixel_addr <= 0;
+        end
+        if (sending_img) begin
+          if (done_o & ~old_done_o) begin 
+            counter <=0;
+            read_pixel_addr<=read_pixel_addr+1;
+            send_pixel<= 1'b0;
+          end else if (counter==2'b10) begin
+            data_i<=pixel_out;
+            counter<= counter + 1;
+            send_pixel <= 1'b1;
+          end else if(counter==2'b11) begin
+            send_pixel <=1'b0;
+          end else begin
+            counter <= counter + 1;
+          end
         end
       end
-    end
   end 
   end
   

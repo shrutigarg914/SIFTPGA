@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2023.1 (lin64) Build 3865809 Sun May  7 15:04:56 MDT 2023
-| Date         : Tue Nov 21 23:35:11 2023
+| Date         : Thu Nov 23 02:28:35 2023
 | Host         : worker running 64-bit Ubuntu 20.04.6 LTS
 | Command      : report_timing -file obj/post_synth_timing.rpt
 | Design       : top_level
@@ -40,7 +40,7 @@ Slack (MET) :             5.782ns  (required time - arrival time)
     N15                  IBUF (Prop_ibuf_I_O)         1.440     1.440 r  clk_100mhz_IBUF_inst/O
                          net (fo=1, unplaced)         0.800     2.240    clk_100mhz_IBUF
                          BUFG (Prop_bufg_I_O)         0.096     2.336 r  clk_100mhz_IBUF_BUFG_inst/O
-                         net (fo=129, unplaced)       0.584     2.920    urx/clk_100mhz_IBUF_BUFG
+                         net (fo=129, unplaced)       0.584     2.920    urx/CLK
                          FDRE                                         r  urx/state_reg[1]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.456     3.376 f  urx/state_reg[1]/Q
@@ -58,7 +58,7 @@ Slack (MET) :             5.782ns  (required time - arrival time)
     N15                  IBUF (Prop_ibuf_I_O)         1.370    11.370 r  clk_100mhz_IBUF_inst/O
                          net (fo=1, unplaced)         0.760    12.130    clk_100mhz_IBUF
                          BUFG (Prop_bufg_I_O)         0.091    12.221 r  clk_100mhz_IBUF_BUFG_inst/O
-                         net (fo=129, unplaced)       0.439    12.660    urx/clk_100mhz_IBUF_BUFG
+                         net (fo=129, unplaced)       0.439    12.660    urx/CLK
                          FDRE                                         r  urx/baud_counter_reg[10]/C
                          clock pessimism              0.115    12.775    
                          clock uncertainty           -0.035    12.740    

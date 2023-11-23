@@ -29,6 +29,7 @@ if __name__ == "__main__":
             for x in range(w):
                 r, g, b = image_in.getpixel((x, y))
                 pixels.append(int(0.2126*r+0.7152*g+0.0722*b))
+        print(h, w, len(pixels))
 
         s = serial.Serial(port='COM6', baudrate=2000000, bytesize=8)
         print("setup ready")
@@ -37,20 +38,20 @@ if __name__ == "__main__":
         while packets_sent<len(pixels):
             # char = bytes(input("send: "), 'ascii')
             # print(struct.pack('B', 3))
+            # print(pixels[packets_sent])
             s.write(struct.pack('B', pixels[packets_sent]))
-            print(".", end='', flush=True)
+            # print(".", end='', flush=True)
             packets_sent +=1
         print("DONE SENDING!")
 
         image_rx = []
         while len(image_rx) <len(pixels):
-            print(".", end='', flush=True)
+            # print(".", end='', flush=True)
             res = s.read()
-            # print()
-            # print(res, struct.unpack('B', res)[0])
-            # break
-            # struct.pack('B', pixels[packets_sent])
             image_rx.append(struct.unpack('B', res)[0])
+            print(len(image_rx), len(pixels), struct.unpack('B', res)[0])
+            ind = input("Index investigating:  ")
+            print(pixels[ind])
         print("IMAGE RECEIVED")
 
         im_res = np.asarray(image_rx).reshape((128, 128))
