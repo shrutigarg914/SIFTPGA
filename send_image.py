@@ -50,8 +50,8 @@ if __name__ == "__main__":
             res = s.read()
             image_rx.append(struct.unpack('B', res)[0])
             print(len(image_rx), len(pixels), struct.unpack('B', res)[0])
-            ind = input("Index investigating:  ")
-            print(pixels[ind])
+            # ind = input("Index investigating:  ")
+            # print(pixels[ind])
         print("IMAGE RECEIVED")
 
         im_res = np.asarray(image_rx).reshape((128, 128))

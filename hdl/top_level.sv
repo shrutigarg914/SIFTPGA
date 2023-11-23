@@ -15,7 +15,6 @@ module top_level(
     logic [13:0] pixel_addr;
     logic [7:0] rx_data;
 
-    
     logic valid_o;
     logic valid_o_edge;
     logic old_valid_o;
@@ -109,57 +108,23 @@ module top_level(
       end
     end
 
+    send_img  tx_img (
+      .clk(clk_100mhz),
+      .rst_in(sys_rst),//sys_rst
+      .img_ready(btn_edge),//full_image_received
+      .tx(uart_txd),//uart_txd
+      .data(pixel_out),
+      .address(read_pixel_addr), // gets wired to the BRAM
+      .tx_free(led[2]),
+      .out_state(led[4:3]),
+      .busy(tx_img_busy) //or we could do img_sent whichever makes more sense
+    );
+  logic tx_img_busy;
 
   logic [7:0] pixel_out;
-  logic [14:0] read_pixel_addr;
-  logic sending_img, send_pixel;
-  logic [3:0] counter;
-  assign led[1] = sending_img;
-  assign led[15:2] = read_pixel_addr;
-  logic old_done_o;
-  // assign led[15:5] = read_pixel_addr[10:0];
-
-  // if we have received a full image,
-  always_ff @(posedge clk_100mhz) begin
-    old_done_o <= done_o;
-    if (sys_rst) begin
-      read_pixel_addr<=0;
-      sending_img <= 1'b0;
-      counter <= 0;
-    end else begin
-      if (full_image_received) begin
-        if (btn_edge & ~sending_img) begin
-          sending_img <=1'b1;
-          counter <= 0;
-          read_pixel_addr <= 0;
-        end
-        if (sending_img) begin
-          if (done_o & ~old_done_o) begin 
-            counter <=0;
-            read_pixel_addr<=read_pixel_addr+1;
-            send_pixel<= 1'b0;
-          end else if (counter==2'b10) begin
-            data_i<=pixel_out;
-            counter<= counter + 1;
-            send_pixel <= 1'b1;
-          end else if(counter==2'b11) begin
-            send_pixel <=1'b0;
-          end else begin
-            counter <= counter + 1;
-          end
-        end
-      end
-  end 
-  end
-  
-  // assign start_i = btn_edge;
-  uart_tx #(.CLOCKS_PER_BAUD(50))
-    utx (
-      .clk(clk_100mhz),
-      .data_i(data_i),
-      .start_i(send_pixel),
-      .done_o(done_o),
-      .tx(uart_txd));
+  logic [13:0] read_pixel_addr;
+  assign led[1] = tx_img_busy;
+  assign led[15:5] = read_pixel_addr[10:0];
   
     
 endmodule // top_level

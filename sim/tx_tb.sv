@@ -33,13 +33,13 @@ module tx_tb;
         data_i = 8'b0101_0100;
         start_i = 1;
         #10;
-        start_i = 0;
         while (!done_o) begin
             #10;
             data_i = 8'b1111_1111;
             // $display("%b    %b", done_o, data_i);
         end
         #10;
+        start_i = 0;
         // start_i = 1;
         #1000;
         // start_i = 0;
