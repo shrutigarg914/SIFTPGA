@@ -31,9 +31,14 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
   // TODO: Write logic for accepting data in and storing in first image BRAM
   always_ff @(posedge clk_in) begin
     if (rst_in) begin
-
+        active_half <= 0;
     end else if (~data_in_done) begin
+        if (active_half) begin
+            active_half <= 0; // reset which side of BRAM we are using for each time we process a new image
+        end
+        if (data_valid_in) begin
 
+        end
     end
   end
 
@@ -48,10 +53,10 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
     .RAM_DEPTH(WIDTH*HEIGHT*2)) //there are WIDTH*HEIGHT entries for full frame
-    frame_buffer (
+    frame_buffer_0 (
     .addra(center_addr_x + center_addr_y * HEIGHT),
     .clka(clk_in),
-    .wea(data_valid_rec),
+    .wea(data_valid_in_0),
     .dina(pixel_in0),
     .ena(1'b1),
     .regcea(1'b1),
@@ -67,17 +72,18 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
     .doutb(pixel_out_0)
   );
 
-  logic resize1_data_valid_in;
+  logic data_valid_in_1;
+  logic [BIT_DEPTH:0] pixel_in_1;
   logic [BIT_DEPTH:0] pixel_out_1; // pixel out from first downsized image
   //two-port BRAM used to hold images on the second octave
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
     .RAM_DEPTH((WIDTH / 2) * (HEIGHT / 2) * 2))
-    resize_buffer (
+    frame_buffer_1 (
     .addra(center_addr_x + center_addr_y * HEIGHT / 2),
     .clka(clk_in),
-    .wea(resize1_data_valid_in),
-    .dina(resize_in),
+    .wea(data_valid_in_1),
+    .dina(pixel_in_1),
     .ena(1'b1),
     .regcea(1'b1),
     .rsta(rst_in),
@@ -92,17 +98,18 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
     .doutb(pixel_out_1)
   );
 
-  logic resize2_data_valid_in;
+  logic data_valid_in_2;
+  logic [BIT_DEPTH:0] pixel_in_2;
   logic [BIT_DEPTH:0] pixel_out_2; // pixel out from second downsized image
   //two-port BRAM used to hold images on the third octave
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
     .RAM_DEPTH((WIDTH / 4) * (HEIGHT / 4) * 2))
-    resize_buffer (
+    frame_buffer_2 (
     .addra(center_addr_x + center_addr_y * HEIGHT / 4),
     .clka(clk_in),
-    .wea(resize2_data_valid_in),
-    .dina(resize_in),
+    .wea(data_valid_in_2),
+    .dina(pixel_in_2),
     .ena(1'b1),
     .regcea(1'b1),
     .rsta(rst_in),
@@ -117,17 +124,18 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
     .doutb(pixel_out_2)
   );
 
-  logic resize3_data_valid_in;
+  logic data_valid_in_3;
+  logic [BIT_DEPTH:0] pixel_in_3;
   logic [BIT_DEPTH:0] pixel_out_3; // pixel out from third downsized image
   //two-port BRAM used to hold images on the 4th octave
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
     .RAM_DEPTH((WIDTH / 8) * (HEIGHT / 8) * 2))
-    resize_buffer (
+    frame_buffer_3 (
     .addra(center_addr_x + center_addr_y * HEIGHT / 8),
     .clka(clk_in),
-    .wea(resize3_data_valid_in),
-    .dina(resize_in),
+    .wea(data_valid_in_3),
+    .dina(pixel_in_3),
     .ena(1'b1),
     .regcea(1'b1),
     .rsta(rst_in),
@@ -241,6 +249,9 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
       // Start blur module (stage 2)
       if (kernel_data_ready) begin
         blur_data_valid_in <= 1;
+      end
+      if (blur_data_valid_in) begin
+        blur_data_valid_in <= 0; // Reset after signaling
       end
 
       // TODO: SAVE OUTPUT TO PYRAMID
