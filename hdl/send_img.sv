@@ -9,6 +9,7 @@ module send_img(
   input wire [7:0] data,
   output logic [13:0] address, // gets wired to the BRAM
   output logic busy, //or we could do img_sent whichever makes more sense
+  output logic send,
   output logic [1:0] out_state,
   output logic tx_free
   );
@@ -27,7 +28,7 @@ module send_img(
         .tx(tx));
     
     logic [3:0] counter;
-    logic send;
+    // logic send;
     // logic tx_free;
     logic [7:0] pixel;
 
@@ -49,6 +50,7 @@ module send_img(
                 counter <= 0;
                 busy <= 1'b1;
                 out_state <= 1'b1;
+                send <= 1'b0;
             end else begin
                 state <= INACTIVE;
                 busy <= 1'b0;
@@ -56,13 +58,13 @@ module send_img(
             end
             
             // before coming into WAITING set counter and address
-            WAITING: if(counter==2'b10) begin
-                pixel <= data;
-                send <= 1'b1;
-            end else if (~tx_free & send) begin 
+            WAITING: if (~tx_free & send) begin 
                 out_state <= 2'b10;
                 state <= TRANSMITTING;
                 send <= 0;
+            end else if(counter==2'b10) begin
+                pixel <= data;
+                send <= 1'b1;
             end else begin
                 counter <= counter + 1;
                 out_state <= 1'b1;
@@ -73,7 +75,7 @@ module send_img(
             // wait for tx_free to go low
             TRANSMITTING: if (tx_free) begin
                 // if we're done transmitting check what state to jump to
-                if (address == 14'b11_1111_1111_1111) begin
+                if (address == 4'b1111) begin
                     state <= INACTIVE;
                     out_state<=1'b0;
                     busy <= 0;
@@ -87,7 +89,7 @@ module send_img(
                 state <= TRANSMITTING;
                 out_state <= 2'b10;
                 send <= 1'b0;
-                address <= address + 1;
+                // address <= address + 1;
             end
         endcase
       end

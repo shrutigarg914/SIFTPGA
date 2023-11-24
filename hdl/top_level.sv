@@ -6,9 +6,15 @@ module top_level(
   input wire clk_100mhz,
   input wire uart_rxd,
   input wire [3:0] btn, //all four momentary button switches
+  output logic [2:0] rgb0, //rgb led
+  output logic [2:0] rgb1, //rgb led
   output logic uart_txd,
   output logic [15:0] led //16 green output LEDs (located right above switches)
   );
+    //shut up those rgb LEDs (active high):
+    assign rgb1= 0;
+    assign rgb0 = 0;
+
     logic sys_rst;
     assign sys_rst = btn[0];
 
