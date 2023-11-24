@@ -42,6 +42,7 @@ module send_img(
         send <= 0;
         address <= 0;
         out_state <= 0;
+        busy <= 0;
       end else begin
         case(state)
             // before coming into INACTIVE set busy to 0
@@ -51,6 +52,7 @@ module send_img(
                 busy <= 1'b1;
                 out_state <= 1'b1;
                 send <= 1'b0;
+                address <= 0;
             end else begin
                 state <= INACTIVE;
                 busy <= 1'b0;
@@ -75,15 +77,18 @@ module send_img(
             // wait for tx_free to go low
             TRANSMITTING: if (tx_free) begin
                 // if we're done transmitting check what state to jump to
-                if (address == 4'b1111) begin
+                // TODO(sgrg): the address counter never actually reaches 16384 
+                if (address == 'd16384) begin 
                     state <= INACTIVE;
                     out_state<=1'b0;
                     busy <= 0;
+                    send <= 0;
                 end else begin
                     address<= address + 1;
                     counter <= 0;
                     state <= WAITING;
                     out_state <= 1'b1;
+                    send <= 1'b0;
                 end
             end else begin
                 state <= TRANSMITTING;

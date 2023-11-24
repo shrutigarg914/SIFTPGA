@@ -122,7 +122,7 @@ module top_level(
       .data(pixel_out),
       .address(read_pixel_addr), // gets wired to the BRAM
       .tx_free(led[2]),
-      .out_state(led[4:3]),
+      // .out_state(led[4:3]),
       .busy(tx_img_busy) //or we could do img_sent whichever makes more sense
     );
   logic tx_img_busy;
@@ -130,7 +130,7 @@ module top_level(
   logic [7:0] pixel_out;
   logic [13:0] read_pixel_addr;
   assign led[1] = tx_img_busy;
-  assign led[15:5] = read_pixel_addr[10:0];
+  assign led[15:3] = read_pixel_addr[12:0];
   
     
 endmodule // top_level
