@@ -14,30 +14,104 @@ module dog #(parameter DIMENSION) (
   input wire clk,
   input wire rst_in,//sys_rst
   input wire bram_ready,
-
+  input wire [7:0] sharper_pix,
+  input wire [7:0] fuzzier_pix,
+  output logic busy,
+  output logic [11:0] address,
+  output logic signed [8:0] data_out
   );
+  typedef enum {FREE=0, WAIT=1, WRITE=2} module_state;
+  module_state state; 
+  parameter BRAM_LENGTH = DIMENSION*DIMENSION -1;
+  logic [1:0] counter;
+  logic signed [8:0] sharp_sign;
+  logic signed [8:0] fuzz_sign;
+  // wait for two cycles for read
+  // only need the one cycle for write
+    always_ff @(posedge clk) begin
+      if (rst_in) begin
+        state <= INACTIVE;
+        counter <= 0;
+        address <= 0;
+        busy<=1'b0;
+      end else begin
+        case(state)
+        INACTIVE: if (bram_ready) begin
+            busy <= 1'b1;
+            state <= WAIT;
+            address <= 0;
+            counter <= 0;
+        end
+        WAIT: if (counter==2'b10) begin
+          state <= WRITE;
+          sharp_sign <= {1'b0, sharper_pix};
+          fuzz_sign <= {1'b0, fuzzier_pix};
+        end else begin
+          counter <= counter +1;
+        end
+        WRITE: if (~write) begin
+          write <= 1'b1;
+          data_out <= sharp_sign - fuzz_sign;
+        end else begin
+          write <= 1'b0;
+          if (address==BRAM_LENGTH) begin
+            address <= address + 1'b1;
+            state <= WAIT;
+          end else begin
+            address <= 0;
+            state <= INACTIVE;
+            busy <= 1'b0;
+          end
+        end
+        endcase
+      end
+    end
 
-    xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(9), // we expect 8 bit greyscale images
-    .RAM_DEPTH(DIMENSION*DIMENSION)) //we expect a 128*128 image with 16384 pixels total
-    dog_bram (
-    .addra(sharper_img),
-    .clka(clk),
-    .wea(0),
-    .dina(),
-    .ena(1'b1),
-    .regcea(1'b1),
-    .rsta(rst_in),
-    .douta(), //never read from this side
-    .addrb(blurrier_img),// transformed lookup pixel
-    .dinb(),
-    .clkb(clk),
-    .web(1'b0),
-    .enb(1'b1),
-    .rstb(rst_in),
-    .regceb(1'b1),
-    .doutb(pixel_out)
-  );
+
+
+  //   xilinx_true_dual_port_read_first_2_clock_ram #(
+  //   .RAM_WIDTH(9), // we expect 8 bit greyscale images
+  //   .RAM_DEPTH(DIMENSION*DIMENSION)) //we expect a 128*128 image with 16384 pixels total
+  //   pixel_bram (
+  //   .addra(sharper_img),
+  //   .clka(clk),
+  //   .wea(0),
+  //   .dina(),
+  //   .ena(1'b1),
+  //   .regcea(1'b1),
+  //   .rsta(rst_in),
+  //   .douta(), //never read from this side
+  //   .addrb(blurrier_img),// transformed lookup pixel
+  //   .dinb(),
+  //   .clkb(clk),
+  //   .web(1'b0),
+  //   .enb(1'b1),
+  //   .rstb(rst_in),
+  //   .regceb(1'b1),
+  //   .doutb(pixel_out)
+  // );
+
+  // xilinx_true_dual_port_read_first_2_clock_ram #(
+  //   .RAM_WIDTH(9), // we expect 8 bit greyscale images
+  //   .RAM_DEPTH(DIMENSION*DIMENSION)) //we expect a 128*128 image with 16384 pixels total
+  //   dog_bram (
+  //   .addra(sharper_img),
+  //   .clka(clk),
+  //   .wea(0),
+  //   .dina(),
+  //   .ena(1'b1),
+  //   .regcea(1'b1),
+  //   .rsta(rst_in),
+  //   .douta(), //never read from this side
+  //   .addrb(blurrier_img),// transformed lookup pixel
+  //   .dinb(),
+  //   .clkb(clk),
+  //   .web(1'b0),
+  //   .enb(1'b1),
+  //   .rstb(rst_in),
+  //   .regceb(1'b1),
+  //   .doutb(pixel_out)
+  // );
 
 
   
