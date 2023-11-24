@@ -18,6 +18,8 @@ module top_level(
     logic sys_rst;
     assign sys_rst = btn[0];
 
+    parameter DIMENSION = 64;
+
     logic [13:0] pixel_addr;
     logic [7:0] rx_data;
 
@@ -55,7 +57,7 @@ module top_level(
         // pixel <= data_o; I'm assuming that data doesn't need to be held
         // for more than one cycle for writin to the BRAM
         pixel_addr <= pixel_addr + 1;
-        if (pixel_addr==14'b11_1111_1111_1111) begin
+        if (pixel_addr== DIMENSION*DIMENSION - 1) begin
           full_image_received <= 1'b1;
         end
       end
@@ -63,7 +65,7 @@ module top_level(
     // the start image BRAM
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
-    .RAM_DEPTH(128*128)) //we expect a 128*128 image with 16384 pixels total
+    .RAM_DEPTH(DIMENSION*DIMENSION)) //we expect a 64*64 image with 16384 pixels total
     rx_img (
     .addra(pixel_addr),
     .clka(clk_100mhz),

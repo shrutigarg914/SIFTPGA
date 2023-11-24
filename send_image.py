@@ -18,7 +18,7 @@ if __name__ == "__main__":
         image_in = image_in.convert('RGB')
 
         # Resize the image
-        image_in = image_in.resize((128, 128))
+        image_in = image_in.resize((64, 64))
         # image_out = image_in.copy()
         pixels = []
         w, h = image_in.size
@@ -54,7 +54,7 @@ if __name__ == "__main__":
             # print(pixels[ind])
         print("IMAGE RECEIVED")
 
-        im_res = np.asarray(image_rx).reshape((128, 128))
+        im_res = np.asarray(image_rx).reshape((64, 64))
         plt.imshow(im_res, cmap='gray', vmin=0, vmax=255)
         # plt.imshow(np.asarray(pixels).reshape(128, 128), cmap='gray', vmin=0, vmax=255)
         plt.show()

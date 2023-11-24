@@ -16,6 +16,7 @@ module send_img(
     // states
     typedef enum {INACTIVE=0, WAITING=1, TRANSMITTING=2} module_state;
     module_state state;
+    parameter BRAM_LENGTH = 64*64;
 
     // instantiating uart_tx
     // send should be a 1 cycle signal high between WAIT -> TRANSMITTING transition edge
@@ -78,7 +79,7 @@ module send_img(
             TRANSMITTING: if (tx_free) begin
                 // if we're done transmitting check what state to jump to
                 // TODO(sgrg): the address counter never actually reaches 16384 
-                if (address == 'd16384) begin 
+                if (address == BRAM_LENGTH - 1) begin 
                     state <= INACTIVE;
                     out_state<=1'b0;
                     busy <= 0;
@@ -99,9 +100,6 @@ module send_img(
         endcase
       end
     end
-  
-
-
     
 endmodule // top_level
 
