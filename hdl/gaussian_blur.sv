@@ -37,25 +37,25 @@ module gaussian #(parameter WIDTH = 8) (
 
     // stage 1: multiply
     logic [WIDTH*9-1:0]     rowdata;
-    logic [8:0]             stage1_data [WIDTH:0];
+    logic [WIDTH+2:0]       stage1_data [8:0];
     logic                   stage1_valid;
 
     logic                   stage1_reg_valid;
-    logic [8:0]             stage1_data_reg [WIDTH:0];
+    logic [WIDTH+2:0]       stage1_data_reg [8:0];
     
 
     // stage 2: accumulate
-    logic [WIDTH+2:0]       stage2_accumulator;
-    logic [WIDTH+2:0]       stage2_data;
+    logic [WIDTH+3:0]       stage2_accumulator;
+    logic [WIDTH+3:0]       stage2_data;
     logic                   stage2_valid;
 
     // stage 3: divide by 16
-    logic [WIDTH+2:0]       stage3_data;
+    logic [WIDTH+3:0]       stage3_data;
     logic                   stage3_valid;
 
     // PIPELINE STAGE 1 (2 cycles)
     //
-    assign rowdata = {i_r0_data, i_r1_data, i_r2_data};
+    assign rowdata = {r0_data_in, r1_data_in, r2_data_in};
 
     // multiply pixel data by kernel
     always_ff@(posedge clk_in) begin
@@ -66,7 +66,7 @@ module gaussian #(parameter WIDTH = 8) (
             end
         end
         else begin
-            stage1_valid <= i_valid;
+            stage1_valid <= data_valid_in;
             for(i=0; i<9; i=i+1) begin
                 stage1_data[i] <= $signed(kernel[i]) * 
                                   $signed({1'b0, rowdata[i*8+:8]});
