@@ -288,3 +288,5 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
     end
   end
 endmodule
+
+`default_nettype wire
