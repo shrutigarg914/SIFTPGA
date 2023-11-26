@@ -22,7 +22,7 @@ module top_level(
     logic done_o;
     logic [7:0] data_i;
     // assign data_i = sw[7:0];
-    assign start_i = btn_edge;
+    assign start_i = all_done;
   
     logic btn_pulse;
     logic old_btn_pulse;
@@ -80,10 +80,11 @@ module top_level(
     logic resize_out_valid;
 
     initial begin
-        center_addr_x <= 0;
-        center_addr_y <= 0;
-        image_collect_done <= 0;
-        all_done <= 0;
+        center_addr_x = 0;
+        center_addr_y = 0;
+        image_collect_done = 0;
+        all_done = 0;
+        valid_addr_read = 0;
     end
 
     always_ff @(posedge clk_100mhz) begin

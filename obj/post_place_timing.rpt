@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2023.1 (lin64) Build 3865809 Sun May  7 15:04:56 MDT 2023
-| Date         : Sun Nov 26 06:33:15 2023
+| Date         : Sun Nov 26 08:20:00 2023
 | Host         : worker running 64-bit Ubuntu 20.04.6 LTS
 | Command      : report_timing -file obj/post_place_timing.rpt
 | Design       : top_level
@@ -12,20 +12,20 @@ Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanc
 
 Timing Report
 
-Slack (MET) :             5.128ns  (required time - arrival time)
-  Source:                 center_addr_x_reg[2]/C
+Slack (MET) :             5.732ns  (required time - arrival time)
+  Source:                 urx/baud_counter_reg[0]/C
                             (rising edge-triggered cell FDRE clocked by gclk  {rise@0.000ns fall@4.000ns period=10.000ns})
-  Destination:            center_addr_y_reg[10]/R
+  Destination:            urx/baud_counter_reg[13]/R
                             (rising edge-triggered cell FDRE clocked by gclk  {rise@0.000ns fall@4.000ns period=10.000ns})
   Path Group:             gclk
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (gclk rise@10.000ns - gclk rise@0.000ns)
-  Data Path Delay:        4.063ns  (logic 0.992ns (24.415%)  route 3.071ns (75.585%))
-  Logic Levels:           3  (LUT5=1 LUT6=2)
-  Clock Path Skew:        -0.042ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    4.786ns = ( 14.786 - 10.000 ) 
-    Source Clock Delay      (SCD):    5.080ns
-    Clock Pessimism Removal (CPR):    0.253ns
+  Data Path Delay:        3.778ns  (logic 0.963ns (25.490%)  route 2.815ns (74.510%))
+  Logic Levels:           3  (LUT4=2 LUT5=1)
+  Clock Path Skew:        -0.026ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    4.771ns = ( 14.771 - 10.000 ) 
+    Source Clock Delay      (SCD):    5.064ns
+    Clock Pessimism Removal (CPR):    0.268ns
   Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
     Total System Jitter     (TSJ):    0.071ns
     Total Input Jitter      (TIJ):    0.000ns
@@ -40,18 +40,18 @@ Slack (MET) :             5.128ns  (required time - arrival time)
     N15                  IBUF (Prop_ibuf_I_O)         1.440     1.440 r  clk_100mhz_IBUF_inst/O
                          net (fo=1, estimated)        1.972     3.412    clk_100mhz_IBUF
     BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.096     3.508 r  clk_100mhz_IBUF_BUFG_inst/O
-                         net (fo=121, estimated)      1.572     5.080    clk_100mhz_IBUF_BUFG
-    SLICE_X49Y45         FDRE                                         r  center_addr_x_reg[2]/C
+                         net (fo=106, estimated)      1.556     5.064    urx/clk_100mhz_IBUF_BUFG
+    SLICE_X9Y52          FDRE                                         r  urx/baud_counter_reg[0]/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X49Y45         FDRE (Prop_fdre_C_Q)         0.419     5.499 r  center_addr_x_reg[2]/Q
-                         net (fo=7, estimated)        1.039     6.538    urx/center_addr_x_reg[7]_1
-    SLICE_X48Y45         LUT6 (Prop_lut6_I1_O)        0.299     6.837 f  urx/center_addr_x[10]_i_3/O
-                         net (fo=7, estimated)        0.572     7.409    urx/center_addr_x_reg[4]
-    SLICE_X44Y44         LUT6 (Prop_lut6_I5_O)        0.124     7.533 f  urx/center_addr_x[0]_i_4/O
-                         net (fo=7, estimated)        0.749     8.282    urx/center_addr_x_reg[7]
-    SLICE_X45Y46         LUT5 (Prop_lut5_I1_O)        0.150     8.432 r  urx/center_addr_y[10]_i_1/O
-                         net (fo=10, estimated)       0.711     9.143    urx_n_11
-    SLICE_X46Y46         FDRE                                         r  center_addr_y_reg[10]/R
+    SLICE_X9Y52          FDRE (Prop_fdre_C_Q)         0.419     5.483 f  urx/baud_counter_reg[0]/Q
+                         net (fo=3, estimated)        0.827     6.310    urx/baud_counter[0]
+    SLICE_X8Y52          LUT4 (Prop_lut4_I0_O)        0.296     6.606 r  urx/state[3]_i_5/O
+                         net (fo=1, estimated)        0.754     7.360    urx/state[3]_i_5_n_0
+    SLICE_X8Y53          LUT4 (Prop_lut4_I1_O)        0.124     7.484 r  urx/state[3]_i_3/O
+                         net (fo=5, estimated)        0.439     7.923    urx/state[3]_i_3_n_0
+    SLICE_X9Y51          LUT5 (Prop_lut5_I4_O)        0.124     8.047 r  urx/state[3]_i_1/O
+                         net (fo=18, estimated)       0.795     8.842    urx/state[3]_i_1_n_0
+    SLICE_X9Y55          FDRE                                         r  urx/baud_counter_reg[13]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock gclk rise edge)      10.000    10.000 r  
@@ -60,16 +60,16 @@ Slack (MET) :             5.128ns  (required time - arrival time)
     N15                  IBUF (Prop_ibuf_I_O)         1.370    11.370 r  clk_100mhz_IBUF_inst/O
                          net (fo=1, estimated)        1.873    13.244    clk_100mhz_IBUF
     BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.091    13.335 r  clk_100mhz_IBUF_BUFG_inst/O
-                         net (fo=121, estimated)      1.451    14.786    clk_100mhz_IBUF_BUFG
-    SLICE_X46Y46         FDRE                                         r  center_addr_y_reg[10]/C
-                         clock pessimism              0.253    15.038    
+                         net (fo=106, estimated)      1.436    14.771    urx/clk_100mhz_IBUF_BUFG
+    SLICE_X9Y55          FDRE                                         r  urx/baud_counter_reg[13]/C
+                         clock pessimism              0.268    15.038    
                          clock uncertainty           -0.035    15.003    
-    SLICE_X46Y46         FDRE (Setup_fdre_C_R)       -0.732    14.271    center_addr_y_reg[10]
+    SLICE_X9Y55          FDRE (Setup_fdre_C_R)       -0.429    14.574    urx/baud_counter_reg[13]
   -------------------------------------------------------------------
-                         required time                         14.271    
-                         arrival time                          -9.143    
+                         required time                         14.574    
+                         arrival time                          -8.842    
   -------------------------------------------------------------------
-                         slack                                  5.128    
+                         slack                                  5.732    
 
 
 
