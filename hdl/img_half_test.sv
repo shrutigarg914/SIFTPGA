@@ -22,7 +22,7 @@ module top_level(
     logic done_o;
     logic [7:0] data_i;
     // assign data_i = sw[7:0];
-    assign start_i = all_done;
+    // assign start_i = all_done;
   
     logic btn_pulse;
     logic old_btn_pulse;
@@ -78,6 +78,9 @@ module top_level(
     logic [7:0] resize_out;
     logic [10:0] resize_out_addr;
     logic resize_out_valid;
+    logic done_o_prev;
+    logic done_o_edge;
+    logic resize_done_out;
 
     initial begin
         center_addr_x = 0;
@@ -87,7 +90,10 @@ module top_level(
         valid_addr_read = 0;
     end
 
+    assign done_o_edge = done_o && !done_o_prev;
+
     always_ff @(posedge clk_100mhz) begin
+        done_o_prev <= done_o;
         if (!all_done) begin
             if (image_collect_done) begin
                 if (valid_addr_read) begin
@@ -103,7 +109,7 @@ module top_level(
                     end
                     valid_addr_read <= 0;
                 end
-                if (valid_img_read_addr_pipe[1]) begin
+                if (done_o_edge || (resize_done_out && ~resize_out_valid)) begin
                     valid_addr_read <= 1;
                 end
             end else begin
@@ -131,7 +137,7 @@ module top_level(
         .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
         .RAM_DEPTH(WIDTH*HEIGHT))
         frame_buffer (
-        .addra(center_addr_x + center_addr_y * HEIGHT),
+        .addra(center_addr_x + center_addr_y * WIDTH),
         .clka(clk_100mhz),
         .wea(valid_o),
         .dina(rx_data),
@@ -139,7 +145,7 @@ module top_level(
         .regcea(1'b1),
         .rsta(sys_rst),
         .douta(), //never read from this side
-        .addrb(center_addr_x + center_addr_y * HEIGHT), // lookup pixel
+        .addrb(center_addr_x + center_addr_y * WIDTH), // lookup pixel
         .dinb(16'b0),
         .clkb(clk_100mhz),
         .web(1'b0),
@@ -150,31 +156,43 @@ module top_level(
     );
 
     image_half #(.BIT_DEPTH(8),
-                 .NEW_HEIGHT(32))
+                 .NEW_WIDTH(32))
         downsizer(
             .clk_in(clk_100mhz),
             .rst_in(sys_rst),
             .data_in(original_pixel),
-            .data_x_in(center_addr_x),
-            .data_y_in(center_addr_y),
+            .data_x_in(center_addr_x_pipe[1]),
+            .data_y_in(center_addr_y_pipe[1]),
             .data_valid_in(valid_img_read_addr_pipe[1]),
             .data_out(resize_out),
             .data_addr_out(resize_out_addr),
             .data_valid_out(resize_out_valid),
+            .done_out(resize_done_out),
             .error_out(),
             .busy_out()
     );
 
     logic [1:0] valid_img_read_addr_pipe;
+    logic [10:0] center_addr_x_pipe [1:0];
+    logic [10:0] center_addr_y_pipe [1:0];
     always_ff @(posedge clk_100mhz)begin
         valid_img_read_addr_pipe[0] <= valid_addr_read;
         valid_img_read_addr_pipe[1] <= valid_img_read_addr_pipe[0];
+
+        center_addr_x_pipe[0] <= center_addr_x;
+        center_addr_x_pipe[1] <= center_addr_x_pipe[0];
+
+        center_addr_y_pipe[0] <= center_addr_y;
+        center_addr_y_pipe[1] <= center_addr_y_pipe[0];
     end
 
     // use switches+buttons
     always_ff @(posedge clk_100mhz) begin
         if (resize_out_valid) begin
             data_i <= resize_out;
+            start_i <= 1;
+        end else begin
+            start_i <= 0;
         end
     end
 endmodule // top_level
