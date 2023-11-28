@@ -9,17 +9,14 @@ module image_half #(
                     input wire rst_in,
 
                     input wire[BIT_DEPTH-1:0] data_in,
-                    input wire[7:0] data_x_in,
-                    input wire[7:0] data_y_in,
+                    input wire[$clog2(NEW_WIDTH):0] data_x_in,
+                    input wire[$clog2(NEW_WIDTH):0] data_y_in,
                     input wire data_valid_in,
 
                     output logic[BIT_DEPTH-1:0] data_out,
-                    output logic[7:0] data_addr_out,
+                    output logic[$clog2(NEW_WIDTH)*2-1:0] data_addr_out,
                     output logic data_valid_out,
-                    output logic done_out;
-
-                    output logic error_out,
-                    output logic busy_out);
+                    output logic done_out);
 
     always_ff @(posedge clk_in) begin
         if (rst_in) begin

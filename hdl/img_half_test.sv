@@ -1,3 +1,4 @@
+// python send_image_receive_resized.py util/buff_doge.png
 `timescale 1ns / 1ps
 `default_nettype none
 
@@ -17,16 +18,98 @@ module top_level(
 
     logic sys_rst;
     assign sys_rst = btn[0];
-    
-    logic start_i;
-    logic done_o;
-    logic [7:0] data_i;
-    // assign data_i = sw[7:0];
-    // assign start_i = all_done;
-  
+
+    uart_rx #(.CLOCKS_PER_BAUD(50))
+      urx (
+        .clk(clk_100mhz),
+        .rx(uart_rxd),
+        .data_o(rx_data),
+        .valid_o(valid_o)
+      );
+      logic valid_o;
+      logic [7:0] rx_data;
+
+    parameter BIT_DEPTH = 8;
+    parameter WIDTH = 64;
+    parameter HEIGHT = 64;
+
+    logic [$clog2(WIDTH)-1:0] center_addr_x;
+    logic [$clog2(HEIGHT)-1:0] center_addr_y;
+    logic image_collect_done;
+    logic all_done;
+
+    logic [7:0] resize_out;
+    logic [$clog2(32)*2-1:0] resize_out_addr;
+    logic resize_out_valid;
+
+    initial begin
+        center_addr_x = 0;
+        center_addr_y = 0;
+        image_collect_done = 0;
+    end
+
+    always_ff @(posedge clk_100mhz) begin
+        if (sys_rst) begin
+            center_addr_x <= 0;
+            center_addr_y <= 0;
+            image_collect_done <= 0;
+        end else begin
+            if (valid_o && !image_collect_done) begin
+                if (center_addr_x == WIDTH - 1) begin
+                    if (center_addr_y == HEIGHT - 1) begin
+                        image_collect_done <= 1;
+                    end else begin
+                        center_addr_x <= 0;
+                        center_addr_y <= center_addr_y + 1;
+                    end
+                end else begin
+                    center_addr_x <= center_addr_x + 1;
+                end
+            end
+        end
+    end
+
+    image_half #(.BIT_DEPTH(8),
+                 .NEW_WIDTH(32))
+        downsizer(
+            .clk_in(clk_100mhz),
+            .rst_in(sys_rst),
+            .data_in(rx_data),
+            .data_x_in(center_addr_x),
+            .data_y_in(center_addr_y),
+            .data_valid_in(valid_o),
+            .data_out(resize_out),
+            .data_addr_out(resize_out_addr),
+            .data_valid_out(resize_out_valid),
+            .done_out()
+    );
+
+    //two-port BRAM used to hold downsided image
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+        .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
+        .RAM_DEPTH(32*32))
+        frame_buffer (
+        .addra(resize_out_addr),
+        .clka(clk_100mhz),
+        .wea(resize_out_valid),
+        .dina(resize_out),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(read_pixel_addr), // lookup pixel
+        .dinb(16'b0),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(pixel_out)
+    );
+
+    logic btn_edge;
     logic btn_pulse;
     logic old_btn_pulse;
-    logic btn_edge;
     debouncer btn1_db(.clk_in(clk_100mhz),
                     .rst_in(sys_rst),
                     .dirty_in(btn[1]),
@@ -47,154 +130,27 @@ module top_level(
       end
     end
 
-    uart_tx #(.CLOCKS_PER_BAUD(33))
-     utx (
+    send_img #(.BRAM_LENGTH(32 * 32)) 
+        tx_img (
         .clk(clk_100mhz),
-        .data_i(data_i),
-        .start_i(start_i),
-        .done_o(done_o),
-        .tx(uart_txd));
-    uart_rx #(.CLOCKS_PER_BAUD(33))
-      urx (
-        .clk(clk_100mhz),
-        .rx(uart_rxd),
-        .data_o(rx_data),
-        .valid_o(valid_o)
-      );
-      logic valid_o;
-      logic [7:0] rx_data;
-
-    parameter BIT_DEPTH = 8;
-    parameter WIDTH = 64;
-    parameter HEIGHT = 64;
-
-    logic [10:0] center_addr_x;
-    logic [10:0] center_addr_y;
-    logic image_collect_done;
-    logic all_done;
-
-    logic [7:0] original_pixel;
-    logic valid_addr_read;
-    logic [7:0] resize_out;
-    logic [10:0] resize_out_addr;
-    logic resize_out_valid;
-    logic done_o_prev;
-    logic done_o_edge;
-    logic resize_done_out;
-
-    initial begin
-        center_addr_x = 0;
-        center_addr_y = 0;
-        image_collect_done = 0;
-        all_done = 0;
-        valid_addr_read = 0;
-    end
-
-    assign done_o_edge = done_o && !done_o_prev;
-
-    always_ff @(posedge clk_100mhz) begin
-        done_o_prev <= done_o;
-        if (!all_done) begin
-            if (image_collect_done) begin
-                if (valid_addr_read) begin
-                    if (center_addr_x == WIDTH - 1) begin
-                        if (center_addr_y == HEIGHT - 1) begin
-                            all_done <= 1;
-                        end else begin
-                            center_addr_x <= 0;
-                            center_addr_y <= center_addr_y + 1;
-                        end
-                    end else begin
-                        center_addr_x <= center_addr_x + 1;
-                    end
-                    valid_addr_read <= 0;
-                end
-                if (done_o_edge || (resize_done_out && ~resize_out_valid)) begin
-                    valid_addr_read <= 1;
-                end
-            end else begin
-                if (valid_o) begin
-                    if (center_addr_x == WIDTH - 1) begin
-                        if (center_addr_y == HEIGHT - 1) begin
-                            image_collect_done <= 1;
-                            center_addr_x <= 0;
-                            center_addr_y <= 0;
-                            valid_addr_read <= 1;
-                        end else begin
-                            center_addr_x <= 0;
-                            center_addr_y <= center_addr_y + 1;
-                        end
-                    end else begin
-                        center_addr_x <= center_addr_x + 1;
-                    end
-                end 
-            end
-        end
-    end
-
-    //two-port BRAM used to hold received image
-    xilinx_true_dual_port_read_first_2_clock_ram #(
-        .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
-        .RAM_DEPTH(WIDTH*HEIGHT))
-        frame_buffer (
-        .addra(center_addr_x + center_addr_y * WIDTH),
-        .clka(clk_100mhz),
-        .wea(valid_o),
-        .dina(rx_data),
-        .ena(1'b1),
-        .regcea(1'b1),
-        .rsta(sys_rst),
-        .douta(), //never read from this side
-        .addrb(center_addr_x + center_addr_y * WIDTH), // lookup pixel
-        .dinb(16'b0),
-        .clkb(clk_100mhz),
-        .web(1'b0),
-        .enb(valid_addr_read),
-        .rstb(sys_rst),
-        .regceb(1'b1),
-        .doutb(original_pixel)
+        .rst_in(sys_rst),//sys_rst
+        .img_ready(btn_edge && image_collect_done),//full_image_received
+        .tx(uart_txd),//uart_txd
+        .data(pixel_out),
+        .address(read_pixel_addr), // gets wired to the BRAM
+        .tx_free(led[2]),
+        // .out_state(led[4:3]),
+        .busy(tx_img_busy) //or we could do img_sent whichever makes more sense
     );
+  logic tx_img_busy;
 
-    image_half #(.BIT_DEPTH(8),
-                 .NEW_WIDTH(32))
-        downsizer(
-            .clk_in(clk_100mhz),
-            .rst_in(sys_rst),
-            .data_in(original_pixel),
-            .data_x_in(center_addr_x_pipe[1]),
-            .data_y_in(center_addr_y_pipe[1]),
-            .data_valid_in(valid_img_read_addr_pipe[1]),
-            .data_out(resize_out),
-            .data_addr_out(resize_out_addr),
-            .data_valid_out(resize_out_valid),
-            .done_out(resize_done_out),
-            .error_out(),
-            .busy_out()
-    );
+  logic [7:0] pixel_out;
+  logic [13:0] read_pixel_addr;
+  assign led[14:3] = read_pixel_addr;
+//   assign led[1] = tx_img_busy;
+//   assign led[15:3] = read_pixel_addr[12:0];
 
-    logic [1:0] valid_img_read_addr_pipe;
-    logic [10:0] center_addr_x_pipe [1:0];
-    logic [10:0] center_addr_y_pipe [1:0];
-    always_ff @(posedge clk_100mhz)begin
-        valid_img_read_addr_pipe[0] <= valid_addr_read;
-        valid_img_read_addr_pipe[1] <= valid_img_read_addr_pipe[0];
 
-        center_addr_x_pipe[0] <= center_addr_x;
-        center_addr_x_pipe[1] <= center_addr_x_pipe[0];
-
-        center_addr_y_pipe[0] <= center_addr_y;
-        center_addr_y_pipe[1] <= center_addr_y_pipe[0];
-    end
-
-    // use switches+buttons
-    always_ff @(posedge clk_100mhz) begin
-        if (resize_out_valid) begin
-            data_i <= resize_out;
-            start_i <= 1;
-        end else begin
-            start_i <= 0;
-        end
-    end
 endmodule // top_level
 
 `default_nettype wire

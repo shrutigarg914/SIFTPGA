@@ -1,7 +1,9 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-module send_img(
+module send_img #(
+    parameter BRAM_LENGTH = 64 * 64
+    ) (
   input wire clk,
   input wire rst_in,//sys_rst
   input wire img_ready,//full_image_received
@@ -16,7 +18,6 @@ module send_img(
     // states
     typedef enum {INACTIVE=0, WAITING=1, TRANSMITTING=2} module_state;
     module_state state;
-    parameter BRAM_LENGTH = 64*64;
 
     // instantiating uart_tx
     // send should be a 1 cycle signal high between WAIT -> TRANSMITTING transition edge

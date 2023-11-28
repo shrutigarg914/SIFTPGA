@@ -7,15 +7,15 @@ module img_resize_tb;
     logic clk_in;
     logic rst_in;
     logic [7:0] pixel_in;
-    logic [7:0] center_addr_x;
-    logic [7:0] center_addr_y;
+    logic [$clog2(64)-1:0] center_addr_x;
+    logic [$clog2(64)-1:0] center_addr_y;
     logic valid_in;
     logic [7:0] data_out;
-    logic [7:0] addr_out;
+    logic [$clog2(32)*2-1:0] addr_out;
     logic valid_out;
 
     image_half #(.BIT_DEPTH(8),
-                 .NEW_HEIGHT(32))
+                 .NEW_WIDTH(32))
         downsizer(
             .clk_in(clk_in),
             .rst_in(rst_in),
@@ -25,9 +25,7 @@ module img_resize_tb;
             .data_valid_in(valid_in),
             .data_out(data_out),
             .data_addr_out(addr_out),
-            .data_valid_out(valid_out),
-            .error_out(),
-            .busy_out()
+            .data_valid_out(valid_out)
     );
     always begin
         #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock

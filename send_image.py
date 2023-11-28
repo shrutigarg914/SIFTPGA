@@ -31,7 +31,7 @@ if __name__ == "__main__":
                 pixels.append(int(0.2126*r+0.7152*g+0.0722*b))
         print(h, w, len(pixels))
 
-        s = serial.Serial(port='COM6', baudrate=2000000, bytesize=8)
+        s = serial.Serial(port='COM5', baudrate=2000000, bytesize=8)
         print("setup ready")
         # time.sleep(10)
         packets_sent = 0
