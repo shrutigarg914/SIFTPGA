@@ -7,8 +7,9 @@ module dog_tb;
     logic sys_rst;
     logic br;
     logic [7:0] img1_out, img2_out;
-    logic dog_busy, dog_out;
-    logic [13:0] dog_address;
+    logic dog_busy;
+    logic signed [8:0] dog_out;
+    logic [13:0] dog_address, write_address;
     logic [1:0] dog_state;
 
     dog #(.DIMENSION(4)) builder (
@@ -22,28 +23,30 @@ module dog_tb;
     .data_out(dog_out),
     .state_num(dog_state)
   );
+  logic weab;
+  logic [7:0] write_data;
 
-//     xilinx_true_dual_port_read_first_2_clock_ram #(
-//     .RAM_WIDTH(8), // we expect 8 bit greyscale images
-//     .RAM_DEPTH(128*128)) //we expect a 128*128 image with 16384 pixels total
-//     rx_img (
-//     .addra(),
-//     .clka(),
-//     .wea(),
-//     .dina(),
-//     .ena(1'b0),
-//     .regcea(1'b1),
-//     .rsta(sys_rst),
-//     .douta(), //never read from this side
-//     .addrb(read_pixel_addr),// transformed lookup pixel
-//     .dinb(),
-//     .clkb(clk),
-//     .web(1'b0),
-//     .enb(1'b1),
-//     .rstb(sys_rst),
-//     .regceb(1'b1),
-//     .doutb(pixel_out)
-//   );
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(4)) //we expect a 128*128 image with 16384 pixels total
+    rx_img (
+    .addra(write_address),
+    .clka(clk),
+    .wea(weab),
+    .dina(write_data),
+    .ena(1'b1),
+    .regcea(1'b1),
+    .rsta(sys_rst),
+    .douta(), //never read from this side
+    .addrb(dog_address),// transformed lookup pixel
+    .dinb(),
+    .clkb(clk),
+    .web(1'b0),
+    .enb(1'b1),
+    .rstb(sys_rst),
+    .regceb(1'b1),
+    .doutb(img1_out)
+  );
 
     always begin
         #5;  // every 5 ns switch...so period of clock is 10 ns...100 MHz clock
@@ -59,7 +62,8 @@ module dog_tb;
         br = 0;
         img1_out = 0;
         img2_out = 0;
-        #10;  //wait a little bit of time at beginning
+        #10;
+        //wait a little bit of time at beginning
         sys_rst= 1'b1;
         #10;
         sys_rst =1'b0;
@@ -67,7 +71,12 @@ module dog_tb;
         br = 1'b1;
         #10;
         br = 1'b0;
-        #4000;
+        img1_out = 42;
+        img2_out = 23;
+        #100;
+        img1_out = 42;
+        img2_out = 63;
+        #1000;
         // while (!done_o) begin
         //     #10;
         // end

@@ -19,6 +19,7 @@ module dog #(parameter DIMENSION) (
   output logic busy,
   output logic [11:0] address,
   output logic signed [8:0] data_out,
+  output logic wea,
   output logic [1:0] state_num
   );
   typedef enum {INACTIVE=0, WAIT=1, WRITE=2} module_state;
@@ -40,6 +41,7 @@ module dog #(parameter DIMENSION) (
         address <= 0;
         busy<=1'b0;
         write <= 1'b0;
+        wea <= 0;
       end else begin
         case(state)
         INACTIVE: if (bram_ready & ~old_bram) begin
@@ -48,9 +50,11 @@ module dog #(parameter DIMENSION) (
             state_num <= 1'b1;
             address <= 0;
             counter <= 0;
+            wea <= 0;
         end
         WAIT: if (counter==2'b10) begin
           state <= WRITE;
+          counter <= 0;
           state_num <= 2'b10;
           sharp_sign <= {1'b0, sharper_pix};
           fuzz_sign <= {1'b0, fuzzier_pix};
@@ -60,8 +64,10 @@ module dog #(parameter DIMENSION) (
         WRITE: if (~write) begin
           write <= 1'b1;
           data_out <= sharp_sign - fuzz_sign;
+          wea<= 1'b1;
         end else begin
           write <= 1'b0;
+          wea <= 1'b0;
           if (address==BRAM_LENGTH) begin
             address <= 0;
             state <= INACTIVE;

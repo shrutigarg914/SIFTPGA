@@ -63,10 +63,11 @@ if __name__ == "__main__":
             # print(".", end='', flush=True)
             res = s.read()
             image_rx.append(struct.unpack('B', res)[0])
-            print(len(image_rx), len(pixels)//4, struct.unpack('B', res)[0])
+            # print(len(image_rx), len(pixels)//4, struct.unpack('B', res)[0])
             # ind = input("Index investigating:  ")
             # print(pixels[ind])
         print("IMAGE RECEIVED")
+        print(image_rx)
 
         im_res = np.asarray(image_rx).reshape((32, 32))
         plt.imshow(im_res, cmap='gray', vmin=-128, vmax=127)
