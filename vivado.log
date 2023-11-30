@@ -122,9 +122,7 @@ WARNING: [Synth 8-7129] Port sw[4] in module top_level is either unconnected or 
 WARNING: [Synth 8-7129] Port sw[3] in module top_level is either unconnected or has no load
 WARNING: [Synth 8-7129] Port sw[2] in module top_level is either unconnected or has no load
 WARNING: [Synth 8-7129] Port sw[1] in module top_level is either unconnected or has no load
-WARNING: [Synth 8-7129] Port sw[0] in module top_level is either unconnected or has no load
 WARNING: [Synth 8-7129] Port btn[3] in module top_level is either unconnected or has no load
-WARNING: [Synth 8-7129] Port btn[2] in module top_level is either unconnected or has no load
 ---------------------------------------------------------------------------------
 Finished RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:06 . Memory (MB): peak = 2072.781 ; gain = 452.637 ; free physical = 1187 ; free virtual = 8575
 ---------------------------------------------------------------------------------
@@ -178,8 +176,18 @@ Start Applying 'set_property' XDC Constraints
 ---------------------------------------------------------------------------------
 Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:07 ; elapsed = 00:00:10 . Memory (MB): peak = 2181.316 ; gain = 561.172 ; free physical = 1153 ; free virtual = 8557
 ---------------------------------------------------------------------------------
+INFO: [Synth 8-802] inferred FSM for state register 'state_reg' in module 'dog'
 INFO: [Synth 8-802] inferred FSM for state register 'state_reg' in module 'send_img'
 INFO: [Synth 8-3971] The signal "xilinx_true_dual_port_read_first_2_clock_ram:/BRAM_reg" was recognized as a true dual port RAM template.
+---------------------------------------------------------------------------------------------------
+                   State |                     New Encoding |                Previous Encoding 
+---------------------------------------------------------------------------------------------------
+                INACTIVE |                               00 | 00000000000000000000000000000000
+                    WAIT |                               01 | 00000000000000000000000000000001
+                   WRITE |                               10 | 00000000000000000000000000000010
+---------------------------------------------------------------------------------------------------
+INFO: [Synth 8-3354] encoded FSM with state register 'state_reg' using encoding 'sequential' in module 'dog'
+INFO: [Synth 8-3971] The signal "xilinx_true_dual_port_read_first_2_clock_ram__parameterized0:/BRAM_reg" was recognized as a true dual port RAM template.
 ---------------------------------------------------------------------------------------------------
                    State |                     New Encoding |                Previous Encoding 
 ---------------------------------------------------------------------------------------------------
@@ -281,7 +289,6 @@ WARNING: [Synth 8-7129] Port sw[4] in module top_level is either unconnected or 
 WARNING: [Synth 8-7129] Port sw[3] in module top_level is either unconnected or has no load
 WARNING: [Synth 8-7129] Port sw[2] in module top_level is either unconnected or has no load
 WARNING: [Synth 8-7129] Port sw[1] in module top_level is either unconnected or has no load
-WARNING: [Synth 8-7129] Port sw[0] in module top_level is either unconnected or has no load
 WARNING: [Synth 8-7129] Port btn[3] in module top_level is either unconnected or has no load
 WARNING: [Synth 8-7129] Port btn[2] in module top_level is either unconnected or has no load
 WARNING: [Synth 8-6014] Unused sequential element rx_img/BRAM_reg was removed. 

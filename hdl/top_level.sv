@@ -1,6 +1,12 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
+// receive two images
+// pass them through dog
+// transmit result to laptop
+// NOTE that we can't send 9 bits over tx
+// divide the results from dog by 2 before sending
+// can multiply by 2 on laptop.
 module top_level(
   input wire [15:0] sw, //all 16 input slide switches
   input wire clk_100mhz,
@@ -46,6 +52,10 @@ module top_level(
       );
     logic full_image_received;
     assign led[0] = full_image_received;
+    // manually flip the switch to receive images in the other BRAM
+    logic image_number;
+    assign image_number = sw[0];
+    logic old_image_number;
 
     // if we have a valid_o, update pixel location for BRAM 
     always_ff @(posedge clk_100mhz) begin
@@ -54,23 +64,112 @@ module top_level(
         full_image_received <= 1'b0;
       end
       else if (valid_o_edge) begin
-        // pixel <= data_o; I'm assuming that data doesn't need to be held
-        // for more than one cycle for writin to the BRAM
         pixel_addr <= pixel_addr + 1;
         if (pixel_addr== DIMENSION*DIMENSION - 1) begin
           full_image_received <= 1'b1;
+          pixel_addr <= 0;
         end
+      end else if (old_image_number!=image_number) begin
+        full_image_received <= 1'b0;
       end
+      old_image_number <= image_number;
     end
     // the start image BRAM
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
     .RAM_DEPTH(DIMENSION*DIMENSION)) //we expect a 64*64 image with 16384 pixels total
-    rx_img (
+    img_1 (
     .addra(pixel_addr),
     .clka(clk_100mhz),
-    .wea(valid_o),
+    .wea(valid_o & (~image_number)),
     .dina(rx_data),
+    .ena(1'b1),
+    .regcea(1'b1),
+    .rsta(sys_rst),
+    .douta(), //never read from this side
+    .addrb(dog_address),// transformed lookup pixel
+    .dinb(),
+    .clkb(clk_100mhz),
+    .web(1'b0),
+    .enb(1'b1),
+    .rstb(sys_rst),
+    .regceb(1'b1),
+    .doutb(img1_out)
+  );
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(DIMENSION*DIMENSION)) //we expect a 64*64 image with 16384 pixels total
+    img_2 (
+    .addra(pixel_addr),
+    .clka(clk_100mhz),
+    .wea(valid_o & image_number),
+    .dina(rx_data),
+    .ena(1'b1),
+    .regcea(1'b1),
+    .rsta(sys_rst),
+    .douta(), //never read from this side
+    .addrb(dog_address),// transformed lookup pixel
+    .dinb(),
+    .clkb(clk_100mhz),
+    .web(1'b0),
+    .enb(1'b1),
+    .rstb(sys_rst),
+    .regceb(1'b1),
+    .doutb(img2_out)
+  );
+  logic ready_for_dog;
+
+  logic dog_ready;
+  logic dog_busy;
+  assign led[3] = dog_ready;
+  assign led[4] = ready_for_dog;
+  logic signed [8:0] dog_out;
+  // assign pixel_out = {dog_out[8], dog_out[7:1]};
+  assign ready_for_dog = full_image_received & image_number;
+  logic old_dog_busy;
+  assign dog_ready = old_dog_busy & ~dog_busy;
+  logic dog_was_here;
+  
+  always_ff @(posedge clk_100mhz) begin
+    old_dog_busy <= dog_busy;
+    if (sys_rst) begin
+      dog_edge <= 0;
+      dog_was_here <= 0;
+    end
+    if (dog_edge) begin
+      dog_was_here <= 1'b1;
+    end
+  end
+  assign led[15] = dog_was_here;
+  assign led[14] = 1'b1;
+  assign led[13] = btn[2];
+
+  dog #(.DIMENSION(DIMENSION)) builder (
+    .clk(clk_100mhz),
+    .rst_in(sys_rst),
+    .bram_ready(btn[2]),
+    .sharper_pix(img1_out),
+    .fuzzier_pix(img2_out),
+    .busy(dog_busy),
+    .address(dog_address),
+    .data_out(dog_out),
+    .wea(dog_wea),
+    .state_num(dog_state)
+  );
+
+  logic [1:0] dog_state;
+  // assign led[6:5] = dog_state;
+  // assign led[13:6] 
+  logic dog_wea;
+
+  xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(9), // we expect 8 bit greyscale images
+    .RAM_DEPTH(DIMENSION*DIMENSION)) //we expect a 64*64 image with 16384 pixels total
+    out (
+    .addra(dog_address),
+    .clka(clk_100mhz),
+    .wea(dog_wea), // FIX THIS
+    .dina(dog_out),
     .ena(1'b1),
     .regcea(1'b1),
     .rsta(sys_rst),
@@ -85,21 +184,27 @@ module top_level(
     .doutb(pixel_out)
   );
 
+
     // TODO: when btn[1] pressed, send what's stored in the output BRAM to the laptop
     
     // button press detected by 
     logic btn_edge;
+    logic dog_edge;
+    assign dog_edge = ~old_dog_pulse & dog_pulse;
 
     //rest of the logic here
-    logic start_i;
-    logic done_o;
-    logic [7:0] data_i;
     logic btn_pulse;
     logic old_btn_pulse;
     debouncer btn1_db(.clk_in(clk_100mhz),
                     .rst_in(sys_rst),
                     .dirty_in(btn[1]),
                     .clean_out(btn_pulse));
+    logic dog_pulse;
+    logic old_dog_pulse;
+    debouncer btn2_db(.clk_in(clk_100mhz),
+                    .rst_in(sys_rst),
+                    .dirty_in(btn[2]),
+                    .clean_out(dog_pulse));
  
     /* this should go high for one cycle on the
     * rising edge of the (debounced) button output
@@ -114,6 +219,7 @@ module top_level(
         old_btn_pulse <= btn_pulse;
         btn_edge <= btn_pulse;
       end
+      old_dog_pulse <= dog_pulse;
     end
 
     send_img  tx_img (
@@ -121,7 +227,7 @@ module top_level(
       .rst_in(sys_rst),//sys_rst
       .img_ready(btn_edge),//full_image_received
       .tx(uart_txd),//uart_txd
-      .data(pixel_out),
+      .data({pixel_out[8], pixel_out[7:1]}),
       .address(read_pixel_addr), // gets wired to the BRAM
       .tx_free(led[2]),
       // .out_state(led[4:3]),
@@ -129,10 +235,11 @@ module top_level(
     );
   logic tx_img_busy;
 
-  logic [7:0] pixel_out;
-  logic [13:0] read_pixel_addr;
+  logic signed [8:0] pixel_out;
+  logic [7:0] img1_out, img2_out;
+  logic [13:0] read_pixel_addr, dog_address;
   assign led[1] = tx_img_busy;
-  assign led[15:3] = read_pixel_addr[12:0];
+  // assign led[15:4] = dog_address[12:1];
   
     
 endmodule // top_level

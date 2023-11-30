@@ -93,9 +93,9 @@ Warning! LUT value is adjusted to account for LUT combining.
 +-----------------------------+------+-------+------------+-----------+-------+
 |          Site Type          | Used | Fixed | Prohibited | Available | Util% |
 +-----------------------------+------+-------+------------+-----------+-------+
-| Bonded IOB                  |   27 |    27 |          0 |       210 | 12.86 |
-|   IOB Master Pads           |   13 |       |            |           |       |
-|   IOB Slave Pads            |   14 |       |            |           |       |
+| Bonded IOB                  |   29 |    29 |          0 |       210 | 13.81 |
+|   IOB Master Pads           |   14 |       |            |           |       |
+|   IOB Slave Pads            |   15 |       |            |           |       |
 | Bonded IPADs                |    0 |     0 |          0 |         2 |  0.00 |
 | PHY_CONTROL                 |    0 |     0 |          0 |         5 |  0.00 |
 | PHASER_REF                  |    0 |     0 |          0 |         5 |  0.00 |
