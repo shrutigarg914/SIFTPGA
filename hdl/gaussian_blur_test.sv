@@ -61,9 +61,15 @@ module top_level(
         pixel_addr <= pixel_addr + 1;
         if (pixel_addr== DIMENSION*DIMENSION - 1) begin
           full_image_received <= 1'b1;
+          start_blurring <= 1'b1;
         end
       end
+
+      if (start_blurring) begin
+        start_blurring <= 0;
+      end
     end
+
     // the start image BRAM
     xilinx_true_dual_port_read_first_2_clock_ram #(
         .RAM_WIDTH(8), // we expect 8 bit greyscale images
@@ -113,6 +119,7 @@ module top_level(
         .error_out(),
         .busy_out()
     );
+    logic start_blurring;
     logic [$clog2(DIMENSION)-1:0] center_addr_x;
     logic [$clog2(DIMENSION)-1:0] center_addr_y;
     logic [$clog2(DIMENSION)-1:0] center_addr_x_prev;
@@ -138,6 +145,7 @@ module top_level(
         blur_out = 0;
         kernel_ind = 0;
         blur_done = 0;
+        start_blurring = 0;
     end
 
     // 3 stage pipeline, collect rows, do blur, write to BRAM
@@ -145,25 +153,31 @@ module top_level(
       if (sys_rst) begin
         center_addr_x <= 0;
         center_addr_y <= 0;
+        center_addr_x_prev <= 0;
+        center_addr_y_prev <= 0;
         blur_data_valid_in <= 0;
         blur_data_valid_out <= 0;
         kernel_ind <= 0;
+        blur_done <= 0;
+        start_blurring <= 0;
       end else begin
         if (full_image_received && ~blur_done) begin
-            if (read_pixel_addr_valid_pipe[1]) begin // has just got valid read out of BRAM
-
-                // write the result to correct row
-                case (kernel_ind_pipe[1]) // use the index from when we started reading because we've changed it by now
-                    0: row1[BIT_DEPTH*3-1:BIT_DEPTH*2] <= pixel_out;
-                    1: row1[BIT_DEPTH*2-1:BIT_DEPTH] <= pixel_out;
-                    2: row1[BIT_DEPTH-1:0] <= pixel_out;
-                    3: row2[BIT_DEPTH*3-1:BIT_DEPTH*2] <= pixel_out;
-                    4: row2[BIT_DEPTH*2-1:BIT_DEPTH] <= pixel_out;
-                    5: row2[BIT_DEPTH-1:0] <= pixel_out;
-                    6: row3[BIT_DEPTH*3-1:BIT_DEPTH*2] <= pixel_out;
-                    7: row3[BIT_DEPTH*2-1:BIT_DEPTH] <= pixel_out;
-                    8: row3[BIT_DEPTH-1:0] <= pixel_out;
-                endcase
+            // we either just started the blurring part or we just finished reading the last pixel from the BRAM
+            if (read_pixel_addr_valid_pipe[1] || start_blurring) begin 
+                if (!start_blurring) begin
+                    // write the previous read result to correct row
+                    case (kernel_ind_pipe[1]) // use the index from when we started reading because we've changed it by now
+                        0: row1[BIT_DEPTH*3-1:BIT_DEPTH*2] <= pixel_out;
+                        1: row1[BIT_DEPTH*2-1:BIT_DEPTH] <= pixel_out;
+                        2: row1[BIT_DEPTH-1:0] <= pixel_out;
+                        3: row2[BIT_DEPTH*3-1:BIT_DEPTH*2] <= pixel_out;
+                        4: row2[BIT_DEPTH*2-1:BIT_DEPTH] <= pixel_out;
+                        5: row2[BIT_DEPTH-1:0] <= pixel_out;
+                        6: row3[BIT_DEPTH*3-1:BIT_DEPTH*2] <= pixel_out;
+                        7: row3[BIT_DEPTH*2-1:BIT_DEPTH] <= pixel_out;
+                        8: row3[BIT_DEPTH-1:0] <= pixel_out;
+                    endcase
+                end
 
                 // update read pixel addr based on current center and kernel_ind
                 case (kernel_ind)
@@ -199,9 +213,9 @@ module top_level(
 
                 // update kernel_ind
                 if (kernel_ind == 8) begin
-                    // reset kernel_ind and go to next pixel
+                    blur_data_valid_in <= 1; // start blur module (just finished collecting rows)
+                    // reset kernel_ind and go to next pixel (inc center x, y)
                     kernel_ind <= 0;
-                    blur_data_valid_in <= 1;
                     center_addr_x_prev <= center_addr_x;
                     center_addr_y_prev <= center_addr_y;
                     if (center_addr_x == DIMENSION - 1) begin
@@ -286,14 +300,12 @@ module top_level(
       .tx(uart_txd),//uart_txd
       .data(blur_stored_out),
       .address(read_blur_addr), // gets wired to the BRAM
-      .tx_free(led[2]),
-      // .out_state(led[4:3]),
+      .tx_free(),
       .busy(tx_img_busy) //or we could do img_sent whichever makes more sense
     );
     logic tx_img_busy;
 
-    // assign led[1] = tx_img_busy;
-    // assign led[15:3] = read_pixel_addr[12:0];
+    assign led[13:2] = center_addr_x_prev + center_addr_y_prev * DIMENSION;
   
     
 endmodule // top_level
