@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2023.1 (lin64) Build 3865809 Sun May  7 15:04:56 MDT 2023
-| Date         : Tue Nov 28 05:30:43 2023
+| Date         : Thu Nov 30 08:02:30 2023
 | Host         : worker running 64-bit Ubuntu 20.04.6 LTS
 | Command      : report_timing -file obj/post_route_timing.rpt
 | Design       : top_level
@@ -12,19 +12,19 @@ Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanc
 
 Timing Report
 
-Slack (MET) :             5.405ns  (required time - arrival time)
-  Source:                 urx/state_reg[3]/C
+Slack (MET) :             3.389ns  (required time - arrival time)
+  Source:                 blur/stage1_data_reg_reg[7][2]/C
                             (rising edge-triggered cell FDRE clocked by gclk  {rise@0.000ns fall@4.000ns period=10.000ns})
-  Destination:            urx/baud_counter_reg[13]/R
+  Destination:            blur/stage2_data_reg[9]/D
                             (rising edge-triggered cell FDRE clocked by gclk  {rise@0.000ns fall@4.000ns period=10.000ns})
   Path Group:             gclk
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (gclk rise@10.000ns - gclk rise@0.000ns)
-  Data Path Delay:        3.891ns  (logic 1.178ns (30.275%)  route 2.713ns (69.725%))
-  Logic Levels:           2  (LUT4=1 LUT5=1)
-  Clock Path Skew:        -0.033ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    4.762ns = ( 14.762 - 10.000 ) 
-    Source Clock Delay      (SCD):    5.052ns
+  Data Path Delay:        6.670ns  (logic 3.147ns (47.179%)  route 3.523ns (52.821%))
+  Logic Levels:           8  (CARRY4=4 LUT3=2 LUT4=2)
+  Clock Path Skew:        0.033ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    4.829ns = ( 14.829 - 10.000 ) 
+    Source Clock Delay      (SCD):    5.053ns
     Clock Pessimism Removal (CPR):    0.257ns
   Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
     Total System Jitter     (TSJ):    0.071ns
@@ -40,16 +40,32 @@ Slack (MET) :             5.405ns  (required time - arrival time)
     N15                  IBUF (Prop_ibuf_I_O)         1.440     1.440 r  clk_100mhz_IBUF_inst/O
                          net (fo=1, routed)           1.972     3.412    clk_100mhz_IBUF
     BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.096     3.508 r  clk_100mhz_IBUF_BUFG_inst/O
-                         net (fo=141, routed)         1.544     5.052    urx/clk_100mhz_IBUF_BUFG
-    SLICE_X12Y79         FDRE                                         r  urx/state_reg[3]/C
+                         net (fo=410, routed)         1.545     5.053    blur/CLK
+    SLICE_X10Y80         FDRE                                         r  blur/stage1_data_reg_reg[7][2]/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X12Y79         FDRE (Prop_fdre_C_Q)         0.478     5.530 f  urx/state_reg[3]/Q
-                         net (fo=11, routed)          1.162     6.692    urx/state_reg_n_0_[3]
-    SLICE_X12Y80         LUT4 (Prop_lut4_I0_O)        0.323     7.015 r  urx/state[3]_i_3/O
-                         net (fo=1, routed)           0.848     7.863    urx/state[3]_i_3_n_0
-    SLICE_X12Y80         LUT5 (Prop_lut5_I0_O)        0.377     8.240 r  urx/state[3]_i_1/O
-                         net (fo=16, routed)          0.703     8.943    urx/state[3]_i_1_n_0
-    SLICE_X11Y82         FDRE                                         r  urx/baud_counter_reg[13]/R
+    SLICE_X10Y80         FDRE (Prop_fdre_C_Q)         0.478     5.531 r  blur/stage1_data_reg_reg[7][2]/Q
+                         net (fo=3, routed)           0.831     6.361    blur/stage1_data_reg_reg[7][2]
+    SLICE_X10Y82         LUT3 (Prop_lut3_I0_O)        0.330     6.691 r  blur/stage2_data[7]_i_25/O
+                         net (fo=2, routed)           0.822     7.514    blur/stage2_data[7]_i_25_n_0
+    SLICE_X10Y82         LUT4 (Prop_lut4_I3_O)        0.331     7.845 r  blur/stage2_data[7]_i_27/O
+                         net (fo=1, routed)           0.000     7.845    blur/stage2_data[7]_i_27_n_0
+    SLICE_X10Y82         CARRY4 (Prop_carry4_S[3]_CO[3])
+                                                      0.376     8.221 r  blur/stage2_data_reg[7]_i_19/CO[3]
+                         net (fo=1, routed)           0.000     8.221    blur/stage2_data_reg[7]_i_19_n_0
+    SLICE_X10Y83         CARRY4 (Prop_carry4_CI_O[2])
+                                                      0.239     8.460 r  blur/stage2_data_reg[11]_i_13/O[2]
+                         net (fo=2, routed)           1.180     9.640    blur/stage2_data_reg[11]_i_13_n_5
+    SLICE_X7Y82          LUT3 (Prop_lut3_I1_O)        0.331     9.971 r  blur/stage2_data[7]_i_3/O
+                         net (fo=2, routed)           0.690    10.661    blur/stage2_data[7]_i_3_n_0
+    SLICE_X7Y82          LUT4 (Prop_lut4_I3_O)        0.327    10.988 r  blur/stage2_data[7]_i_7/O
+                         net (fo=1, routed)           0.000    10.988    blur/stage2_data[7]_i_7_n_0
+    SLICE_X7Y82          CARRY4 (Prop_carry4_S[3]_CO[3])
+                                                      0.401    11.389 r  blur/stage2_data_reg[7]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    11.389    blur/stage2_data_reg[7]_i_1_n_0
+    SLICE_X7Y83          CARRY4 (Prop_carry4_CI_O[1])
+                                                      0.334    11.723 r  blur/stage2_data_reg[11]_i_1/O[1]
+                         net (fo=1, routed)           0.000    11.723    blur/stage2_data_reg[11]_i_1_n_6
+    SLICE_X7Y83          FDRE                                         r  blur/stage2_data_reg[9]/D
   -------------------------------------------------------------------    -------------------
 
                          (clock gclk rise edge)      10.000    10.000 r  
@@ -58,16 +74,16 @@ Slack (MET) :             5.405ns  (required time - arrival time)
     N15                  IBUF (Prop_ibuf_I_O)         1.370    11.370 r  clk_100mhz_IBUF_inst/O
                          net (fo=1, routed)           1.868    13.238    clk_100mhz_IBUF
     BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.091    13.329 r  clk_100mhz_IBUF_BUFG_inst/O
-                         net (fo=141, routed)         1.433    14.762    urx/clk_100mhz_IBUF_BUFG
-    SLICE_X11Y82         FDRE                                         r  urx/baud_counter_reg[13]/C
-                         clock pessimism              0.257    15.019    
-                         clock uncertainty           -0.035    14.983    
-    SLICE_X11Y82         FDRE (Setup_fdre_C_R)       -0.636    14.347    urx/baud_counter_reg[13]
+                         net (fo=410, routed)         1.500    14.829    blur/CLK
+    SLICE_X7Y83          FDRE                                         r  blur/stage2_data_reg[9]/C
+                         clock pessimism              0.257    15.086    
+                         clock uncertainty           -0.035    15.050    
+    SLICE_X7Y83          FDRE (Setup_fdre_C_D)        0.062    15.112    blur/stage2_data_reg[9]
   -------------------------------------------------------------------
-                         required time                         14.347    
-                         arrival time                          -8.943    
+                         required time                         15.112    
+                         arrival time                         -11.723    
   -------------------------------------------------------------------
-                         slack                                  5.405    
+                         slack                                  3.389    
 
 
 

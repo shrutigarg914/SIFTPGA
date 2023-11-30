@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 -------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version     : Vivado v.2023.1 (lin64) Build 3865809 Sun May  7 15:04:56 MDT 2023
-| Date             : Tue Nov 28 05:30:43 2023
+| Date             : Thu Nov 30 08:02:31 2023
 | Host             : worker running 64-bit Ubuntu 20.04.6 LTS
 | Command          : report_power -file obj/post_route_power.rpt
 | Design           : top_level
@@ -33,7 +33,7 @@ Table of Contents
 | Total On-Chip Power (W)  | 0.075        |
 | Design Power Budget (W)  | Unspecified* |
 | Power Budget Margin (W)  | NA           |
-| Dynamic (W)              | 0.003        |
+| Dynamic (W)              | 0.004        |
 | Device Static (W)        | 0.072        |
 | Effective TJA (C/W)      | 4.9          |
 | Max Ambient (C)          | 84.6         |
@@ -52,16 +52,15 @@ Table of Contents
 +----------------+-----------+----------+-----------+-----------------+
 | On-Chip        | Power (W) | Used     | Available | Utilization (%) |
 +----------------+-----------+----------+-----------+-----------------+
-| Clocks         |     0.001 |        3 |       --- |             --- |
-| Slice Logic    |    <0.001 |      306 |       --- |             --- |
-|   LUT as Logic |    <0.001 |      112 |     32600 |            0.34 |
-|   CARRY4       |    <0.001 |       13 |      8150 |            0.16 |
-|   Register     |    <0.001 |      139 |     65200 |            0.21 |
-|   F7/F8 Muxes  |    <0.001 |        1 |     32600 |           <0.01 |
-|   Others       |     0.000 |       15 |       --- |             --- |
-| Signals        |    <0.001 |      228 |       --- |             --- |
-| Block RAM      |    <0.001 |      0.5 |        75 |            0.67 |
-| I/O            |     0.001 |       27 |       210 |           12.86 |
+| Clocks         |     0.002 |        3 |       --- |             --- |
+| Slice Logic    |    <0.001 |      738 |       --- |             --- |
+|   LUT as Logic |    <0.001 |      214 |     32600 |            0.66 |
+|   CARRY4       |    <0.001 |       33 |      8150 |            0.40 |
+|   Register     |    <0.001 |      406 |     65200 |            0.62 |
+|   Others       |     0.000 |       21 |       --- |             --- |
+| Signals        |    <0.001 |      631 |       --- |             --- |
+| Block RAM      |    <0.001 |        2 |        75 |            2.67 |
+| I/O            |    <0.001 |       27 |       210 |           12.86 |
 | Static Power   |     0.072 |          |           |                 |
 | Total          |     0.075 |          |           |                 |
 +----------------+-----------+----------+-----------+-----------------+
@@ -73,7 +72,7 @@ Table of Contents
 +-----------+-------------+-----------+-------------+------------+-------------+-------------+------------+
 | Source    | Voltage (V) | Total (A) | Dynamic (A) | Static (A) | Powerup (A) | Budget (A)  | Margin (A) |
 +-----------+-------------+-----------+-------------+------------+-------------+-------------+------------+
-| Vccint    |       1.000 |     0.012 |       0.002 |      0.010 |       NA    | Unspecified | NA         |
+| Vccint    |       1.000 |     0.013 |       0.003 |      0.010 |       NA    | Unspecified | NA         |
 | Vccaux    |       1.800 |     0.013 |       0.000 |      0.013 |       NA    | Unspecified | NA         |
 | Vcco33    |       3.300 |     0.001 |       0.000 |      0.001 |       NA    | Unspecified | NA         |
 | Vcco25    |       2.500 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
@@ -140,7 +139,7 @@ Table of Contents
 +-----------+-----------+
 | Name      | Power (W) |
 +-----------+-----------+
-| top_level |     0.003 |
+| top_level |     0.004 |
 +-----------+-----------+
 
 
