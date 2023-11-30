@@ -1,5 +1,3 @@
-# modified version of the following manta example script
-# https://github.com/fischermoseley/manta/blob/main/examples/nexys_a7/video_sprite_uart/send_image.py
 import time
 import sys
 from PIL import Image, ImageOps
@@ -39,7 +37,7 @@ if __name__ == "__main__":
             # char = bytes(input("send: "), 'ascii')
             # print(struct.pack('B', 3))
             # print(pixels[packets_sent])
-            s.write(struct.pack('B', pixels[packets_sent]))
+            s.write(struct.pack('B', int(pixels[packets_sent]/2)))
             # print(".", end='', flush=True)
             packets_sent +=1
         print("DONE SENDING!")

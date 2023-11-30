@@ -18,32 +18,40 @@ module dog #(parameter DIMENSION) (
   input wire [7:0] fuzzier_pix,
   output logic busy,
   output logic [11:0] address,
-  output logic signed [8:0] data_out
+  output logic signed [8:0] data_out,
+  output logic [1:0] state_num
   );
-  typedef enum {FREE=0, WAIT=1, WRITE=2} module_state;
+  typedef enum {INACTIVE=0, WAIT=1, WRITE=2} module_state;
   module_state state; 
   parameter BRAM_LENGTH = DIMENSION*DIMENSION -1;
   logic [1:0] counter;
   logic signed [8:0] sharp_sign;
   logic signed [8:0] fuzz_sign;
+  logic write;
+  logic old_bram;
   // wait for two cycles for read
   // only need the one cycle for write
     always_ff @(posedge clk) begin
+      old_bram <= bram_ready;
       if (rst_in) begin
         state <= INACTIVE;
+        state_num <= 0;
         counter <= 0;
         address <= 0;
         busy<=1'b0;
+        write <= 1'b0;
       end else begin
         case(state)
-        INACTIVE: if (bram_ready) begin
+        INACTIVE: if (bram_ready & ~old_bram) begin
             busy <= 1'b1;
             state <= WAIT;
+            state_num <= 1'b1;
             address <= 0;
             counter <= 0;
         end
         WAIT: if (counter==2'b10) begin
           state <= WRITE;
+          state_num <= 2'b10;
           sharp_sign <= {1'b0, sharper_pix};
           fuzz_sign <= {1'b0, fuzzier_pix};
         end else begin
@@ -55,12 +63,14 @@ module dog #(parameter DIMENSION) (
         end else begin
           write <= 1'b0;
           if (address==BRAM_LENGTH) begin
-            address <= address + 1'b1;
-            state <= WAIT;
-          end else begin
             address <= 0;
             state <= INACTIVE;
+            state_num <= 1'b0;
             busy <= 1'b0;
+          end else begin
+            address <= address + 1'b1;
+            state <= WAIT;
+            state_num <= 1'b1;
           end
         end
         endcase
