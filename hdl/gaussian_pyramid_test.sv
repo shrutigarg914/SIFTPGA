@@ -112,7 +112,7 @@ module top_level(
         .addra(O1L1_write_addr),
         .clka(clk_100mhz),
         .wea(O1L1_write_valid),
-        .dina(O1L1_pixel_out),
+        .dina(O1L1_pixel_in),
         .ena(1'b1),
         .regcea(1'b1),
         .rsta(sys_rst),
@@ -128,7 +128,7 @@ module top_level(
     );
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O1L1_write_addr;
     logic O1L1_write_valid;
-    logic [BIT_DEPTH-1:0] O1L1_pixel_out;
+    logic [BIT_DEPTH-1:0] O1L1_pixel_in;
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O1L1_read_addr;
     logic [BIT_DEPTH-1:0] O1L1_pixel_out;
 
@@ -139,7 +139,7 @@ module top_level(
         .addra(O1L2_write_addr),
         .clka(clk_100mhz),
         .wea(O1L2_write_valid),
-        .dina(O1L2_pixel_out),
+        .dina(O1L2_pixel_in),
         .ena(1'b1),
         .regcea(1'b1),
         .rsta(sys_rst),
@@ -155,7 +155,7 @@ module top_level(
     );
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O1L2_write_addr;
     logic O1L2_write_valid;
-    logic [BIT_DEPTH-1:0] O1L2_pixel_out;
+    logic [BIT_DEPTH-1:0] O1L2_pixel_in;
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O1L2_read_addr;
     logic [BIT_DEPTH-1:0] O1L2_pixel_out;
 
@@ -166,7 +166,7 @@ module top_level(
         .addra(O1L3_write_addr),
         .clka(clk_100mhz),
         .wea(O1L3_write_valid),
-        .dina(O1L3_pixel_out),
+        .dina(O1L3_pixel_in),
         .ena(1'b1),
         .regcea(1'b1),
         .rsta(sys_rst),
@@ -182,7 +182,7 @@ module top_level(
     );
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O1L3_write_addr;
     logic O1L3_write_valid;
-    logic [BIT_DEPTH-1:0] O1L3_pixel_out;
+    logic [BIT_DEPTH-1:0] O1L3_pixel_in;
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O1L3_read_addr;
     logic [BIT_DEPTH-1:0] O1L3_pixel_out;
 
@@ -193,7 +193,7 @@ module top_level(
         .addra(O2L1_write_addr),
         .clka(clk_100mhz),
         .wea(O2L1_write_valid),
-        .dina(O2L1_pixel_out),
+        .dina(O2L1_pixel_in),
         .ena(1'b1),
         .regcea(1'b1),
         .rsta(sys_rst),
@@ -209,7 +209,7 @@ module top_level(
     );
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L1_write_addr;
     logic O2L1_write_valid;
-    logic [BIT_DEPTH-1:0] O2L1_pixel_out;
+    logic [BIT_DEPTH-1:0] O2L1_pixel_in;
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L1_read_addr;
     logic [BIT_DEPTH-1:0] O2L1_pixel_out;
 
@@ -220,7 +220,7 @@ module top_level(
         .addra(O2L2_write_addr),
         .clka(clk_100mhz),
         .wea(O2L2_write_valid),
-        .dina(O2L2_pixel_out),
+        .dina(O2L2_pixel_in),
         .ena(1'b1),
         .regcea(1'b1),
         .rsta(sys_rst),
@@ -236,7 +236,7 @@ module top_level(
     );
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L2_write_addr;
     logic O2L2_write_valid;
-    logic [BIT_DEPTH-1:0] O2L2_pixel_out;
+    logic [BIT_DEPTH-1:0] O2L2_pixel_in;
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L2_read_addr;
     logic [BIT_DEPTH-1:0] O2L2_pixel_out;
 
@@ -247,7 +247,7 @@ module top_level(
         .addra(O2L3_write_addr),
         .clka(clk_100mhz),
         .wea(O2L3_write_valid),
-        .dina(O2L3_pixel_out),
+        .dina(O2L3_pixel_in),
         .ena(1'b1),
         .regcea(1'b1),
         .rsta(sys_rst),
@@ -263,7 +263,7 @@ module top_level(
     );
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L3_write_addr;
     logic O2L3_write_valid;
-    logic [BIT_DEPTH-1:0] O2L3_pixel_out;
+    logic [BIT_DEPTH-1:0] O2L3_pixel_in;
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L3_read_addr;
     logic [BIT_DEPTH-1:0] O2L3_pixel_out;
 
@@ -274,7 +274,7 @@ module top_level(
         .addra(O3L1_write_addr),
         .clka(clk_100mhz),
         .wea(O3L1_write_valid),
-        .dina(O3L1_pixel_out),
+        .dina(O3L1_pixel_in),
         .ena(1'b1),
         .regcea(1'b1),
         .rsta(sys_rst),
@@ -290,7 +290,7 @@ module top_level(
     );
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O3L1_write_addr;
     logic O3L1_write_valid;
-    logic [BIT_DEPTH-1:0] O3L1_pixel_out;
+    logic [BIT_DEPTH-1:0] O3L1_pixel_in;
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O3L1_read_addr;
     logic [BIT_DEPTH-1:0] O3L1_pixel_out;
 
@@ -301,7 +301,7 @@ module top_level(
         .addra(O3L2_write_addr),
         .clka(clk_100mhz),
         .wea(O3L2_write_valid),
-        .dina(O3L2_pixel_out),
+        .dina(O3L2_pixel_in),
         .ena(1'b1),
         .regcea(1'b1),
         .rsta(sys_rst),
@@ -317,7 +317,7 @@ module top_level(
     );
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O3L2_write_addr;
     logic O3L2_write_valid;
-    logic [BIT_DEPTH-1:0] O3L2_pixel_out;
+    logic [BIT_DEPTH-1:0] O3L2_pixel_in;
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O3L2_read_addr;
     logic [BIT_DEPTH-1:0] O3L2_pixel_out;
 
@@ -328,7 +328,7 @@ module top_level(
         .addra(O3L3_write_addr),
         .clka(clk_100mhz),
         .wea(O3L3_write_valid),
-        .dina(O3L3_pixel_out),
+        .dina(O3L3_pixel_in),
         .ena(1'b1),
         .regcea(1'b1),
         .rsta(sys_rst),
@@ -344,7 +344,7 @@ module top_level(
     );
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O3L3_write_addr;
     logic O3L3_write_valid;
-    logic [BIT_DEPTH-1:0] O3L3_pixel_out;
+    logic [BIT_DEPTH-1:0] O3L3_pixel_in;
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O3L3_read_addr;
     logic [BIT_DEPTH-1:0] O3L3_pixel_out;
     
@@ -359,31 +359,31 @@ module top_level(
                          .ext_pixel_in(pixel_in),
                          .O1L1_write_addr(O1L1_write_addr),
                          .O1L1_write_valid(O1L1_write_valid),
-                         .O1L1_pixel_out(O1L1_pixel_out), 
+                         .O1L1_pixel_out(O1L1_pixel_in), 
                          .O1L2_write_addr(O1L2_write_addr),
                          .O1L2_write_valid(O1L2_write_valid),
-                         .O1L2_pixel_out(O1L2_pixel_out), 
+                         .O1L2_pixel_out(O1L2_pixel_in), 
                          .O1L3_write_addr(O1L3_write_addr),
                          .O1L3_write_valid(O1L3_write_valid),
-                         .O1L3_pixel_out(O1L3_pixel_out), 
+                         .O1L3_pixel_out(O1L3_pixel_in), 
                          .O2L1_write_addr(O2L1_write_addr),
                          .O2L1_write_valid(O2L1_write_valid),
-                         .O2L1_pixel_out(O2L1_pixel_out), 
+                         .O2L1_pixel_out(O2L1_pixel_in), 
                          .O2L2_write_addr(O2L2_write_addr),
                          .O2L2_write_valid(O2L2_write_valid),
-                         .O2L2_pixel_out(O2L2_pixel_out), 
+                         .O2L2_pixel_out(O2L2_pixel_in), 
                          .O2L3_write_addr(O2L3_write_addr),
                          .O2L3_write_valid(O2L3_write_valid),
-                         .O2L3_pixel_out(O2L3_pixel_out), 
+                         .O2L3_pixel_out(O2L3_pixel_in), 
                          .O3L1_write_addr(O3L1_write_addr),
                          .O3L1_write_valid(O3L1_write_valid),
-                         .O3L1_pixel_out(O3L1_pixel_out), 
+                         .O3L1_pixel_out(O3L1_pixel_in), 
                          .O3L2_write_addr(O3L2_write_addr),
                          .O3L2_write_valid(O3L2_write_valid),
-                         .O3L2_pixel_out(O3L2_pixel_out), 
+                         .O3L2_pixel_out(O3L2_pixel_in), 
                          .O3L3_write_addr(O3L3_write_addr),
                          .O3L3_write_valid(O3L3_write_valid),
-                         .O3L3_pixel_out(O3L3_pixel_out), 
+                         .O3L3_pixel_out(O3L3_pixel_in), 
                          .start_in(start_pyramid),
                          .pyramid_done(pyramid_done));
     logic pyramid_done;
@@ -419,19 +419,172 @@ module top_level(
       end
     end
 
-    send_img  tx_img (
+    typedef enum {IDLE=0, O1L1=1, O1L2=2, O1L3=3, O2L1=4, O2L2=5, O2L3=6, O3L1=7, O3L2=8, O3L3=9} tx_state;
+    tx_state state;
+    tx_state state_prev;
+
+    initial begin
+        state <= IDLE;
+    end
+
+    always_ff @(posedge clk_100mhz) begin
+        if (sys_rst) begin
+            state <= IDLE;
+        end else begin
+            state_prev <= state;
+            case (state)
+                IDLE:
+                    if (btn_edge && pyramid_done_latched) begin
+                        state <= O1L1;
+                    end
+                O1L1:
+                    if (!tx_img_busy_O1L1) begin
+                        state <= O1L2;
+                    end
+                O1L2:
+                    if (!tx_img_busy_O1L2) begin
+                        state <= O1L3;
+                    end
+                O1L3:
+                    if (!tx_img_busy_O1L3) begin
+                        state <= O2L1;
+                    end
+                O2L1:
+                    if (!tx_img_busy_O2L1) begin
+                        state <= O2L2;
+                    end
+                O2L2:
+                    if (!tx_img_busy_O2L2) begin
+                        state <= O2L3;
+                    end
+                O2L3:
+                    if (!tx_img_busy_O2L3) begin
+                        state <= O3L1;
+                    end
+                O3L1:
+                    if (!tx_img_busy_O3L1) begin
+                        state <= O3L2;
+                    end
+                O3L2:
+                    if (!tx_img_busy_O3L2) begin
+                        state <= O3L3;
+                    end
+                O3L3:
+                    if (!tx_img_busy_O3L3) begin
+                        state <= IDLE;
+                    end
+            endcase
+        end
+    end
+
+    send_img  tx_img_O1L1 (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
-      .img_ready(btn_edge && pyramid_done_latched),//full_image_received
+      .img_ready((state == O1L1) && (state_prev != O1L1)),//full_image_received
       .tx(uart_txd),//uart_txd
-      .data(resized_stored_out),
-      .address(read_resized_addr), // gets wired to the BRAM
+      .data(O1L1_pixel_out),
+      .address(O1L1_read_addr), // gets wired to the BRAM
       .tx_free(),
-      .busy(tx_img_busy) //or we could do img_sent whichever makes more sense
+      .busy(tx_img_busy_O1L1) //or we could do img_sent whichever makes more sense
     );
-    logic tx_img_busy;
+    logic tx_img_busy_O1L1;
+
+    send_img  tx_img_O1L2 (
+      .clk(clk_100mhz),
+      .rst_in(sys_rst),//sys_rst
+      .img_ready((state == O1L2) && (state_prev != O1L2)),//full_image_received
+      .tx(uart_txd),//uart_txd
+      .data(O1L2_pixel_out),
+      .address(O1L2_read_addr), // gets wired to the BRAM
+      .tx_free(),
+      .busy(tx_img_busy_O1L2) //or we could do img_sent whichever makes more sense
+    );
+    logic tx_img_busy_O1L2;
+
+    send_img  tx_img_O1L3 (
+      .clk(clk_100mhz),
+      .rst_in(sys_rst),//sys_rst
+      .img_ready((state == O1L3) && (state_prev != O1L3)),//full_image_received
+      .tx(uart_txd),//uart_txd
+      .data(O1L3_pixel_out),
+      .address(O1L3_read_addr), // gets wired to the BRAM
+      .tx_free(),
+      .busy(tx_img_busy_O1L3) //or we could do img_sent whichever makes more sense
+    );
+    logic tx_img_busy_O1L3;
+
+    send_img  tx_img_O2L1 (
+      .clk(clk_100mhz),
+      .rst_in(sys_rst),//sys_rst
+      .img_ready((state == O2L1) && (state_prev != O2L1)),//full_image_received
+      .tx(uart_txd),//uart_txd
+      .data(O2L1_pixel_out),
+      .address(O2L1_read_addr), // gets wired to the BRAM
+      .tx_free(),
+      .busy(tx_img_busy_O2L1) //or we could do img_sent whichever makes more sense
+    );
+    logic tx_img_busy_O2L1;
+
+    send_img  tx_img_O2L2 (
+      .clk(clk_100mhz),
+      .rst_in(sys_rst),//sys_rst
+      .img_ready((state == O2L2) && (state_prev != O2L2)),//full_image_received
+      .tx(uart_txd),//uart_txd
+      .data(O2L2_pixel_out),
+      .address(O2L2_read_addr), // gets wired to the BRAM
+      .tx_free(),
+      .busy(tx_img_busy_O2L2) //or we could do img_sent whichever makes more sense
+    );
+    logic tx_img_busy_O2L2;
+
+    send_img  tx_img_O2L3 (
+      .clk(clk_100mhz),
+      .rst_in(sys_rst),//sys_rst
+      .img_ready((state == O2L3) && (state_prev != O2L3)),//full_image_received
+      .tx(uart_txd),//uart_txd
+      .data(O2L3_pixel_out),
+      .address(O2L3_read_addr), // gets wired to the BRAM
+      .tx_free(),
+      .busy(tx_img_busy_O2L3) //or we could do img_sent whichever makes more sense
+    );
+    logic tx_img_busy_O2L3;
+
+    send_img  tx_img_O3L1 (
+      .clk(clk_100mhz),
+      .rst_in(sys_rst),//sys_rst
+      .img_ready((state == O3L1) && (state_prev != O3L1)),//full_image_received
+      .tx(uart_txd),//uart_txd
+      .data(O3L1_pixel_out),
+      .address(O3L1_read_addr), // gets wired to the BRAM
+      .tx_free(),
+      .busy(tx_img_busy_O3L1) //or we could do img_sent whichever makes more sense
+    );
+    logic tx_img_busy_O3L1;
+
+    send_img  tx_img_O3L2 (
+      .clk(clk_100mhz),
+      .rst_in(sys_rst),//sys_rst
+      .img_ready((state == O3L2) && (state_prev != O3L2)),//full_image_received
+      .tx(uart_txd),//uart_txd
+      .data(O3L2_pixel_out),
+      .address(O3L2_read_addr), // gets wired to the BRAM
+      .tx_free(),
+      .busy(tx_img_busy_O3L2) //or we could do img_sent whichever makes more sense
+    );
+    logic tx_img_busy_O3L2;
+
+    send_img  tx_img_O3L3 (
+      .clk(clk_100mhz),
+      .rst_in(sys_rst),//sys_rst
+      .img_ready((state == O3L3) && (state_prev != O3L3)),//full_image_received
+      .tx(uart_txd),//uart_txd
+      .data(O3L3_pixel_out),
+      .address(O3L3_read_addr), // gets wired to the BRAM
+      .tx_free(),
+      .busy(tx_img_busy_O3L3) //or we could do img_sent whichever makes more sense
+    );
+    logic tx_img_busy_O3L3;
   
-    assign led[13:2] = pixel_out;
     
 endmodule // top_level
 

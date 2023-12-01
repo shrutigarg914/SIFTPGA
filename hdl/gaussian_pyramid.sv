@@ -32,7 +32,7 @@ module gaussian_pyramid #(
                     // Octave 2
                     output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L1_write_addr,
                     output logic O2L1_write_valid,
-                    output logic [BIT_DEPTH-1:0] O1L1_pixel_out,
+                    output logic [BIT_DEPTH-1:0] O2L1_pixel_out,
 
                     output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L2_write_addr,
                     output logic O2L2_write_valid,
@@ -151,7 +151,7 @@ module gaussian_pyramid #(
     
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
-    .RAM_DEPTH(TOP_WIDTH/2*TOP_HEIGHT/2T)) //we expect a 64*64 image with 16384 pixels total
+    .RAM_DEPTH(TOP_WIDTH/2*TOP_HEIGHT/2)) //we expect a 64*64 image with 16384 pixels total
     O2Buffer2 (
         .addra(O2Buffer2_write_addr),
         .clka(clk_in),
@@ -378,18 +378,17 @@ module gaussian_pyramid #(
             start_read_original <= 0;
             state_initialized <= 0;
         end else begin
+            if (pyramid_done) begin
+                pyramid_done <= 0;
+            end
             case (state)
                 IDLE:
                     if (start_in) begin
                         state <= O1L1;
                         start_read_original <= 1;
                     end
-                    if (pyramid_done) begin
-                        pyramid_done <= 0;
-                    end
                 O1L1:
                     // Read from original image BRAM by iterating through all addresses and reading
-                    state_initialized <= 1;
                     if (ext_read_addr_valid_pipe[1] || start_read_original) begin
                         ext_read_addr <= ext_read_addr + 1;
                         if (ext_read_addr== TOP_WIDTH * TOP_HEIGHT - 1) begin
@@ -399,9 +398,9 @@ module gaussian_pyramid #(
                     end
                 O1L2:
                     // Start O1Blur, wait for it to be done, go next state
-                    state_initialized <= 1;
                     if (!state_initialized) begin
                         O1_start_blurring <= 1;
+                        state_initialized <= 1;
                     end else begin
                         if (O1_start_blurring) begin
                             O1_start_blurring <= 0;
@@ -413,9 +412,9 @@ module gaussian_pyramid #(
                     end
                 O1L3:
                     // Start O1Blur, wait for it to be done, go next state
-                    state_initialized <= 1;
                     if (!state_initialized) begin
                         O1_start_blurring <= 1;
+                        state_initialized <= 1;
                     end else begin
                         if (O1_start_blurring) begin
                             O1_start_blurring <= 0;
@@ -427,9 +426,9 @@ module gaussian_pyramid #(
                     end
                 O2L1:
                     // Start O1_to_O2, wait for it to be done, go next state
-                    state_initialized <= 1;
                     if (!state_initialized) begin
                         O12_start_resizing <= 1;
+                        state_initialized <= 1;
                     end else begin
                         if (O12_start_resizing) begin
                             O12_start_resizing <= 0;
@@ -441,9 +440,9 @@ module gaussian_pyramid #(
                     end
                 O2L2:
                     // Start O2Blur, wait for it to be done, go next state
-                    state_initialized <= 1;
                     if (!state_initialized) begin
                         O2_start_blurring <= 1;
+                        state_initialized <= 1;
                     end else begin
                         if (O2_start_blurring) begin
                             O2_start_blurring <= 0;
@@ -455,9 +454,9 @@ module gaussian_pyramid #(
                     end
                 O2L3:
                     // Start O2Blur, wait for it to be done, go next state
-                    state_initialized <= 1;
                     if (!state_initialized) begin
                         O2_start_blurring <= 1;
+                        state_initialized <= 1;
                     end else begin
                         if (O2_start_blurring) begin
                             O2_start_blurring <= 0;
@@ -469,9 +468,9 @@ module gaussian_pyramid #(
                     end
                 O3L1:
                     // Start O2_to_O3, wait for it to be done, go next state
-                    state_initialized <= 1;
                     if (!state_initialized) begin
                         O23_start_resizing <= 1;
+                        state_initialized <= 1;
                     end else begin
                         if (O23_start_resizing) begin
                             O23_start_resizing <= 0;
@@ -483,9 +482,9 @@ module gaussian_pyramid #(
                     end
                 O3L2:
                     // Start O3Blur, wait for it to be done, go next state
-                    state_initialized <= 1;
                     if (!state_initialized) begin
                         O3_start_blurring <= 1;
+                        state_initialized <= 1;
                     end else begin
                         if (O3_start_blurring) begin
                             O3_start_blurring <= 0;
@@ -497,9 +496,9 @@ module gaussian_pyramid #(
                     end
                 O3L3:
                     // Start O3Blur, wait for it to be done, go back to IDLE
-                    state_initialized <= 1;
                     if (!state_initialized) begin
                         O3_start_blurring <= 1;
+                        state_initialized <= 1;
                     end else begin
                         if (O3_start_blurring) begin
                             O3_start_blurring <= 0;
@@ -516,8 +515,8 @@ module gaussian_pyramid #(
 
     always_comb begin // connect correct BRAM inputs and outputs here based on state
         case (state)
-            IDLE:
-                // Nothing needs to be connected here
+            // IDLE:
+            //     // Nothing needs to be connected here
             O1L1:
                 // set O1Buffer1 write inputs and O1L1 write inputs to equal original BRAM read outputs
                 O1Buffer1_write_addr = ext_read_addr;
