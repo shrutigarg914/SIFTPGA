@@ -119,45 +119,60 @@ module top_level(
   );
   logic ready_for_dog;
 
-  logic dog_ready;
   logic dog_busy;
-  assign led[3] = dog_ready;
+  assign ready_for_dog = full_image_received & image_number;
   assign led[4] = ready_for_dog;
   logic signed [8:0] dog_out;
   // assign pixel_out = {dog_out[8], dog_out[7:1]};
-  assign ready_for_dog = full_image_received & image_number;
-  logic old_dog_busy;
-  assign dog_ready = old_dog_busy & ~dog_busy;
-  logic dog_was_here;
-  
+  logic start_dog;
+  logic dog_was_busy;
+  assign led[15] = dog_was_busy;
+  logic [2:0] dog_state_counter;
+
+  typedef enum {BUILDING=0, START=1, STARTED=2} dog_state;
+  dog_state dog_state_keeper;
   always_ff @(posedge clk_100mhz) begin
-    old_dog_busy <= dog_busy;
     if (sys_rst) begin
-      dog_edge <= 0;
-      dog_was_here <= 0;
-    end
-    if (dog_edge) begin
-      dog_was_here <= 1'b1;
+      dog_state_keeper <= BUILDING;
+      dog_was_busy <= 1'b0;
+      dog_state_counter <= 2'b00;
+    end else begin
+      case(dog_state_keeper)
+        BUILDING: if (ready_for_dog) begin
+          dog_state_counter <= dog_state_counter + 2'b01;
+          if (dog_state_counter==2'b11) begin
+            dog_state_keeper <= START;
+          end
+        end else begin
+          dog_state_counter <= 2'b00;
+        end
+        START: dog_state_keeper <= STARTED;
+        STARTED: dog_state_keeper <= STARTED;
+      endcase
+      if (dog_busy) begin
+        dog_was_busy <= 1'b1;
+      end
     end
   end
-  assign led[15] = dog_was_here;
-  assign led[14] = 1'b1;
+
+  assign start_dog = (dog_state_keeper==START);
+  assign led[14] = 1'b0;
   assign led[13] = btn[2];
+  assign led[10:9] = dog_state_keeper;
 
   dog #(.DIMENSION(DIMENSION)) builder (
     .clk(clk_100mhz),
     .rst_in(sys_rst),
-    .bram_ready(btn[2]),
+    .bram_ready(start_dog),
     .sharper_pix(img1_out),
     .fuzzier_pix(img2_out),
     .busy(dog_busy),
     .address(dog_address),
     .data_out(dog_out),
     .wea(dog_wea),
-    .state_num(dog_state)
+    .state_num(led[6:5])
   );
 
-  logic [1:0] dog_state;
   // assign led[6:5] = dog_state;
   // assign led[13:6] 
   logic dog_wea;

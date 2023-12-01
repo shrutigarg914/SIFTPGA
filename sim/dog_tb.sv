@@ -11,6 +11,7 @@ module dog_tb;
     logic signed [8:0] dog_out;
     logic [13:0] dog_address, write_address;
     logic [1:0] dog_state;
+    logic dog_wea;
 
     dog #(.DIMENSION(4)) builder (
     .clk(clk),
@@ -21,32 +22,33 @@ module dog_tb;
     .busy(dog_busy),
     .address(dog_address),
     .data_out(dog_out),
-    .state_num(dog_state)
+    .state_num(dog_state),
+    .wea(dog_wea)
   );
   logic weab;
   logic [7:0] write_data;
 
-    xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(8), // we expect 8 bit greyscale images
-    .RAM_DEPTH(4)) //we expect a 128*128 image with 16384 pixels total
-    rx_img (
-    .addra(write_address),
-    .clka(clk),
-    .wea(weab),
-    .dina(write_data),
-    .ena(1'b1),
-    .regcea(1'b1),
-    .rsta(sys_rst),
-    .douta(), //never read from this side
-    .addrb(dog_address),// transformed lookup pixel
-    .dinb(),
-    .clkb(clk),
-    .web(1'b0),
-    .enb(1'b1),
-    .rstb(sys_rst),
-    .regceb(1'b1),
-    .doutb(img1_out)
-  );
+  //   xilinx_true_dual_port_read_first_2_clock_ram #(
+  //   .RAM_WIDTH(8), // we expect 8 bit greyscale images
+  //   .RAM_DEPTH(4)) //we expect a 128*128 image with 16384 pixels total
+  //   rx_img (
+  //   .addra(write_address),
+  //   .clka(clk),
+  //   .wea(weab),
+  //   .dina(write_data),
+  //   .ena(1'b1),
+  //   .regcea(1'b1),
+  //   .rsta(sys_rst),
+  //   .douta(), //never read from this side
+  //   .addrb(dog_address),// transformed lookup pixel
+  //   .dinb(),
+  //   .clkb(clk),
+  //   .web(1'b0),
+  //   .enb(1'b1),
+  //   .rstb(sys_rst),
+  //   .regceb(1'b1),
+  //   .doutb(img1_out)
+  // );
 
     always begin
         #5;  // every 5 ns switch...so period of clock is 10 ns...100 MHz clock
