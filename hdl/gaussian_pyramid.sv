@@ -346,10 +346,74 @@ module gaussian_pyramid #(
     // States
     typedef enum {IDLE=0, O1L1=1, O1L2=2, O1L3=3, O2L1=4, O2L2=5, O2L3=6, O3L1=7, O3L2=8, O3L3=9} module_state;
 
+    module_state state;
+
+    initial begin
+        state = IDLE;
+    end
+
     always_ff @(posedge clk_in) begin
         if (rst_in) begin
+            state <= IDLE;
         end else begin
+            case (state)
+                IDLE:
+                    if (start_in) begin
+
+                    end
+                O1L1:
+                    // Read from original image BRAM by iterating through all addresses and reading
+                O1L2:
+                    // Start O1Blur, wait for it to be done, go next state
+                O1L3:
+                    // Start O1Blur, wait for it to be done, go next state
+                O2L1:
+                    // Start O1_to_O2, wait for it to be done, go next state
+                O2L2:
+                    // Start O2Blur, wait for it to be done, go next state
+                O2L3:
+                    // Start O2Blur, wait for it to be done, go next state
+                O3L1:
+                    // Start O2_to_O3, wait for it to be done, go next state
+                O3L2:
+                    // Start O3Blur, wait for it to be done, go next state
+                O3L3:
+                    // Start O3Blur, wait for it to be done, go back to IDLE
+            endcase
         end
+    end
+
+    always_comb begin // connect correct BRAM inputs and outputs here based on state
+        case (state)
+            IDLE:
+
+            O1L1:
+                // set O1Buffer1 write inputs and O1L1 write inputs to equal original BRAM read outputs
+            O1L2:
+                // Set O1Blur inputs to equal O1Buffer1 outputs
+                // Set O1Buffer2 write inputs and O1L2 write inputs to equal O1Blur read outputs
+            O1L3:
+                // Set O1Blur inputs to equal O1Buffer2 outputs
+                // Set O1Buffer1 write inputs and O1L3 write inputs to equal O1Blur read outputs
+            O2L1:
+                // Set O1_to_O2 inputs to equal O1Buffer1 write outputs
+                // Set O2Buffer1 write inputs and O2L1 write inputs to equal O1_to_O2 read outputs
+            O2L2:
+                // Set O2Blur inputs to equal O2Buffer1 outputs
+                // Set O2Buffer2 write inputs and O2L2 write inputs to equal O2Blur read outputs
+            O2L3:
+                // Set O2Blur inputs to equal O2Buffer2 outputs
+                // Set O2Buffer1 write inputs and O2L3 write inputs to equal O2Blur read outputs
+            O3L1:
+                // Set O2_to_O3 inputs to equal O2Buffer1 write outputs
+                // Set O3Buffer1 write inputs and O3L1 write inputs to equal O2_to_O3 read outputs
+            O3L2:
+                // Set O3Blur inputs to equal O3Buffer1 outputs
+                // Set O3Buffer2 write inputs and O3L2 write inputs to equal O3Blur read outputs
+            O3L3:
+                // Set O3Blur inputs to equal O3Buffer2 outputs
+                // Set O3Buffer1 write inputs and O3L3 write inputs to equal O3Blur read outputs
+        endcase
     end
 
 endmodule
