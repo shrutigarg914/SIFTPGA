@@ -4,42 +4,46 @@
 module blur_img #(
     parameter BIT_DEPTH = 8,
     parameter WIDTH = 64,
-    parameter HEIGHT = 64,
+    parameter HEIGHT = 64
     ) (
     input wire clk_in,
     input wire rst_in,
 
     // connect to BRAM that we are reading from
-    input wire [$clog2(WIDTH * HEIGHT)-1:0] ext_read_addr,
-    input wire ext_read_addr_valid,
+    output logic [$clog2(WIDTH * HEIGHT)-1:0] ext_read_addr,
+    output logic ext_read_addr_valid,
     input wire [BIT_DEPTH-1:0] ext_pixel_in,
 
     // connect to BRAM that we are writing to
-    input wire [$clog2(WIDTH * HEIGHT)-1:0] ext_write_addr,
-    input wire ext_write_valid,
-    input wire [BIT_DEPTH-1:0] ext_pixel_out,
+    output logic [$clog2(WIDTH * HEIGHT)-1:0] ext_write_addr,
+    output logic ext_write_valid,
+    output logic [BIT_DEPTH-1:0] ext_pixel_out,
 
     input wire start_in, // one clock cycle signal high when starting blur
-    output logic blur_done // one clock cycle signal high when finishing blur
+    output logic blur_done, // one clock cycle signal high when finishing blur
+
+    // temp outputs for tb
+    output logic blur_data_valid_out,
+    output logic [3:0] kernel_ind
     );
     
     logic [$clog2(WIDTH)-1:0] center_addr_x;
     logic [$clog2(HEIGHT)-1:0] center_addr_y;
     logic [$clog2(WIDTH)-1:0] center_addr_x_prev;
     logic [$clog2(HEIGHT)-1:0] center_addr_y_prev;
-    logic [3:0] kernel_ind;
+    // logic [3:0] kernel_ind;
     logic [3:0] kernel_ind_pipe [1:0];
     logic[BIT_DEPTH*3-1:0] row1;
     logic[BIT_DEPTH*3-1:0] row2;
     logic[BIT_DEPTH*3-1:0] row3;
     logic blur_data_valid_in;
     logic[BIT_DEPTH-1:0] blur_out;
-    logic blur_data_valid_out;
+    // logic blur_data_valid_out;
     logic busy;
 
     logic [1:0] ext_read_addr_valid_pipe;
     always_ff @(posedge clk_in) begin
-        ext_read_addr_valid_pipe[0] <= ext_read_addr;
+        ext_read_addr_valid_pipe[0] <= ext_read_addr_valid;
         ext_read_addr_valid_pipe[1] <= ext_read_addr_valid_pipe[0];
 
         kernel_ind_pipe[0] <= kernel_ind;
@@ -50,11 +54,9 @@ module blur_img #(
         center_addr_x = 0;
         center_addr_y = 0;
         blur_data_valid_in = 0;
-        blur_data_valid_out = 0;
         row1 = 0;
         row2 = 0;
         row3 = 0;
-        blur_out = 0;
         kernel_ind = 0;
         blur_done = 0;
         busy = 0;
@@ -76,6 +78,10 @@ module blur_img #(
         .busy_out()
     );
 
+    assign ext_write_addr = center_addr_x_prev + center_addr_y_prev * WIDTH;
+    assign ext_write_valid = blur_data_valid_out;
+    assign ext_pixel_out = blur_out;
+
     // 3 stage pipeline, collect rows, do blur, write to BRAM
     always_ff @(posedge clk_in) begin
       if (rst_in) begin
@@ -84,26 +90,31 @@ module blur_img #(
         center_addr_x_prev <= 0;
         center_addr_y_prev <= 0;
         blur_data_valid_in <= 0;
-        blur_data_valid_out <= 0;
         kernel_ind <= 0;
         blur_done <= 0;
         busy <= 0;
       end else begin
+        if (ext_read_addr_valid) begin
+            ext_read_addr_valid <= 0;
+        end
+        if (blur_data_valid_in) begin
+            blur_data_valid_in <= 0;
+        end
         if (busy || start_in) begin
             // we either just started the blurring part or we just finished reading the last pixel from the BRAM
-            if (read_pixel_addr_valid_pipe[1] || start_in) begin 
+            if (ext_read_addr_valid_pipe[1] || start_in) begin 
                 if (!start_in) begin
                     // write the previous read result to correct row
                     case (kernel_ind_pipe[1]) // use the index from when we started reading because we've changed it by now
-                        0: row1[BIT_DEPTH*3-1:BIT_DEPTH*2] <= pixel_out;
-                        1: row1[BIT_DEPTH*2-1:BIT_DEPTH] <= pixel_out;
-                        2: row1[BIT_DEPTH-1:0] <= pixel_out;
-                        3: row2[BIT_DEPTH*3-1:BIT_DEPTH*2] <= pixel_out;
-                        4: row2[BIT_DEPTH*2-1:BIT_DEPTH] <= pixel_out;
-                        5: row2[BIT_DEPTH-1:0] <= pixel_out;
-                        6: row3[BIT_DEPTH*3-1:BIT_DEPTH*2] <= pixel_out;
-                        7: row3[BIT_DEPTH*2-1:BIT_DEPTH] <= pixel_out;
-                        8: row3[BIT_DEPTH-1:0] <= pixel_out;
+                        0: row1[BIT_DEPTH*3-1:BIT_DEPTH*2] <= ext_pixel_in;
+                        1: row1[BIT_DEPTH*2-1:BIT_DEPTH] <= ext_pixel_in;
+                        2: row1[BIT_DEPTH-1:0] <= ext_pixel_in;
+                        3: row2[BIT_DEPTH*3-1:BIT_DEPTH*2] <= ext_pixel_in;
+                        4: row2[BIT_DEPTH*2-1:BIT_DEPTH] <= ext_pixel_in;
+                        5: row2[BIT_DEPTH-1:0] <= ext_pixel_in;
+                        6: row3[BIT_DEPTH*3-1:BIT_DEPTH*2] <= ext_pixel_in;
+                        7: row3[BIT_DEPTH*2-1:BIT_DEPTH] <= ext_pixel_in;
+                        8: row3[BIT_DEPTH-1:0] <= ext_pixel_in;
                     endcase
                 end else begin
                     busy <= 1;
@@ -112,34 +123,34 @@ module blur_img #(
                 // update read pixel addr based on current center and kernel_ind
                 case (kernel_ind)
                 0:
-                    read_pixel_addr <= ((center_addr_x == 0) ? center_addr_x : center_addr_x - 1) 
+                    ext_read_addr <= ((center_addr_x == 0) ? center_addr_x : center_addr_x - 1) 
                                         + ((center_addr_y == 0) ? center_addr_y : center_addr_y - 1) * WIDTH;
                 1:
-                    read_pixel_addr <= center_addr_x 
+                    ext_read_addr <= center_addr_x 
                                         + ((center_addr_y == 0) ? center_addr_y : center_addr_y - 1) * WIDTH;
                 2:
-                    read_pixel_addr <= ((center_addr_x == WIDTH - 1) ? center_addr_x : center_addr_x + 1) 
+                    ext_read_addr <= ((center_addr_x == WIDTH - 1) ? center_addr_x : center_addr_x + 1) 
                                         + ((center_addr_y == 0) ? center_addr_y : center_addr_y - 1) * WIDTH;
                 3:
-                    read_pixel_addr <= ((center_addr_x == 0) ? center_addr_x : center_addr_x - 1) 
+                    ext_read_addr <= ((center_addr_x == 0) ? center_addr_x : center_addr_x - 1) 
                                         + center_addr_y * WIDTH;
                 4:
-                    read_pixel_addr <= center_addr_x 
+                    ext_read_addr <= center_addr_x 
                                         + center_addr_y * WIDTH;
                 5:
-                    read_pixel_addr <= ((center_addr_x == WIDTH - 1) ? center_addr_x : center_addr_x + 1) 
+                    ext_read_addr <= ((center_addr_x == WIDTH - 1) ? center_addr_x : center_addr_x + 1) 
                                         + center_addr_y * WIDTH;
                 6:
-                    read_pixel_addr <= ((center_addr_x == 0) ? center_addr_x : center_addr_x - 1) 
+                    ext_read_addr <= ((center_addr_x == 0) ? center_addr_x : center_addr_x - 1) 
                                         + ((center_addr_y == HEIGHT - 1) ? center_addr_y : center_addr_y + 1) * WIDTH;
                 7:
-                    read_pixel_addr <= center_addr_x 
+                    ext_read_addr <= center_addr_x 
                                         + ((center_addr_y == HEIGHT - 1) ? center_addr_y : center_addr_y + 1) * WIDTH;
                 8:
-                    read_pixel_addr <= ((center_addr_x == WIDTH - 1) ? center_addr_x : center_addr_x + 1) 
+                    ext_read_addr <= ((center_addr_x == WIDTH - 1) ? center_addr_x : center_addr_x + 1) 
                                         + ((center_addr_y == HEIGHT - 1) ? center_addr_y : center_addr_y + 1) * WIDTH;
                 endcase
-                read_pixel_addr_valid <= 1;
+                ext_read_addr_valid <= 1;
 
                 // update kernel_ind
                 if (kernel_ind == 8) begin
