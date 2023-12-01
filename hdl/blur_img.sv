@@ -46,19 +46,6 @@ module blur_img #(
         kernel_ind_pipe[1] <= kernel_ind_pipe[0];
     end
 
-    initial begin
-        center_addr_x = 0;
-        center_addr_y = 0;
-        blur_data_valid_in = 0;
-        row1 = 0;
-        row2 = 0;
-        row3 = 0;
-        kernel_ind = 0;
-        blur_done = 0;
-        busy = 0;
-    end
-    
-
     gaussian #(
         .WIDTH(BIT_DEPTH))
         blur (
@@ -86,6 +73,9 @@ module blur_img #(
         center_addr_x_prev <= 0;
         center_addr_y_prev <= 0;
         blur_data_valid_in <= 0;
+        row1 <= 0;
+        row2 <= 0;
+        row3 <= 0;
         kernel_ind <= 0;
         blur_done <= 0;
         busy <= 0;

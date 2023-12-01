@@ -50,13 +50,14 @@ module top_level(
       );
     logic full_image_received;
     assign led[0] = full_image_received;
-    assign led[1] = blur_done;
+    assign led[1] = blur_done_latched;
 
     // if we have a valid_o, update pixel location for BRAM 
     always_ff @(posedge clk_100mhz) begin
       if (sys_rst) begin
         pixel_addr <= 0;
         full_image_received <= 1'b0;
+        blur_done_latched <= 0;
       end
       else if (valid_o_edge) begin
         // pixel <= data_o; I'm assuming that data doesn't need to be held

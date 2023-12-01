@@ -42,12 +42,6 @@ module top_level(
     logic [$clog2(32)*2-1:0] resize_out_addr;
     logic resize_out_valid;
 
-    initial begin
-        center_addr_x = 0;
-        center_addr_y = 0;
-        image_collect_done = 0;
-    end
-
     always_ff @(posedge clk_100mhz) begin
         if (sys_rst) begin
             center_addr_x <= 0;

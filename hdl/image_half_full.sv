@@ -37,21 +37,15 @@ module image_half_full #(
         ext_read_addr_valid_pipe[1] <= ext_read_addr_valid_pipe[0];
     end
 
-    initial begin
-        center_addr_x = 0;
-        center_addr_y = 0;
-        old_center_addr_x_used = 0;
-        old_center_addr_y_used = 0;
-        resize_done = 0;
-        busy = 0;
-    end
-
     assign ext_read_addr = center_addr_x + center_addr_y * OLD_WIDTH;
 
     always_ff @(posedge clk_in) begin
         if (rst_in) begin
             center_addr_x <= 0;
             center_addr_y <= 0;
+            old_center_addr_x_used <= 0;
+            old_center_addr_y_used <= 0;
+            resize_done <= 0;
             busy <= 0;
         end else begin
             if (ext_read_addr_valid) begin
