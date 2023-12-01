@@ -511,6 +511,9 @@ module gaussian_pyramid #(
         end
     end
 
+    logic ext_read_addr_valid_pipe_1;
+    assign ext_read_addr_valid_pipe_1 = ext_read_addr_valid_pipe[1];
+
     always_comb begin // connect correct BRAM inputs and outputs here based on state
         case (state)
             // IDLE:
@@ -519,11 +522,11 @@ module gaussian_pyramid #(
             begin
                 // set O1Buffer1 write inputs and O1L1 write inputs to equal original BRAM read outputs
                 O1Buffer1_write_addr = ext_read_addr;
-                O1Buffer1_write_valid = ext_read_addr_valid_pipe[1];
+                O1Buffer1_write_valid = ext_read_addr_valid_pipe;
                 O1Buffer1_pixel_in = ext_pixel_in;
                 
                 O1L1_write_addr = ext_read_addr;
-                O1L1_write_valid = ext_read_addr_valid_pipe[1];
+                O1L1_write_valid = ext_read_addr_valid_pipe;
                 O1L1_pixel_out = ext_pixel_in;
             end
             O1L2:
