@@ -28,8 +28,8 @@ module top_level(
     logic valid_o;
     logic valid_o_edge;
     logic old_valid_o;
-    logic start_blurring;
-    logic blur_done_latched;
+    logic start_resizing;
+    logic resize_done_latched;
 
     always_ff @(posedge clk_100mhz) begin
       if (valid_o==old_valid_o) begin
@@ -50,7 +50,7 @@ module top_level(
       );
     logic full_image_received;
     assign led[0] = full_image_received;
-    assign led[1] = blur_done;
+    assign led[1] = resize_done;
 
     // if we have a valid_o, update pixel location for BRAM 
     always_ff @(posedge clk_100mhz) begin
@@ -64,16 +64,16 @@ module top_level(
         pixel_addr <= pixel_addr + 1;
         if (pixel_addr== WIDTH*HEIGHT - 1) begin
           full_image_received <= 1'b1;
-          start_blurring <= 1'b1;
+          start_resizing <= 1'b1;
         end
       end
 
-      if (start_blurring) begin
-        start_blurring <= 0;
+      if (start_resizing) begin
+        start_resizing <= 0;
       end
 
-      if (blur_done) begin
-        blur_done_latched <= 1;
+      if (resize_done) begin
+        resize_done_latched <= 1;
       end
     end
 
@@ -104,17 +104,17 @@ module top_level(
     logic read_addr_valid;
     logic [BIT_DEPTH-1:0] pixel_in;
     
-    logic [$clog2(WIDTH * HEIGHT)-1:0] write_addr;
+    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] write_addr;
     logic write_valid;
     logic [BIT_DEPTH-1:0] pixel_out;
 
-    logic blur_done;
+    logic resize_done;
 
-    // the start blurred image BRAM
+    // the start resized image BRAM
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
-    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 16384 pixels total
-    blur_img (
+    .RAM_DEPTH(WIDTH/2*HEIGHT/2)) //we expect a 64*64 image with 16384 pixels total
+    resized_img (
         .addra(write_addr),
         .clka(clk_100mhz),
         .wea(write_valid),
@@ -123,34 +123,36 @@ module top_level(
         .regcea(1'b1),
         .rsta(sys_rst),
         .douta(), //never read from this side
-        .addrb(read_blur_addr),// transformed lookup pixel
+        .addrb(read_resized_addr),// transformed lookup pixel
         .dinb(),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(blur_stored_out)
+        .doutb(resized_stored_out)
     );
-    logic [$clog2(WIDTH * HEIGHT)-1:0] read_blur_addr;
-    logic [BIT_DEPTH-1:0] blur_stored_out;
+    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] read_resized_addr;
+    logic [BIT_DEPTH-1:0] resized_stored_out;
 
 
-    blur_img #(
+    image_half_full #(
         .BIT_DEPTH(BIT_DEPTH),
-        .WIDTH(WIDTH),
-        .HEIGHT(HEIGHT))
-    blur(.clk_in(clk_100mhz), .rst_in(sys_rst),
+        .OLD_WIDTH(WIDTH),
+        .OLD_HEIGHT(HEIGHT))
+    downsize (.clk_in(clk_100mhz), .rst_in(sys_rst),
                          .ext_read_addr(read_addr),
                          .ext_read_addr_valid(read_addr_valid),
                          .ext_pixel_in(pixel_in),
                          .ext_write_addr(write_addr),
                          .ext_write_valid(write_valid),
                          .ext_pixel_out(pixel_out), 
-                         .start_in(start_blurring),
-                         .blur_done(blur_done));
+                         .start_in(start_resizing),
+                         .resize_done(resize_done),
+                         .old_center_addr_x_used(),
+                         .old_center_addr_y_used());
 
-    // when btn[1] pressed if gaussian blur is done, send what's stored in the blur BRAM to the laptop
+    // when btn[1] pressed if resize is done, send what's stored in the resized BRAM to the laptop
     
     // button press detected by 
     logic btn_edge;
@@ -184,15 +186,16 @@ module top_level(
     send_img  tx_img (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
-      .img_ready(btn_edge && blur_done_latched),//full_image_received
+      .img_ready(btn_edge && resize_done_latched),//full_image_received
       .tx(uart_txd),//uart_txd
-      .data(blur_stored_out),
-      .address(read_blur_addr), // gets wired to the BRAM
+      .data(resized_stored_out),
+      .address(read_resized_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(tx_img_busy) //or we could do img_sent whichever makes more sense
     );
     logic tx_img_busy;
-
+  
+    assign led[13:2] = pixel_out;
     
 endmodule // top_level
 

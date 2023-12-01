@@ -96,6 +96,9 @@ module blur_img #(
         if (blur_data_valid_in) begin
             blur_data_valid_in <= 0;
         end
+        if (blur_done) begin
+            blur_done <= 0;
+        end
         if (busy || start_in) begin
             // we either just started the blurring part or we just finished reading the last pixel from the BRAM
             if (ext_read_addr_valid_pipe[1] || start_in) begin 

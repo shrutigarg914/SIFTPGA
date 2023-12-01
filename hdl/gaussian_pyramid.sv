@@ -1,292 +1,324 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-module gaussian_pyramid #(parameter WIDTH = 8) (
-                        input wire clk_in,
-                        input wire rst_in,
+// Assuming 3 Octaves, 3 images per octave
+module gaussian_pyramid #(
+                    parameter BIT_DEPTH = 8,
+                    parameter TOP_WIDTH = 64,
+                    parameter TOP_HEIGHT = 64
+                    ) (
+                    input wire clk_in,
+                    input wire rst_in,
 
-                        input logic[WIDTH-1:0] data_in,
-                        input logic[7:0] data_addr_in,
-                        input logic data_valid_in,
-                        input logic data_in_done,
+                    // inputs from original image BRAM
+                    output logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] ext_read_addr,
+                    output logic ext_read_addr_valid,
+                    input wire [BIT_DEPTH-1:0] ext_pixel_in,
 
-                        output logic[WIDTH-1:0] data_out,
-                        output logic[7:0] address_out,
-                        output logic data_valid_out,
+                    // all outputs to BRAMs
+                    // Octave 1
+                    output logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1L1_write_addr,
+                    output logic O1L1_write_valid,
+                    output logic [BIT_DEPTH-1:0] O1L1_pixel_out,
 
-                        output logic pyramid_done, // if we are done building the pyramid, stop increasing above addresses and stop writing to BRAM
+                    output logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1L2_write_addr,
+                    output logic O1L2_write_valid,
+                    output logic [BIT_DEPTH-1:0] O1L2_pixel_out,
+                    
+                    output logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1L3_write_addr,
+                    output logic O1L3_write_valid,
+                    output logic [BIT_DEPTH-1:0] O1L3_pixel_out,
+                    
+                    // Octave 2
+                    output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L1_write_addr,
+                    output logic O2L1_write_valid,
+                    output logic [BIT_DEPTH-1:0] O1L1_pixel_out,
 
-                        output logic error_out,
-                        output logic busy_out);
+                    output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L2_write_addr,
+                    output logic O2L2_write_valid,
+                    output logic [BIT_DEPTH-1:0] O2L2_pixel_out,
+                    
+                    output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L3_write_addr,
+                    output logic O2L3_write_valid,
+                    output logic [BIT_DEPTH-1:0] O2L3_pixel_out,
+                    
+                    // Octave 3
+                    output logic [$clog2(TOP_WIDTH / 4 * TOP_HEIGHT / 4)-1:0] O3L1_write_addr,
+                    output logic O3L1_write_valid,
+                    output logic [BIT_DEPTH-1:0] O3L1_pixel_out,
 
-  // shared info
-  parameter WIDTH = 128;
-  parameter HEIGHT = 128;
-  parameter BIT_DEPTH = 8;
-  logic [7:0] center_addr_x;
-  logic [7:0] center_addr_y;
-  logic [7:0] lookup_addr;
-  logic lookup_valid;
+                    output logic [$clog2(TOP_WIDTH / 4 * TOP_HEIGHT / 4)-1:0] O3L2_write_addr,
+                    output logic O3L2_write_valid,
+                    output logic [BIT_DEPTH-1:0] O3L2_pixel_out,
+                    
+                    output logic [$clog2(TOP_WIDTH / 4 * TOP_HEIGHT / 4)-1:0] O3L3_write_addr,
+                    output logic O3L3_write_valid,
+                    output logic [BIT_DEPTH-1:0] O3L3_pixel_out,
 
-  // TODO: Write logic for accepting data in and storing in first image BRAM
-  always_ff @(posedge clk_in) begin
-    if (rst_in) begin
-        active_half <= 0;
-    end else if (~data_in_done) begin
-        if (active_half) begin
-            active_half <= 0; // reset which side of BRAM we are using for each time we process a new image
-        end
-        if (data_valid_in) begin
+                    // start and done signals
+                    input wire start_in,
+                    output logic pyramid_done
+                    );
+    // NOTE: the naming scheme sucks but its pixel_out for writing OUT of the pyramid module,
+    // but pixel_in when writing IN to an intermediate BRAM
 
-        end
-    end
-  end
+    // 2 intermediate BRAMs per octave
+    // Octave 1
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(TOP_WIDTH*TOP_HEIGHT)) //we expect a 64*64 image with 16384 pixels total
+    O1Buffer1 (
+        .addra(O1Buffer1_write_addr),
+        .clka(clk_in),
+        .wea(O1Buffer1_write_valid),
+        .dina(O1Buffer1_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(rst_in),
+        .douta(), //never read from this side
+        .addrb(O1Buffer1_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_in),
+        .web(1'b0),
+        .enb(O1Buffer1_read_addr_valid),
+        .rstb(rst_in),
+        .regceb(1'b1),
+        .doutb(O1Buffer1_pixel_out)
+    );
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1Buffer1_write_addr;
+    logic O1Buffer1_write_valid;
+    logic [BIT_DEPTH-1:0] O1Buffer1_pixel_in;
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1Buffer1_read_addr;
+    logic O1Buffer1_read_addr_valid;
+    logic [BIT_DEPTH-1:0] O1Buffer1_pixel_out;
+    
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(TOP_WIDTH*TOP_HEIGHT)) //we expect a 64*64 image with 16384 pixels total
+    O1Buffer2 (
+        .addra(O1Buffer2_write_addr),
+        .clka(clk_in),
+        .wea(O1Buffer2_write_valid),
+        .dina(O1Buffer2_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(rst_in),
+        .douta(), //never read from this side
+        .addrb(O1Buffer2_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_in),
+        .web(1'b0),
+        .enb(O1Buffer2_read_addr_valid),
+        .rstb(rst_in),
+        .regceb(1'b1),
+        .doutb(O1Buffer2_pixel_out)
+    );
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1Buffer2_write_addr;
+    logic O1Buffer2_write_valid;
+    logic [BIT_DEPTH-1:0] O1Buffer2_pixel_in;
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1Buffer2_read_addr;
+    logic O1Buffer2_read_addr_valid;
+    logic [BIT_DEPTH-1:0] O1Buffer2_pixel_out;
+    
+    // Octave 2
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(TOP_WIDTH/2*TOP_HEIGHT/2)) //we expect a 64*64 image with 16384 pixels total
+    O2Buffer1 (
+        .addra(O2Buffer1_write_addr),
+        .clka(clk_in),
+        .wea(O2Buffer1_write_valid),
+        .dina(O2Buffer1_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(rst_in),
+        .douta(), //never read from this side
+        .addrb(O2Buffer1_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_in),
+        .web(1'b0),
+        .enb(O2Buffer1_read_addr_valid),
+        .rstb(rst_in),
+        .regceb(1'b1),
+        .doutb(O2Buffer1_pixel_out)
+    );
+    logic [$clog2(TOP_WIDTH/2 * TOP_HEIGHT/2)-1:0] O2Buffer1_write_addr;
+    logic O2Buffer1_write_valid;
+    logic [BIT_DEPTH-1:0] O2Buffer1_pixel_in;
+    logic [$clog2(TOP_WIDTH/2 * TOP_HEIGHT/2)-1:0] O2Buffer1_read_addr;
+    logic O2Buffer1_read_addr_valid;
+    logic [BIT_DEPTH-1:0] O2Buffer1_pixel_out;
+    
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(TOP_WIDTH/2*TOP_HEIGHT/2T)) //we expect a 64*64 image with 16384 pixels total
+    O2Buffer2 (
+        .addra(O2Buffer2_write_addr),
+        .clka(clk_in),
+        .wea(O2Buffer2_write_valid),
+        .dina(O2Buffer2_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(rst_in),
+        .douta(), //never read from this side
+        .addrb(O2Buffer2_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_in),
+        .web(1'b0),
+        .enb(O2Buffer2_read_addr_valid),
+        .rstb(rst_in),
+        .regceb(1'b1),
+        .doutb(O2Buffer2_pixel_out)
+    );
+    logic [$clog2(TOP_WIDTH/2 * TOP_HEIGHT/2)-1:0] O2Buffer2_write_addr;
+    logic O2Buffer2_write_valid;
+    logic [BIT_DEPTH-1:0] O2Buffer2_pixel_in;
+    logic [$clog2(TOP_WIDTH/2 * TOP_HEIGHT/2)-1:0] O2Buffer2_read_addr;
+    logic O2Buffer2_read_addr_valid;
+    logic [BIT_DEPTH-1:0] O2Buffer2_pixel_out;
+    
+    // Octave 3
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(TOP_WIDTH/4*TOP_HEIGHT/4)) //we expect a 64*64 image with 16384 pixels total
+    O3Buffer1 (
+        .addra(O3Buffer1_write_addr),
+        .clka(clk_in),
+        .wea(O3Buffer1_write_valid),
+        .dina(O3Buffer1_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(rst_in),
+        .douta(), //never read from this side
+        .addrb(O3Buffer1_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_in),
+        .web(1'b0),
+        .enb(O3Buffer1_read_addr_valid),
+        .rstb(rst_in),
+        .regceb(1'b1),
+        .doutb(O3Buffer1_pixel_out)
+    );
+    logic [$clog2(TOP_WIDTH/4 * TOP_HEIGHT/4)-1:0] O3Buffer1_write_addr;
+    logic O3Buffer1_write_valid;
+    logic [BIT_DEPTH-1:0] O3Buffer1_pixel_in;
+    logic [$clog2(TOP_WIDTH/4 * TOP_HEIGHT/4)-1:0] O3Buffer1_read_addr;
+    logic O3Buffer1_read_addr_valid;
+    logic [BIT_DEPTH-1:0] O3Buffer1_pixel_out;
+    
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(TOP_WIDTH/4*TOP_HEIGHT/4)) //we expect a 64*64 image with 16384 pixels total
+    O3Buffer2 (
+        .addra(O3Buffer2_write_addr),
+        .clka(clk_in),
+        .wea(O3Buffer2_write_valid),
+        .dina(O3Buffer2_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(rst_in),
+        .douta(), //never read from this side
+        .addrb(O3Buffer2_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_in),
+        .web(1'b0),
+        .enb(O3Buffer2_read_addr_valid),
+        .rstb(rst_in),
+        .regceb(1'b1),
+        .doutb(O3Buffer2_pixel_out)
+    );
+    logic [$clog2(TOP_WIDTH/4 * TOP_HEIGHT/4)-1:0] O3Buffer2_write_addr;
+    logic O3Buffer2_write_valid;
+    logic [BIT_DEPTH-1:0] O3Buffer2_pixel_in;
+    logic [$clog2(TOP_WIDTH/4 * TOP_HEIGHT/4)-1:0] O3Buffer2_read_addr;
+    logic O3Buffer2_read_addr_valid;
+    logic [BIT_DEPTH-1:0] O3Buffer2_pixel_out;
 
-  // BRAMS to hold reference images at each level
-  logic data_valid_in_0;
-  logic [BIT_DEPTH:0] pixel_in_0;
-  logic [BIT_DEPTH:0] pixel_out_0; // pixel out from original image
+    // Submodules (blur_img, image resize)
+    blur_img #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(TOP_WIDTH),
+        .HEIGHT(TOP_HEIGHT))
+    O1_blur(.clk_in(clk_in), .rst_in(rst_in),
+            .ext_read_addr(read_addr),
+            .ext_read_addr_valid(read_addr_valid),
+            .ext_pixel_in(pixel_in),
+            .ext_write_addr(O1_blur_write_addr),
+            .ext_write_valid(O1_blur_write_valid),
+            .ext_pixel_out(O1_blur_pixel_out), 
+            .start_in(start_blurring),
+            .blur_done(blur_done));
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1_blur_write_addr;
+    logic O1_blur_write_valid;
+    logic [BIT_DEPTH-1:0] O1_blur_pixel_out; // for writing to bram
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1_blur_read_addr;
+    logic O1_blur_read_addr_valid;
+    logic [BIT_DEPTH-1:0] O1_blur_pixel_in; // for reading from bram
+    
+    blur_img #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(TOP_WIDTH),
+        .HEIGHT(TOP_HEIGHT))
+    O2_blur(.clk_in(clk_in), .rst_in(rst_in),
+            .ext_read_addr(read_addr),
+            .ext_read_addr_valid(read_addr_valid),
+            .ext_pixel_in(pixel_in),
+            .ext_write_addr(O2_blur_write_addr),
+            .ext_write_valid(O2_blur_write_valid),
+            .ext_pixel_out(O2_blur_pixel_out), 
+            .start_in(start_blurring),
+            .blur_done(blur_done));
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O2_blur_write_addr;
+    logic O2_blur_write_valid;
+    logic [BIT_DEPTH-1:0] O2_blur_pixel_out; // for writing to bram
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O2_blur_read_addr;
+    logic O2_blur_read_addr_valid;
+    logic [BIT_DEPTH-1:0] O2_blur_pixel_in; // for reading from bram
+    
+    blur_img #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(TOP_WIDTH),
+        .HEIGHT(TOP_HEIGHT))
+    O3_blur(.clk_in(clk_in), .rst_in(rst_in),
+            .ext_read_addr(read_addr),
+            .ext_read_addr_valid(read_addr_valid),
+            .ext_pixel_in(pixel_in),
+            .ext_write_addr(O3_blur_write_addr),
+            .ext_write_valid(O3_blur_write_valid),
+            .ext_pixel_out(O3_blur_pixel_out), 
+            .start_in(start_blurring),
+            .blur_done(blur_done));
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O3_blur_write_addr;
+    logic O3_blur_write_valid;
+    logic [BIT_DEPTH-1:0] O3_blur_pixel_out; // for writing to bram
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O3_blur_read_addr;
+    logic O3_blur_read_addr_valid;
+    logic [BIT_DEPTH-1:0] O3_blur_pixel_in; // for reading from bram
 
-  //two-port BRAM used to hold images on first octave
-  // Two halves will hold two separate images so we can write new blurred images while
-  // still using old blurred image for gaussian blur
-  xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
-    .RAM_DEPTH(WIDTH*HEIGHT*2)) //there are WIDTH*HEIGHT entries for full frame
-    frame_buffer_0 (
-    .addra(center_addr_x + center_addr_y * HEIGHT),
-    .clka(clk_in),
-    .wea(data_valid_in_0),
-    .dina(pixel_in0),
-    .ena(1'b1),
-    .regcea(1'b1),
-    .rsta(rst_in),
-    .douta(), //never read from this side
-    .addrb(lookup_addr), // lookup pixel
-    .dinb(16'b0),
-    .clkb(clk_in),
-    .web(1'b0),
-    .enb(lookup_valid),
-    .rstb(rst_in),
-    .regceb(1'b1),
-    .doutb(pixel_out_0)
-  );
+    image_half #(.BIT_DEPTH(BIT_DEPTH),
+                 .NEW_WIDTH(TOP_WIDTH / 2))
+        O1_to_O2(
+            .clk_in(clk_in),
+            .rst_in(sys_rst),
+            .data_in(rx_data),
+            .data_x_in(center_addr_x),
+            .data_y_in(center_addr_y),
+            .data_valid_in(valid_o),
+            .data_out(resize_out),
+            .data_addr_out(resize_out_addr),
+            .data_valid_out(resize_out_valid),
+            .done_out()
+    );
 
-  logic data_valid_in_1;
-  logic [BIT_DEPTH:0] pixel_in_1;
-  logic [BIT_DEPTH:0] pixel_out_1; // pixel out from first downsized image
-  //two-port BRAM used to hold images on the second octave
-  xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
-    .RAM_DEPTH((WIDTH / 2) * (HEIGHT / 2) * 2))
-    frame_buffer_1 (
-    .addra(center_addr_x + center_addr_y * HEIGHT / 2),
-    .clka(clk_in),
-    .wea(data_valid_in_1),
-    .dina(pixel_in_1),
-    .ena(1'b1),
-    .regcea(1'b1),
-    .rsta(rst_in),
-    .douta(), //never read from this side
-    .addrb(lookup_addr), // lookup pixel
-    .dinb(16'b0),
-    .clkb(clk_in),
-    .web(1'b0),
-    .enb(lookup_valid),
-    .rstb(rst_in),
-    .regceb(1'b1),
-    .doutb(pixel_out_1)
-  );
+    // States
+    typedef enum {IDLE=0, O1L1=1, O1L2=2, O1L3=3, O2L1=4, O2L2=5, O2L3=6, O3L1=7, O3L2=8, O3L3=9} module_state;
 
-  logic data_valid_in_2;
-  logic [BIT_DEPTH:0] pixel_in_2;
-  logic [BIT_DEPTH:0] pixel_out_2; // pixel out from second downsized image
-  //two-port BRAM used to hold images on the third octave
-  xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
-    .RAM_DEPTH((WIDTH / 4) * (HEIGHT / 4) * 2))
-    frame_buffer_2 (
-    .addra(center_addr_x + center_addr_y * HEIGHT / 4),
-    .clka(clk_in),
-    .wea(data_valid_in_2),
-    .dina(pixel_in_2),
-    .ena(1'b1),
-    .regcea(1'b1),
-    .rsta(rst_in),
-    .douta(), //never read from this side
-    .addrb(lookup_addr), // lookup pixel
-    .dinb(16'b0),
-    .clkb(clk_in),
-    .web(1'b0),
-    .enb(lookup_valid),
-    .rstb(rst_in),
-    .regceb(1'b1),
-    .doutb(pixel_out_2)
-  );
-
-  logic data_valid_in_3;
-  logic [BIT_DEPTH:0] pixel_in_3;
-  logic [BIT_DEPTH:0] pixel_out_3; // pixel out from third downsized image
-  //two-port BRAM used to hold images on the 4th octave
-  xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(BIT_DEPTH), //each entry in this memory is BIT_DEPTH bits
-    .RAM_DEPTH((WIDTH / 8) * (HEIGHT / 8) * 2))
-    frame_buffer_3 (
-    .addra(center_addr_x + center_addr_y * HEIGHT / 8),
-    .clka(clk_in),
-    .wea(data_valid_in_3),
-    .dina(pixel_in_3),
-    .ena(1'b1),
-    .regcea(1'b1),
-    .rsta(rst_in),
-    .douta(), //never read from this side
-    .addrb(lookup_addr), // lookup pixel
-    .dinb(16'b0),
-    .clkb(clk_in),
-    .web(1'b0),
-    .enb(lookup_valid),
-    .rstb(rst_in),
-    .regceb(1'b1),
-    .doutb(pixel_out_3)
-  );
-
-  // Gaussian Blur STAGE 2
-  logic[BIT_DEPTH*3-1:0] row1;
-  logic[BIT_DEPTH*3-1:0] row2;
-  logic[BIT_DEPTH*3-1:0] row3;
-  logic blur_data_valid_in;
-  logic[BIT_DEPTH-1:0] blur_out;
-  logic blur_data_valid_out;
-  logic blur_busy;
-
-  gaussian #(
-      .WIDTH(BIT_DEPTH))
-    blur (
-    .clk_in(clk_in),
-    .rst_in(rst_in),
-    .r0_data_in(row1),
-    .r1_data_in(row2),
-    .r2_data_in(row3),
-    .data_valid_in(blur_data_valid_in),
-    .data_out(blur_out),
-    .data_valid_out(blur_data_valid_out),
-    .error_out(),
-    .busy_out()
-  );
-
-  // Locating pyramid address STAGE 3
-  logic [2:0] pyramid_level; // layer in gaussian pyramid
-  logic [2:0] blur_level; // horizontal location of current image in gaussian pyramid
-  logic pyramid_location_ready;
-
-  // Gathering kernel data STAGE 1
-  logic active_half; // 0 for currently using first half as old image, second half to store new image, 1 for opposite
-  logic kernel_data_ready;
-  logic [1:0] kernel_x;
-  logic [1:0] kernel_y;
-
-  logic kernel_x_intermediate;
-  logic kernel_y_intermediate;
-  logic height_intermediate;
-
-  // get lookup address
-  always_comb begin
-    // saturate edges
-    if (center_addr_x == 0 && kernel_x == 0) begin
-      kernel_x_intermediate = center_addr_x;
-    end
-    if (center_addr_x == WIDTH-1 && kernel_x == 2) begin
-      kernel_x_intermediate = center_addr_x;
-    end
-    if (center_addr_y == 0 && kernel_y == 0) begin
-      kernel_y_intermediate = center_addr_y;
-    end
-    if (center_addr_y == WIDTH-1 && kernel_y == 2) begin
-      kernel_y_intermediate = center_addr_y;
-    end
-
-    // Get image height at current octave
-    case (pyramid_level)
-      0: height_intermediate = HEIGHT;
-      1: height_intermediate = HEIGHT / 2;
-      2: height_intermediate = HEIGHT / 4;
-      3: height_intermediate = HEIGHT / 8;
-    endcase
-
-    lookup_addr = kernel_x_intermediate + kernel_y_intermediate * height_intermediate;
-  end
-
-  // TODO: Figure out how to signal collecting kernel pixels from BRAM, to waiting for blur module + storing result, to increasing center addr
-  // Notes: Need to read 9 pixels, one at a time from BRAM (which takes 2 cycles each) to gather all kernel data
-  // Blur module takes 4 cycles
-  // Increasing the center address may take up to 4 cycles
-  // Up to some amount of time for image resizing on each inc pyramid level
-  // In total, should pipeline this so that each pixel of the pyramid takes 9*2=18 cycles?
-
-  always_ff @(posedge clk_in) begin
-    if (rst_in) begin
-      center_addr_x <= 0;
-      center_addr_y <= 0;
-      blur_level <= 0;
-      pyramid_level <= 0;
-      pyramid_done <= 0;
-    end else if (data_in_done) begin
-      // Collect Kernel Pixels (stage 1)
-      if (pyramid_location_ready) begin // TODO: Add check that uart collection BRAM is ready
-
-        // read out of right BRAM
-        case (pyramid_level)
-          0:
-            
-          1:
-
-          2:
-
-          3:
-        endcase
-      end
-
-      // Start blur module (stage 2)
-      if (kernel_data_ready) begin
-        blur_data_valid_in <= 1;
-      end
-      if (blur_data_valid_in) begin
-        blur_data_valid_in <= 0; // Reset after signaling
-      end
-
-      // TODO: SAVE OUTPUT TO PYRAMID
-
-      // TODO: Simultaneously output blurred pixels to pyramid and save back to BRAM to use for next blurred image
-
-      // TODO: Add downsizing (cries)
-
-      // Increase center addr (stage 3)
-      if (blur_data_valid_out) begin
-        if (center_addr_x < WIDTH) begin // Inc X
-          center_addr_x <= center_addr_x + 1;
+    always_ff @(posedge clk_in) begin
+        if (rst_in) begin
         end else begin
-          center_addr_x <= 0;
-          if (center_addr_y < HEIGHT) begin // Inc Y
-            center_addr_y <= center_addr_y + 1;
-          end else begin
-            center_addr_y <= 0;
-            if (blur_level < 4) begin // Inc blur level
-              blur_level <= blur_level + 1;
-            end else begin
-              blur_level <= 0;
-              if (pyramid_level < 4) begin  // Inc pyramid level
-                pyramid_level <= pyramid_level + 1;
-              end else begin
-                pyramid_level <= 0;
-                pyramid_done <= 1;
-              end
-            end
-          end
         end
-      end
-
     end
-  end
+
 endmodule
 
 `default_nettype wire
