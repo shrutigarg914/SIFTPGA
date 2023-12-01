@@ -136,7 +136,9 @@ module top_level(
       dog_state_keeper <= BUILDING;
       dog_was_busy <= 1'b0;
       dog_state_counter <= 2'b00;
-    end else begin
+    end else begin// this little state machine exists because there's one cycle where ready for dog is high
+    // erroneously because full_image_received gets reset after image_number changes F
+    // TODO (sgrg):  handle this more elegantly in actual top level but
       case(dog_state_keeper)
         BUILDING: if (ready_for_dog) begin
           dog_state_counter <= dog_state_counter + 2'b01;
