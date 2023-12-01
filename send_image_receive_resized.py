@@ -53,7 +53,7 @@ if __name__ == "__main__":
             # char = bytes(input("send: "), 'ascii')
             # print(struct.pack('B', 3))
             # print(pixels[packets_sent])
-            s.write(struct.pack('B', pixels[packets_sent]))
+            s.write(struct.pack('B', pixels_two[packets_sent]))
             # print(".", end='', flush=True)
             packets_sent +=1
         print("DONE SENDING!")

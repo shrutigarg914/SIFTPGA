@@ -63,6 +63,7 @@ module dog #(parameter DIMENSION) (
         end
         WRITE: if (~write) begin
           write <= 1'b1;
+          // data_out <= fuzzier_pix;
           data_out <= sharp_sign - fuzz_sign;
           wea<= 1'b1;
         end else begin
