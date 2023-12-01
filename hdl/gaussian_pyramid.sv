@@ -155,7 +155,7 @@ module gaussian_pyramid #(parameter WIDTH = 8) (
   logic[BIT_DEPTH*3-1:0] row2;
   logic[BIT_DEPTH*3-1:0] row3;
   logic blur_data_valid_in;
-  logic blur_out;
+  logic[BIT_DEPTH-1:0] blur_out;
   logic blur_data_valid_out;
   logic blur_busy;
 
