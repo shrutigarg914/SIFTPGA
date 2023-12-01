@@ -318,10 +318,10 @@ module gaussian_pyramid #(
                          .old_center_addr_y_used());
     logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1_resize_read_addr;
     logic O1_resize_read_addr_valid;
-    logic O1_resize_pixel_in; // the value we read from upper layer
+    logic [BIT_DEPTH-1:0] O1_resize_pixel_in; // the value we read from upper layer
     logic [$clog2(TOP_WIDTH/2 * TOP_HEIGHT/2)-1:0] O2_resize_write_addr;
     logic O2_resize_write_addr_valid;
-    logic O2_resize_pixel_out; // the value we write to lower layer
+    logic [BIT_DEPTH-1:0] O2_resize_pixel_out; // the value we write to lower layer
     logic O12_start_resizing;
     logic O12_resize_done;
 
@@ -342,10 +342,10 @@ module gaussian_pyramid #(
                          .old_center_addr_y_used());
     logic [$clog2(TOP_WIDTH/2 * TOP_HEIGHT/2)-1:0] O2_resize_read_addr;
     logic O2_resize_read_addr_valid;
-    logic O2_resize_pixel_in; // the value we read from upper layer
+    logic [BIT_DEPTH-1:0] O2_resize_pixel_in; // the value we read from upper layer
     logic [$clog2(TOP_WIDTH/4 * TOP_HEIGHT/4)-1:0] O3_resize_write_addr;
     logic O3_resize_write_addr_valid;
-    logic O3_resize_pixel_out; // the value we write to lower layer
+    logic [BIT_DEPTH-1:0] O3_resize_pixel_out; // the value we write to lower layer
     logic O23_start_resizing;
     logic O23_resize_done;
 
@@ -362,8 +362,6 @@ module gaussian_pyramid #(
         state_initialized = 0;
     end
 
-    logic ext_read_addr_valid;
-    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] ext_read_addr;
     logic [1:0] ext_read_addr_valid_pipe;
     always_ff @(posedge clk_in) begin
         ext_read_addr_valid_pipe[0] <= ext_read_addr_valid;
@@ -531,8 +529,8 @@ module gaussian_pyramid #(
             O1L2:
             begin
                 // Set O1Blur read inputs to equal O1Buffer1 outputs
-                O1_blur_read_addr = O1Buffer1_read_addr;
-                O1_blur_read_addr_valid = O1Buffer1_read_addr_valid;
+                O1Buffer1_read_addr = O1_blur_read_addr;
+                O1Buffer1_read_addr_valid = O1_blur_read_addr_valid;
                 O1_blur_pixel_in = O1Buffer1_pixel_out;
 
                 // Set O1Buffer2 write inputs and O1L2 write inputs to equal O1Blur write outputs
@@ -547,8 +545,8 @@ module gaussian_pyramid #(
             O1L3:
             begin
                 // Set O1Blur read inputs to equal O1Buffer2 outputs
-                O1_blur_read_addr = O1Buffer2_read_addr;
-                O1_blur_read_addr_valid = O1Buffer2_read_addr_valid;
+                O1Buffer2_read_addr = O1_blur_read_addr;
+                O1Buffer2_read_addr_valid = O1_blur_read_addr_valid;
                 O1_blur_pixel_in = O1Buffer2_pixel_out;
 
                 // Set O1Buffer1 write inputs and O1L3 write inputs to equal O1Blur write outputs
@@ -563,8 +561,8 @@ module gaussian_pyramid #(
             O2L1:
             begin
                 // Set O1_to_O2 read inputs to equal O1Buffer1 write outputs
-                O1_resize_read_addr = O1Buffer1_read_addr;
-                O1_resize_read_addr_valid = O1Buffer1_read_addr_valid;
+                O1Buffer1_read_addr = O1_resize_read_addr;
+                O1Buffer1_read_addr_valid = O1_resize_read_addr_valid;
                 O1_resize_pixel_in = O1Buffer1_pixel_out;
 
                 // Set O2Buffer1 write inputs and O2L1 write inputs to equal O1_to_O2 write outputs
@@ -579,8 +577,8 @@ module gaussian_pyramid #(
             O2L2:
             begin
                 // Set O2Blur read inputs to equal O2Buffer1 outputs
-                O2_blur_read_addr = O2Buffer1_read_addr;
-                O2_blur_read_addr_valid = O2Buffer1_read_addr_valid;
+                O2Buffer1_read_addr = O2_blur_read_addr;
+                O2Buffer1_read_addr_valid = O2_blur_read_addr_valid;
                 O2_blur_pixel_in = O2Buffer1_pixel_out;
 
                 // Set O2Buffer2 write inputs and O2L2 write inputs to equal O2Blur write outputs
@@ -595,8 +593,8 @@ module gaussian_pyramid #(
             O2L3:
             begin
                 // Set O2Blur read inputs to equal O2Buffer2 outputs
-                O2_blur_read_addr = O2Buffer2_read_addr;
-                O2_blur_read_addr_valid = O2Buffer2_read_addr_valid;
+                O2Buffer2_read_addr = O2_blur_read_addr;
+                O2Buffer2_read_addr_valid = O2_blur_read_addr_valid;
                 O2_blur_pixel_in = O2Buffer2_pixel_out;
 
                 // Set O2Buffer1 write inputs and O2L3 write inputs to equal O2Blur write outputs
@@ -611,8 +609,8 @@ module gaussian_pyramid #(
             O3L1:
             begin
                 // Set O2_to_O3 read inputs to equal O2Buffer1 write outputs
-                O2_resize_read_addr = O2Buffer1_read_addr;
-                O2_resize_read_addr_valid = O2Buffer1_read_addr_valid;
+                O2Buffer1_read_addr = O2_resize_read_addr;
+                O2Buffer1_read_addr_valid = O2_resize_read_addr_valid;
                 O2_resize_pixel_in = O2Buffer1_pixel_out;
 
                 // Set O3Buffer1 write inputs and O3L1 write inputs to equal O2_to_O3 write outputs
@@ -627,8 +625,8 @@ module gaussian_pyramid #(
             O3L2:
             begin
                 // Set O3Blur read inputs to equal O3Buffer1 outputs
-                O3_blur_read_addr = O3Buffer1_read_addr;
-                O3_blur_read_addr_valid = O3Buffer1_read_addr_valid;
+                O3Buffer1_read_addr = O3_blur_read_addr;
+                O3Buffer1_read_addr_valid = O3_blur_read_addr_valid;
                 O3_blur_pixel_in = O3Buffer1_pixel_out;
 
                 // Set O3Buffer2 write inputs and O3L2 write inputs to equal O3Blur write outputs
@@ -643,8 +641,8 @@ module gaussian_pyramid #(
             O3L3:
             begin
                 // Set O3Blur read inputs to equal O3Buffer2 outputs
-                O3_blur_read_addr = O3Buffer2_read_addr;
-                O3_blur_read_addr_valid = O3Buffer2_read_addr_valid;
+                O3Buffer2_read_addr = O3_blur_read_addr;
+                O3Buffer2_read_addr_valid = O3_blur_read_addr_valid;
                 O3_blur_pixel_in = O3Buffer2_pixel_out;
 
                 // Set O3Buffer1 write inputs and O3L3 write inputs to equal O3Blur write outputs
