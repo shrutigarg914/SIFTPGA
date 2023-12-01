@@ -240,60 +240,66 @@ module gaussian_pyramid #(
         .WIDTH(TOP_WIDTH),
         .HEIGHT(TOP_HEIGHT))
     O1_blur(.clk_in(clk_in), .rst_in(rst_in),
-            .ext_read_addr(read_addr),
-            .ext_read_addr_valid(read_addr_valid),
-            .ext_pixel_in(pixel_in),
+            .ext_read_addr(O1_blur_read_addr),
+            .ext_read_addr_valid(O1_blur_read_addr_valid),
+            .ext_pixel_in(O1_blur_pixel_in),
             .ext_write_addr(O1_blur_write_addr),
             .ext_write_valid(O1_blur_write_valid),
             .ext_pixel_out(O1_blur_pixel_out), 
-            .start_in(start_blurring),
-            .blur_done(blur_done));
+            .start_in(O1_start_blurring),
+            .blur_done(O1_blur_done));
     logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1_blur_write_addr;
     logic O1_blur_write_valid;
     logic [BIT_DEPTH-1:0] O1_blur_pixel_out; // for writing to bram
     logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1_blur_read_addr;
     logic O1_blur_read_addr_valid;
     logic [BIT_DEPTH-1:0] O1_blur_pixel_in; // for reading from bram
+    logic O1_start_blurring;
+    logic O1_blur_done;
     
     blur_img #(
         .BIT_DEPTH(BIT_DEPTH),
         .WIDTH(TOP_WIDTH/2),
         .HEIGHT(TOP_HEIGHT/2))
     O2_blur(.clk_in(clk_in), .rst_in(rst_in),
-            .ext_read_addr(read_addr),
-            .ext_read_addr_valid(read_addr_valid),
-            .ext_pixel_in(pixel_in),
+            .ext_read_addr(O2_blur_read_addr),
+            .ext_read_addr_valid(O2_blur_read_addr_valid),
+            .ext_pixel_in(O2_blur_pixel_in),
             .ext_write_addr(O2_blur_write_addr),
             .ext_write_valid(O2_blur_write_valid),
             .ext_pixel_out(O2_blur_pixel_out), 
-            .start_in(start_blurring),
-            .blur_done(blur_done));
+            .start_in(O2_start_blurring),
+            .blur_done(O2_blur_done));
     logic [$clog2(TOP_WIDTH/2 * TOP_HEIGHT/2)-1:0] O2_blur_write_addr;
     logic O2_blur_write_valid;
     logic [BIT_DEPTH-1:0] O2_blur_pixel_out; // for writing to bram
     logic [$clog2(TOP_WIDTH/2 * TOP_HEIGHT/2)-1:0] O2_blur_read_addr;
     logic O2_blur_read_addr_valid;
     logic [BIT_DEPTH-1:0] O2_blur_pixel_in; // for reading from bram
+    logic O2_start_blurring;
+    logic O2_blur_done;
     
     blur_img #(
         .BIT_DEPTH(BIT_DEPTH),
         .WIDTH(TOP_WIDTH/4),
         .HEIGHT(TOP_HEIGHT/4))
     O3_blur(.clk_in(clk_in), .rst_in(rst_in),
-            .ext_read_addr(read_addr),
-            .ext_read_addr_valid(read_addr_valid),
-            .ext_pixel_in(pixel_in),
+            .ext_read_addr(O3_blur_read_addr),
+            .ext_read_addr_valid(O3_blur_read_addr_valid),
+            .ext_pixel_in(O3_blur_pixel_in),
             .ext_write_addr(O3_blur_write_addr),
             .ext_write_valid(O3_blur_write_valid),
             .ext_pixel_out(O3_blur_pixel_out), 
-            .start_in(start_blurring),
-            .blur_done(blur_done));
+            .start_in(O3_start_blurring),
+            .blur_done(O3_blur_done));
     logic [$clog2(TOP_WIDTH/4 * TOP_HEIGHT/4)-1:0] O3_blur_write_addr;
     logic O3_blur_write_valid;
     logic [BIT_DEPTH-1:0] O3_blur_pixel_out; // for writing to bram
     logic [$clog2(TOP_WIDTH/4 * TOP_HEIGHT/4)-1:0] O3_blur_read_addr;
     logic O3_blur_read_addr_valid;
     logic [BIT_DEPTH-1:0] O3_blur_pixel_in; // for reading from bram
+    logic O3_start_blurring;
+    logic O3_blur_done;
 
     image_half_full #(
         .BIT_DEPTH(BIT_DEPTH),
@@ -350,35 +356,156 @@ module gaussian_pyramid #(
 
     initial begin
         state = IDLE;
+        start_read_original = 0;
+        ext_read_addr = 0;
+        ext_read_addr_valid = 0;
+        state_initialized = 0;
     end
+
+    logic ext_read_addr_valid;
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] ext_read_addr;
+    logic [1:0] ext_read_addr_valid_pipe;
+    always_ff @(posedge clk_in) begin
+        ext_read_addr_valid_pipe[0] <= ext_read_addr_valid;
+        ext_read_addr_valid_pipe[1] <= ext_read_addr_valid_pipe[0];
+    end
+    logic start_read_original;
+    logic state_initialized;
 
     always_ff @(posedge clk_in) begin
         if (rst_in) begin
             state <= IDLE;
+            start_read_original <= 0;
+            state_initialized <= 0;
         end else begin
             case (state)
                 IDLE:
                     if (start_in) begin
-
+                        state <= O1L1;
+                        start_read_original <= 1;
                     end
                 O1L1:
                     // Read from original image BRAM by iterating through all addresses and reading
+                    state_initialized <= 1;
+                    if (ext_read_addr_valid_pipe[1] || start_read_original) begin
+                        ext_read_addr <= ext_read_addr + 1;
+                        if (ext_read_addr== TOP_WIDTH * TOP_HEIGHT - 1) begin
+                            state <= O1L2;
+                            state_initialized <= 0;
+                        end
+                    end
                 O1L2:
                     // Start O1Blur, wait for it to be done, go next state
+                    state_initialized <= 1;
+                    if (!state_initialized) begin
+                        O1_start_blurring <= 1;
+                    end else begin
+                        if (O1_start_blurring) begin
+                            O1_start_blurring <= 0;
+                        end
+                        if (O1_blur_done) begin
+                            state <= O1L3;
+                            state_initialized <= 0;
+                        end
+                    end
                 O1L3:
                     // Start O1Blur, wait for it to be done, go next state
+                    state_initialized <= 1;
+                    if (!state_initialized) begin
+                        O1_start_blurring <= 1;
+                    end else begin
+                        if (O1_start_blurring) begin
+                            O1_start_blurring <= 0;
+                        end
+                        if (O1_blur_done) begin
+                            state <= O2L1;
+                            state_initialized <= 0;
+                        end
+                    end
                 O2L1:
                     // Start O1_to_O2, wait for it to be done, go next state
+                    state_initialized <= 1;
+                    if (!state_initialized) begin
+                        O12_start_resizing <= 1;
+                    end else begin
+                        if (O12_start_resizing) begin
+                            O12_start_resizing <= 0;
+                        end
+                        if (O12_resize_done) begin
+                            state <= O2L2;
+                            state_initialized <= 0;
+                        end
+                    end
                 O2L2:
                     // Start O2Blur, wait for it to be done, go next state
+                    state_initialized <= 1;
+                    if (!state_initialized) begin
+                        O2_start_blurring <= 1;
+                    end else begin
+                        if (O2_start_blurring) begin
+                            O2_start_blurring <= 0;
+                        end
+                        if (O2_blur_done) begin
+                            state <= O2L3;
+                            state_initialized <= 0;
+                        end
+                    end
                 O2L3:
                     // Start O2Blur, wait for it to be done, go next state
+                    state_initialized <= 1;
+                    if (!state_initialized) begin
+                        O2_start_blurring <= 1;
+                    end else begin
+                        if (O2_start_blurring) begin
+                            O2_start_blurring <= 0;
+                        end
+                        if (O2_blur_done) begin
+                            state <= O3L1;
+                            state_initialized <= 0;
+                        end
+                    end
                 O3L1:
                     // Start O2_to_O3, wait for it to be done, go next state
+                    state_initialized <= 1;
+                    if (!state_initialized) begin
+                        O23_start_resizing <= 1;
+                    end else begin
+                        if (O23_start_resizing) begin
+                            O23_start_resizing <= 0;
+                        end
+                        if (O23_resize_done) begin
+                            state <= O3L2;
+                            state_initialized <= 0;
+                        end
+                    end
                 O3L2:
                     // Start O3Blur, wait for it to be done, go next state
+                    state_initialized <= 1;
+                    if (!state_initialized) begin
+                        O3_start_blurring <= 1;
+                    end else begin
+                        if (O3_start_blurring) begin
+                            O3_start_blurring <= 0;
+                        end
+                        if (O3_blur_done) begin
+                            state <= O3L3;
+                            state_initialized <= 0;
+                        end
+                    end
                 O3L3:
                     // Start O3Blur, wait for it to be done, go back to IDLE
+                    state_initialized <= 1;
+                    if (!state_initialized) begin
+                        O3_start_blurring <= 1;
+                    end else begin
+                        if (O3_start_blurring) begin
+                            O3_start_blurring <= 0;
+                        end
+                        if (O3_blur_done) begin
+                            state <= IDLE;
+                            state_initialized <= 0;
+                        end
+                    end
             endcase
         end
     end
@@ -386,7 +513,7 @@ module gaussian_pyramid #(
     always_comb begin // connect correct BRAM inputs and outputs here based on state
         case (state)
             IDLE:
-
+                // Nothing needs to be connected here
             O1L1:
                 // set O1Buffer1 write inputs and O1L1 write inputs to equal original BRAM read outputs
             O1L2:
