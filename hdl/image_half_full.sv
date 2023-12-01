@@ -77,6 +77,8 @@ module image_half_full #(
                             if (center_addr_y == OLD_HEIGHT - 1) begin
                                 resize_done <= 1;
                                 busy <= 0;
+                                center_addr_x <= 0;
+                                center_addr_y <= 0;
                             end else begin
                                 center_addr_x <= 0;
                                 center_addr_y <= center_addr_y + 1;

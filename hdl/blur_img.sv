@@ -161,6 +161,12 @@ module blur_img #(
                     if (center_addr_x == WIDTH - 1) begin
                         if (center_addr_y == HEIGHT - 1) begin
                             blur_done <= 1;
+                            center_addr_x <= 0;
+                            center_addr_y <= 0;
+                            center_addr_x_prev <= 0;
+                            center_addr_y_prev <= 0;
+                            blur_data_valid_in <= 0;
+                            kernel_ind <= 0;
                             busy <= 0;
                         end else begin
                             center_addr_x <= 0;
