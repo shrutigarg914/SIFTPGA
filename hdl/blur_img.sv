@@ -20,25 +20,21 @@ module blur_img #(
     output logic [BIT_DEPTH-1:0] ext_pixel_out,
 
     input wire start_in, // one clock cycle signal high when starting blur
-    output logic blur_done, // one clock cycle signal high when finishing blur
-
-    // temp outputs for tb
-    output logic blur_data_valid_out,
-    output logic [3:0] kernel_ind
+    output logic blur_done // one clock cycle signal high when finishing blur
     );
     
     logic [$clog2(WIDTH)-1:0] center_addr_x;
     logic [$clog2(HEIGHT)-1:0] center_addr_y;
     logic [$clog2(WIDTH)-1:0] center_addr_x_prev;
     logic [$clog2(HEIGHT)-1:0] center_addr_y_prev;
-    // logic [3:0] kernel_ind;
+    logic [3:0] kernel_ind;
     logic [3:0] kernel_ind_pipe [1:0];
     logic[BIT_DEPTH*3-1:0] row1;
     logic[BIT_DEPTH*3-1:0] row2;
     logic[BIT_DEPTH*3-1:0] row3;
     logic blur_data_valid_in;
     logic[BIT_DEPTH-1:0] blur_out;
-    // logic blur_data_valid_out;
+    logic blur_data_valid_out;
     logic busy;
 
     logic [1:0] ext_read_addr_valid_pipe;

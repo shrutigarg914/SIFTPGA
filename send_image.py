@@ -28,6 +28,7 @@ if __name__ == "__main__":
                 r, g, b = image_in.getpixel((x, y))
                 pixels.append(int(0.2126*r+0.7152*g+0.0722*b))
         print(h, w, len(pixels))
+        print(pixels)
 
         s = serial.Serial(port='COM5', baudrate=2000000, bytesize=8)
         print("setup ready")
@@ -37,7 +38,7 @@ if __name__ == "__main__":
             # char = bytes(input("send: "), 'ascii')
             # print(struct.pack('B', 3))
             # print(pixels[packets_sent])
-            s.write(struct.pack('B', int(pixels[packets_sent]/2)))
+            s.write(struct.pack('B', int(pixels[packets_sent])))
             # print(".", end='', flush=True)
             packets_sent +=1
         print("DONE SENDING!")
@@ -52,7 +53,12 @@ if __name__ == "__main__":
             # print(pixels[ind])
         print("IMAGE RECEIVED")
 
+        im_res = np.asarray(pixels).reshape((64, 64))
+        plt.imshow(im_res, cmap='gray', vmin=0, vmax=255)
+        plt.show()
+
         im_res = np.asarray(image_rx).reshape((64, 64))
+        print(im_res)
         plt.imshow(im_res, cmap='gray', vmin=0, vmax=255)
         # plt.imshow(np.asarray(pixels).reshape(128, 128), cmap='gray', vmin=0, vmax=255)
         plt.show()

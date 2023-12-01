@@ -133,7 +133,11 @@ module top_level(
     logic [BIT_DEPTH-1:0] blur_stored_out;
 
 
-    blur_img blur(.clk_in(clk_100mhz), .rst_in(sys_rst),
+    blur_img #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(WIDTH),
+        .HEIGHT(HEIGHT))
+    blur(.clk_in(clk_100mhz), .rst_in(sys_rst),
                          .ext_read_addr(read_addr),
                          .ext_read_addr_valid(read_addr_valid),
                          .ext_pixel_in(pixel_in),
@@ -141,9 +145,7 @@ module top_level(
                          .ext_write_valid(write_valid),
                          .ext_pixel_out(pixel_out), 
                          .start_in(start_blurring),
-                         .blur_done(blur_done),
-                         .blur_data_valid_out(blur_data_valid_out),
-                         .kernel_ind(kernel_ind));
+                         .blur_done(blur_done));
 
     // when btn[1] pressed if gaussian blur is done, send what's stored in the blur BRAM to the laptop
     
@@ -188,6 +190,7 @@ module top_level(
     );
     logic tx_img_busy;
   
+    assign led[13:2] = pixel_out;
     
 endmodule // top_level
 

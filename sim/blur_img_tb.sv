@@ -26,8 +26,6 @@ module blur_img_tb;
 
     logic start_in;
     logic blur_done;
-    logic blur_data_valid_out;
-    logic [3:0] kernel_ind;
 
     // the start image BRAM
     xilinx_single_port_ram_read_first #(
@@ -54,9 +52,7 @@ module blur_img_tb;
                          .ext_write_valid(write_valid),
                          .ext_pixel_out(pixel_out), 
                          .start_in(start_in),
-                         .blur_done(blur_done),
-                         .blur_data_valid_out(blur_data_valid_out),
-                         .kernel_ind(kernel_ind));
+                         .blur_done(blur_done));
     always begin
         #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
         clk_in = !clk_in;
