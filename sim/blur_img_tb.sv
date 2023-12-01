@@ -16,62 +16,47 @@ module blur_img_tb;
     logic clk_in;
     logic rst_in;
 
-    // the start image BRAM
-    xilinx_true_dual_port_read_first_2_clock_ram #(
-        .RAM_WIDTH(8), // we expect 8 bit greyscale images
-        .RAM_DEPTH(WIDTH*HEIGHT) //we expect a 64*64 image with 16384 pixels total
-        .INIT_FILE(`FPATH(image.mem)))
-        rx_img (
-        .addra(pixel_addr),
-        .clka(clk_100mhz),
-        .wea(valid_o),
-        .dina(rx_data),
-        .ena(1'b1),
-        .regcea(1'b1),
-        .rsta(sys_rst),
-        .douta(), //never read from this side
-        .addrb(read_pixel_addr),// transformed lookup pixel
-        .dinb(),
-        .clkb(clk_100mhz),
-        .web(1'b0),
-        .enb(read_pixel_addr_valid),
-        .rstb(sys_rst),
-        .regceb(1'b1),
-        .doutb(pixel_out)
-    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] read_addr;
+    logic read_addr_valid;
+    logic [BIT_DEPTH-1:0] pixel_in;
+    
+    logic [$clog2(WIDTH * HEIGHT)-1:0] write_addr;
+    logic write_valid;
+    logic [BIT_DEPTH-1:0] pixel_out;
 
-    // the start blurred image BRAM
-    xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(8), // we expect 8 bit greyscale images
-    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 16384 pixels total
-    blur_img (
-        .addra(center_addr_x_prev + center_addr_y_prev * DIMENSION),
-        .clka(clk_100mhz),
-        .wea(blur_data_valid_out),
-        .dina(blur_out),
-        .ena(1'b1),
-        .regcea(1'b1),
-        .rsta(sys_rst),
-        .douta(), //never read from this side
-        .addrb(read_blur_addr),// transformed lookup pixel
-        .dinb(),
-        .clkb(clk_100mhz),
-        .web(1'b0),
-        .enb(1'b1),
-        .rstb(sys_rst),
-        .regceb(1'b1),
-        .doutb(blur_stored_out)
+    logic start_in;
+    logic blur_done;
+    logic blur_data_valid_out;
+    logic [3:0] kernel_ind;
+
+    // the start image BRAM
+    xilinx_single_port_ram_read_first #(
+        .RAM_WIDTH(8),                       // Specify RAM data width
+        .RAM_DEPTH(WIDTH * HEIGHT),                     // Specify RAM depth (number of entries)
+        .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
+        .INIT_FILE(`FPATH(image.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    ) image (
+        .addra(read_addr),     // Address bus, width determined from RAM_DEPTH
+        .dina(8'b0),       // RAM input data, width determined from RAM_WIDTH
+        .clka(clk_in),       // Clock
+        .wea(1'b0),         // Write enable
+        .ena(read_addr_valid),         // RAM Enable, for additional power savings, disable port when not in use
+        .rsta(rst_in),       // Output reset (does not affect memory contents)
+        .regcea(1'b1),   // Output register enable
+        .douta(pixel_in)      // RAM output data, width determined from RAM_WIDTH
     );
 
     blur_img blur(.clk_in(clk_in), .rst_in(rst_in),
-                         .r0_data_in(r0),
-                         .r1_data_in(r1),
-                         .r2_data_in(r2),
-                         .data_valid_in(valid_in),
-                         .data_out(data_out),
-                         .data_valid_out(valid_out), 
-                         .error_out(),
-                         .busy_out());
+                         .ext_read_addr(read_addr),
+                         .ext_read_addr_valid(read_addr_valid),
+                         .ext_pixel_in(pixel_in),
+                         .ext_write_addr(write_addr),
+                         .ext_write_valid(write_valid),
+                         .ext_pixel_out(pixel_out), 
+                         .start_in(start_in),
+                         .blur_done(blur_done),
+                         .blur_data_valid_out(blur_data_valid_out),
+                         .kernel_ind(kernel_ind));
     always begin
         #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
         clk_in = !clk_in;
@@ -79,93 +64,24 @@ module blur_img_tb;
 
     //initial block...this is our test simulation
     initial begin
-        $dumpfile("blur.vcd"); //file to store value change dump (vcd)
-        $dumpvars(0,gaussian_blur_tb); //store everything at the current level and below
+        $dumpfile("img_blur.vcd"); //file to store value change dump (vcd)
+        $dumpvars(0,blur_img_tb); //store everything at the current level and below
         $display("Starting Sim"); //print nice message
         clk_in = 0; //initialize clk (super important)
         rst_in = 0; //initialize rst (super important)
-        r0 = 24'h00_00_00;
-        r1 = 24'h00_00_00;
-        r2 = 24'h00_00_00;
-        valid_in = 0;
-        #10  //wait a little bit of time at beginning
-        rst_in = 1; //reset system
-        #10; //hold high for a few clock cycles
-        rst_in=0;
-        #10;
+        start_in = 0;
 
-        // Test 1 
-        $display("Test 1, all zeros");
-        r0 = 24'h00_00_00;
-        r1 = 24'h00_00_00;
-        r2 = 24'h00_00_00;
-        valid_in = 1;
         #10
-        valid_in = 0;
-        #100;
-        $display("Test 1 done");
-        $display("Blurred pixel Value:", data_out);
-
-        // Test 2
-        $display("Test 2, all ones");
-        r0 = 24'h01_01_01;
-        r1 = 24'h01_01_01;
-        r2 = 24'h01_01_01;
-        valid_in = 1;
+        clk_in = 1; //initialize clk (super important)
+        rst_in = 1; //initialize rst (super important)
         #10
-        valid_in = 0;
-        #100;
-        $display("Test 2 done");
-        $display("Blurred pixel Value:", data_out);
-
-        // Test 3
-        $display("Test 3, 1-9 square");
-        r0 = 24'h01_02_03;
-        r1 = 24'h04_05_06;
-        r2 = 24'h07_08_09;
-        valid_in = 1;
+        clk_in = 0; //initialize clk (super important)
+        rst_in = 0; //initialize rst (super important)
         #10
-        valid_in = 0;
-        #100;
-        $display("Test 3 done");
-        $display("Blurred pixel Value:", data_out);
-
-        // Test 4
-        $display("Test 4, all 255");
-        r0 = 24'hFF_FF_FF;
-        r1 = 24'hFF_FF_FF;
-        r2 = 24'hFF_FF_FF;
-        valid_in = 1;
+        start_in = 1;
         #10
-        valid_in = 0;
-        #100;
-        $display("Test 4 done");
-        $display("Blurred pixel Value:", data_out);
-
-        // Test 5
-        $display("Test 5, 255 middle");
-        r0 = 24'h00_00_00;
-        r1 = 24'h00_FF_00;
-        r2 = 24'h00_00_00;
-        valid_in = 1;
-        #10
-        valid_in = 0;
-        #100;
-        $display("Test 5 done");
-        $display("Blurred pixel Value:", data_out);
-
-        // Test 6
-        $display("Test 6, random numbers");
-        r0 = 24'h86_02_2E;
-        r1 = 24'h1E_19_00;
-        r2 = 24'h01_09_FF;
-        valid_in = 1;
-        #10
-        valid_in = 0;
-        #100;
-        $display("Test 6 done");
-        $display("Blurred pixel Value:", data_out);
-        
+        start_in = 0;
+        #1200000
 
         $display("Finishing Sim"); //print nice message
         $finish;
