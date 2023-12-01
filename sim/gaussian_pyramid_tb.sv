@@ -138,7 +138,7 @@ module gaussian_pyramid_tb;
         start_pyramid = 1;
         #10
         start_pyramid = 0;
-        #12000000
+        #1200000
 
         $display("Finishing Sim"); //print nice message
         $finish;

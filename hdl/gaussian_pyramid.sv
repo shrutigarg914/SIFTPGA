@@ -379,6 +379,9 @@ module gaussian_pyramid #(
             if (pyramid_done) begin
                 pyramid_done <= 0;
             end
+            if (ext_read_addr_valid) begin
+                ext_read_addr_valid <= 0;
+            end
             case (state)
                 IDLE:
                     if (start_in) begin
@@ -388,10 +391,12 @@ module gaussian_pyramid #(
                 O1L1:
                     // Read from original image BRAM by iterating through all addresses and reading
                     if (ext_read_addr_valid_pipe[1] || start_read_original) begin
-                        ext_read_addr <= ext_read_addr + 1;
-                        if (ext_read_addr== TOP_WIDTH * TOP_HEIGHT - 1) begin
+                        ext_read_addr_valid <= 1;
+                        if (ext_read_addr == TOP_WIDTH * TOP_HEIGHT - 1) begin
                             state <= O1L2;
                             state_initialized <= 0;
+                        end else begin
+                            ext_read_addr <= ext_read_addr + 1;
                         end
                     end
                 O1L2:
@@ -522,11 +527,11 @@ module gaussian_pyramid #(
             begin
                 // set O1Buffer1 write inputs and O1L1 write inputs to equal original BRAM read outputs
                 O1Buffer1_write_addr = ext_read_addr;
-                O1Buffer1_write_valid = ext_read_addr_valid_pipe;
+                O1Buffer1_write_valid = ext_read_addr_valid_pipe_1;
                 O1Buffer1_pixel_in = ext_pixel_in;
                 
                 O1L1_write_addr = ext_read_addr;
-                O1L1_write_valid = ext_read_addr_valid_pipe;
+                O1L1_write_valid = ext_read_addr_valid_pipe_1;
                 O1L1_pixel_out = ext_pixel_in;
             end
             O1L2:
