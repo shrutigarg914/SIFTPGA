@@ -354,18 +354,11 @@ module gaussian_pyramid #(
 
     module_state state;
 
-    initial begin
-        state = IDLE;
-        start_read_original = 0;
-        ext_read_addr = 0;
-        ext_read_addr_valid = 0;
-        state_initialized = 0;
-    end
-
-    logic [1:0] ext_read_addr_valid_pipe;
+    logic ext_read_addr_valid_pipe_0;
+    logic ext_read_addr_valid_pipe_1;
     always_ff @(posedge clk_in) begin
-        ext_read_addr_valid_pipe[0] <= ext_read_addr_valid;
-        ext_read_addr_valid_pipe[1] <= ext_read_addr_valid_pipe[0];
+        ext_read_addr_valid_pipe_0 <= ext_read_addr_valid;
+        ext_read_addr_valid_pipe_1 <= ext_read_addr_valid_pipe_0;
     end
     logic start_read_original;
     logic state_initialized;
@@ -374,13 +367,19 @@ module gaussian_pyramid #(
         if (rst_in) begin
             state <= IDLE;
             start_read_original <= 0;
+            ext_read_addr <= 0;
+            ext_read_addr_valid <= 0;
             state_initialized <= 0;
+            pyramid_done <= 0;
         end else begin
             if (pyramid_done) begin
                 pyramid_done <= 0;
             end
             if (ext_read_addr_valid) begin
                 ext_read_addr_valid <= 0;
+            end
+            if (start_read_original) begin
+                start_read_original <= 0;
             end
             case (state)
                 IDLE:
@@ -390,13 +389,13 @@ module gaussian_pyramid #(
                     end
                 O1L1:
                     // Read from original image BRAM by iterating through all addresses and reading
-                    if (ext_read_addr_valid_pipe[1] || start_read_original) begin
-                        ext_read_addr_valid <= 1;
+                    if (ext_read_addr_valid_pipe_1 || start_read_original) begin
                         if (ext_read_addr == TOP_WIDTH * TOP_HEIGHT - 1) begin
                             state <= O1L2;
                             state_initialized <= 0;
                         end else begin
                             ext_read_addr <= ext_read_addr + 1;
+                            ext_read_addr_valid <= 1;
                         end
                     end
                 O1L2:
@@ -515,9 +514,6 @@ module gaussian_pyramid #(
             endcase
         end
     end
-
-    logic ext_read_addr_valid_pipe_1;
-    assign ext_read_addr_valid_pipe_1 = ext_read_addr_valid_pipe[1];
 
     always_comb begin // connect correct BRAM inputs and outputs here based on state
         case (state)
