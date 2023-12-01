@@ -384,6 +384,9 @@ module gaussian_pyramid #(
                         state <= O1L1;
                         start_read_original <= 1;
                     end
+                    if (pyramid_done) begin
+                        pyramid_done <= 0;
+                    end
                 O1L1:
                     // Read from original image BRAM by iterating through all addresses and reading
                     state_initialized <= 1;
@@ -504,6 +507,7 @@ module gaussian_pyramid #(
                         if (O3_blur_done) begin
                             state <= IDLE;
                             state_initialized <= 0;
+                            pyramid_done <= 1;
                         end
                     end
             endcase
