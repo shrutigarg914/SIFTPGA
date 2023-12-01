@@ -303,8 +303,8 @@ module gaussian_pyramid #(
 
     image_half_full #(
         .BIT_DEPTH(BIT_DEPTH),
-        .OLD_WIDTH(WIDTH),
-        .OLD_HEIGHT(HEIGHT))
+        .OLD_WIDTH(TOP_WIDTH),
+        .OLD_HEIGHT(TOP_HEIGHT))
     O1_to_O2 (.clk_in(clk_in), .rst_in(rst_in),
                          .ext_read_addr(O1_resize_read_addr),
                          .ext_read_addr_valid(O1_resize_read_addr_valid),
@@ -327,8 +327,8 @@ module gaussian_pyramid #(
 
     image_half_full #(
         .BIT_DEPTH(BIT_DEPTH),
-        .OLD_WIDTH(WIDTH/2),
-        .OLD_HEIGHT(HEIGHT/2))
+        .OLD_WIDTH(TOP_WIDTH/2),
+        .OLD_HEIGHT(TOP_HEIGHT/2))
     O2_to_O3 (.clk_in(clk_in), .rst_in(rst_in),
                          .ext_read_addr(O2_resize_read_addr),
                          .ext_read_addr_valid(O2_resize_read_addr_valid),
@@ -518,6 +518,7 @@ module gaussian_pyramid #(
             // IDLE:
             //     // Nothing needs to be connected here
             O1L1:
+            begin
                 // set O1Buffer1 write inputs and O1L1 write inputs to equal original BRAM read outputs
                 O1Buffer1_write_addr = ext_read_addr;
                 O1Buffer1_write_valid = ext_read_addr_valid_pipe[1];
@@ -526,7 +527,9 @@ module gaussian_pyramid #(
                 O1L1_write_addr = ext_read_addr;
                 O1L1_write_valid = ext_read_addr_valid_pipe[1];
                 O1L1_pixel_out = ext_pixel_in;
+            end
             O1L2:
+            begin
                 // Set O1Blur read inputs to equal O1Buffer1 outputs
                 O1_blur_read_addr = O1Buffer1_read_addr;
                 O1_blur_read_addr_valid = O1Buffer1_read_addr_valid;
@@ -540,8 +543,9 @@ module gaussian_pyramid #(
                 O1L2_write_addr = O1_blur_write_addr;
                 O1L2_write_valid = O1_blur_write_valid;
                 O1L2_pixel_out = O1_blur_pixel_out;
-
+            end
             O1L3:
+            begin
                 // Set O1Blur read inputs to equal O1Buffer2 outputs
                 O1_blur_read_addr = O1Buffer2_read_addr;
                 O1_blur_read_addr_valid = O1Buffer2_read_addr_valid;
@@ -555,7 +559,9 @@ module gaussian_pyramid #(
                 O1L3_write_addr = O1_blur_write_addr;
                 O1L3_write_valid = O1_blur_write_valid;
                 O1L3_pixel_out = O1_blur_pixel_out;
+            end
             O2L1:
+            begin
                 // Set O1_to_O2 read inputs to equal O1Buffer1 write outputs
                 O1_resize_read_addr = O1Buffer1_read_addr;
                 O1_resize_read_addr_valid = O1Buffer1_read_addr_valid;
@@ -569,7 +575,9 @@ module gaussian_pyramid #(
                 O2L1_write_addr = O2_resize_write_addr;
                 O2L1_write_valid = O2_resize_write_addr_valid;
                 O2L1_pixel_out = O2_resize_pixel_out;
+            end
             O2L2:
+            begin
                 // Set O2Blur read inputs to equal O2Buffer1 outputs
                 O2_blur_read_addr = O2Buffer1_read_addr;
                 O2_blur_read_addr_valid = O2Buffer1_read_addr_valid;
@@ -583,7 +591,9 @@ module gaussian_pyramid #(
                 O2L2_write_addr = O2_blur_write_addr;
                 O2L2_write_valid = O2_blur_write_valid;
                 O2L2_pixel_out = O2_blur_pixel_out;
+            end
             O2L3:
+            begin
                 // Set O2Blur read inputs to equal O2Buffer2 outputs
                 O2_blur_read_addr = O2Buffer2_read_addr;
                 O2_blur_read_addr_valid = O2Buffer2_read_addr_valid;
@@ -597,7 +607,9 @@ module gaussian_pyramid #(
                 O2L3_write_addr = O2_blur_write_addr;
                 O2L3_write_valid = O2_blur_write_valid;
                 O2L3_pixel_out = O2_blur_pixel_out;
+            end
             O3L1:
+            begin
                 // Set O2_to_O3 read inputs to equal O2Buffer1 write outputs
                 O2_resize_read_addr = O2Buffer1_read_addr;
                 O2_resize_read_addr_valid = O2Buffer1_read_addr_valid;
@@ -611,7 +623,9 @@ module gaussian_pyramid #(
                 O3L1_write_addr = O3_resize_write_addr;
                 O3L1_write_valid = O3_resize_write_addr_valid;
                 O3L1_pixel_out = O3_resize_pixel_out;
+            end
             O3L2:
+            begin
                 // Set O3Blur read inputs to equal O3Buffer1 outputs
                 O3_blur_read_addr = O3Buffer1_read_addr;
                 O3_blur_read_addr_valid = O3Buffer1_read_addr_valid;
@@ -625,7 +639,9 @@ module gaussian_pyramid #(
                 O3L2_write_addr = O3_blur_write_addr;
                 O3L2_write_valid = O3_blur_write_valid;
                 O3L2_pixel_out = O3_blur_pixel_out;
+            end
             O3L3:
+            begin
                 // Set O3Blur read inputs to equal O3Buffer2 outputs
                 O3_blur_read_addr = O3Buffer2_read_addr;
                 O3_blur_read_addr_valid = O3Buffer2_read_addr_valid;
@@ -639,6 +655,7 @@ module gaussian_pyramid #(
                 O3L3_write_addr = O3_blur_write_addr;
                 O3L3_write_valid = O3_blur_write_valid;
                 O3L3_pixel_out = O3_blur_pixel_out;
+            end
         endcase
     end
 

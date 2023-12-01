@@ -481,109 +481,159 @@ module top_level(
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O1L1) && (state_prev != O1L1)),//full_image_received
-      .tx(uart_txd),//uart_txd
+      .tx(O1L1_txd),//uart_txd
       .data(O1L1_pixel_out),
       .address(O1L1_read_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(tx_img_busy_O1L1) //or we could do img_sent whichever makes more sense
     );
     logic tx_img_busy_O1L1;
+    logic O1L1_txd;
 
     send_img  tx_img_O1L2 (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O1L2) && (state_prev != O1L2)),//full_image_received
-      .tx(uart_txd),//uart_txd
+      .tx(O1L2_txd),//uart_txd
       .data(O1L2_pixel_out),
       .address(O1L2_read_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(tx_img_busy_O1L2) //or we could do img_sent whichever makes more sense
     );
     logic tx_img_busy_O1L2;
+    logic O1L2_txd;
 
     send_img  tx_img_O1L3 (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O1L3) && (state_prev != O1L3)),//full_image_received
-      .tx(uart_txd),//uart_txd
+      .tx(O1L3_txd),//uart_txd
       .data(O1L3_pixel_out),
       .address(O1L3_read_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(tx_img_busy_O1L3) //or we could do img_sent whichever makes more sense
     );
     logic tx_img_busy_O1L3;
+    logic O1L3_txd;
 
     send_img  tx_img_O2L1 (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O2L1) && (state_prev != O2L1)),//full_image_received
-      .tx(uart_txd),//uart_txd
+      .tx(O2L1_txd),//uart_txd
       .data(O2L1_pixel_out),
       .address(O2L1_read_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(tx_img_busy_O2L1) //or we could do img_sent whichever makes more sense
     );
     logic tx_img_busy_O2L1;
+    logic O2L1_txd;
 
     send_img  tx_img_O2L2 (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O2L2) && (state_prev != O2L2)),//full_image_received
-      .tx(uart_txd),//uart_txd
+      .tx(O2L2_txd),//uart_txd
       .data(O2L2_pixel_out),
       .address(O2L2_read_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(tx_img_busy_O2L2) //or we could do img_sent whichever makes more sense
     );
     logic tx_img_busy_O2L2;
+    logic O2L2_txd;
 
     send_img  tx_img_O2L3 (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O2L3) && (state_prev != O2L3)),//full_image_received
-      .tx(uart_txd),//uart_txd
+      .tx(O2L3_txd),//uart_txd
       .data(O2L3_pixel_out),
       .address(O2L3_read_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(tx_img_busy_O2L3) //or we could do img_sent whichever makes more sense
     );
     logic tx_img_busy_O2L3;
+    logic O2L3_txd;
 
     send_img  tx_img_O3L1 (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O3L1) && (state_prev != O3L1)),//full_image_received
-      .tx(uart_txd),//uart_txd
+      .tx(O3L1_txd),//uart_txd
       .data(O3L1_pixel_out),
       .address(O3L1_read_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(tx_img_busy_O3L1) //or we could do img_sent whichever makes more sense
     );
     logic tx_img_busy_O3L1;
+    logic O3L1_txd;
 
     send_img  tx_img_O3L2 (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O3L2) && (state_prev != O3L2)),//full_image_received
-      .tx(uart_txd),//uart_txd
+      .tx(O3L2_txd),//uart_txd
       .data(O3L2_pixel_out),
       .address(O3L2_read_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(tx_img_busy_O3L2) //or we could do img_sent whichever makes more sense
     );
     logic tx_img_busy_O3L2;
+    logic O3L2_txd;
 
     send_img  tx_img_O3L3 (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O3L3) && (state_prev != O3L3)),//full_image_received
-      .tx(uart_txd),//uart_txd
+      .tx(O3L3_txd),//uart_txd
       .data(O3L3_pixel_out),
       .address(O3L3_read_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(tx_img_busy_O3L3) //or we could do img_sent whichever makes more sense
     );
     logic tx_img_busy_O3L3;
+    logic O3L3_txd;
+
+    always_comb begin
+        case (state)
+            O1L1:
+                begin
+                    uart_txd = O1L1_txd;
+                end
+            O1L2:
+                begin
+                    uart_txd = O1L2_txd;
+                end
+            O1L3:
+                begin
+                    uart_txd = O1L3_txd;
+                end
+            O2L1:
+                begin
+                    uart_txd = O2L1_txd;
+                end
+            O2L2:
+                begin
+                    uart_txd = O2L2_txd;
+                end
+            O2L3:
+                begin
+                    uart_txd = O2L3_txd;
+                end
+            O3L1:
+                begin
+                    uart_txd = O3L1_txd;
+                end
+            O3L2:
+                begin
+                    uart_txd = O3L2_txd;
+                end
+            O3L3:
+                begin
+                    uart_txd = O3L3_txd;
+                end
+        endcase
+    end
   
     
 endmodule // top_level
