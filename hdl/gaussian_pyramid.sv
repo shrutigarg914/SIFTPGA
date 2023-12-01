@@ -257,8 +257,8 @@ module gaussian_pyramid #(
     
     blur_img #(
         .BIT_DEPTH(BIT_DEPTH),
-        .WIDTH(TOP_WIDTH),
-        .HEIGHT(TOP_HEIGHT))
+        .WIDTH(TOP_WIDTH/2),
+        .HEIGHT(TOP_HEIGHT/2))
     O2_blur(.clk_in(clk_in), .rst_in(rst_in),
             .ext_read_addr(read_addr),
             .ext_read_addr_valid(read_addr_valid),
@@ -268,17 +268,17 @@ module gaussian_pyramid #(
             .ext_pixel_out(O2_blur_pixel_out), 
             .start_in(start_blurring),
             .blur_done(blur_done));
-    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O2_blur_write_addr;
+    logic [$clog2(TOP_WIDTH/2 * TOP_HEIGHT/2)-1:0] O2_blur_write_addr;
     logic O2_blur_write_valid;
     logic [BIT_DEPTH-1:0] O2_blur_pixel_out; // for writing to bram
-    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O2_blur_read_addr;
+    logic [$clog2(TOP_WIDTH/2 * TOP_HEIGHT/2)-1:0] O2_blur_read_addr;
     logic O2_blur_read_addr_valid;
     logic [BIT_DEPTH-1:0] O2_blur_pixel_in; // for reading from bram
     
     blur_img #(
         .BIT_DEPTH(BIT_DEPTH),
-        .WIDTH(TOP_WIDTH),
-        .HEIGHT(TOP_HEIGHT))
+        .WIDTH(TOP_WIDTH/4),
+        .HEIGHT(TOP_HEIGHT/4))
     O3_blur(.clk_in(clk_in), .rst_in(rst_in),
             .ext_read_addr(read_addr),
             .ext_read_addr_valid(read_addr_valid),
@@ -288,27 +288,60 @@ module gaussian_pyramid #(
             .ext_pixel_out(O3_blur_pixel_out), 
             .start_in(start_blurring),
             .blur_done(blur_done));
-    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O3_blur_write_addr;
+    logic [$clog2(TOP_WIDTH/4 * TOP_HEIGHT/4)-1:0] O3_blur_write_addr;
     logic O3_blur_write_valid;
     logic [BIT_DEPTH-1:0] O3_blur_pixel_out; // for writing to bram
-    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O3_blur_read_addr;
+    logic [$clog2(TOP_WIDTH/4 * TOP_HEIGHT/4)-1:0] O3_blur_read_addr;
     logic O3_blur_read_addr_valid;
     logic [BIT_DEPTH-1:0] O3_blur_pixel_in; // for reading from bram
 
-    image_half #(.BIT_DEPTH(BIT_DEPTH),
-                 .NEW_WIDTH(TOP_WIDTH / 2))
-        O1_to_O2(
-            .clk_in(clk_in),
-            .rst_in(sys_rst),
-            .data_in(rx_data),
-            .data_x_in(center_addr_x),
-            .data_y_in(center_addr_y),
-            .data_valid_in(valid_o),
-            .data_out(resize_out),
-            .data_addr_out(resize_out_addr),
-            .data_valid_out(resize_out_valid),
-            .done_out()
-    );
+    image_half_full #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .OLD_WIDTH(WIDTH),
+        .OLD_HEIGHT(HEIGHT))
+    O1_to_O2 (.clk_in(clk_in), .rst_in(rst_in),
+                         .ext_read_addr(O1_resize_read_addr),
+                         .ext_read_addr_valid(O1_resize_read_addr_valid),
+                         .ext_pixel_in(O1_resize_pixel_in),
+                         .ext_write_addr(O2_resize_write_addr),
+                         .ext_write_valid(O2_resize_write_addr_valid),
+                         .ext_pixel_out(O2_resize_pixel_out), 
+                         .start_in(O12_start_resizing),
+                         .resize_done(O12_resize_done),
+                         .old_center_addr_x_used(),
+                         .old_center_addr_y_used());
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1_resize_read_addr;
+    logic O1_resize_read_addr_valid;
+    logic O1_resize_pixel_in; // the value we read from upper layer
+    logic [$clog2(TOP_WIDTH/2 * TOP_HEIGHT/2)-1:0] O2_resize_write_addr;
+    logic O2_resize_write_addr_valid;
+    logic O2_resize_pixel_out; // the value we write to lower layer
+    logic O12_start_resizing;
+    logic O12_resize_done;
+
+    image_half_full #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .OLD_WIDTH(WIDTH/2),
+        .OLD_HEIGHT(HEIGHT/2))
+    O2_to_O3 (.clk_in(clk_in), .rst_in(rst_in),
+                         .ext_read_addr(O2_resize_read_addr),
+                         .ext_read_addr_valid(O2_resize_read_addr_valid),
+                         .ext_pixel_in(O2_resize_pixel_in),
+                         .ext_write_addr(O3_resize_write_addr),
+                         .ext_write_valid(O3_resize_write_addr_valid),
+                         .ext_pixel_out(O3_resize_pixel_out), 
+                         .start_in(O23_start_resizing),
+                         .resize_done(O23_resize_done),
+                         .old_center_addr_x_used(),
+                         .old_center_addr_y_used());
+    logic [$clog2(TOP_WIDTH/2 * TOP_HEIGHT/2)-1:0] O2_resize_read_addr;
+    logic O2_resize_read_addr_valid;
+    logic O2_resize_pixel_in; // the value we read from upper layer
+    logic [$clog2(TOP_WIDTH/4 * TOP_HEIGHT/4)-1:0] O3_resize_write_addr;
+    logic O3_resize_write_addr_valid;
+    logic O3_resize_pixel_out; // the value we write to lower layer
+    logic O23_start_resizing;
+    logic O23_resize_done;
 
     // States
     typedef enum {IDLE=0, O1L1=1, O1L2=2, O1L3=3, O2L1=4, O2L2=5, O2L3=6, O3L1=7, O3L2=8, O3L3=9} module_state;
