@@ -430,6 +430,7 @@ module top_level(
     always_ff @(posedge clk_100mhz) begin
         if (sys_rst) begin
             state <= IDLE;
+            led[11:2] <= 1;
         end else begin
             state_prev <= state;
             case (state)
@@ -438,69 +439,79 @@ module top_level(
                         if (btn_edge && pyramid_done_latched) begin
                             state <= O1L1;
                         end
+                        led[2] <= 1;
                     end
                 O1L1:
                     begin
-                        if (!tx_img_busy_O1L1) begin
+                        if (!tx_img_busy_O1L1 && state_prev == O1L1) begin
                             state <= O1L2;
                         end
                         uart_txd <= O1L1_txd;
+                        led[3] <= 1;
                     end
                 O1L2:
                     begin
-                        if (!tx_img_busy_O1L2) begin
+                        if (!tx_img_busy_O1L2 && state_prev == O1L2) begin
                             state <= O1L3;
                         end
                         uart_txd <= O1L2_txd;
+                        led[4] <= 1;
                     end
                 O1L3:
                     begin
-                        if (!tx_img_busy_O1L3) begin
+                        if (!tx_img_busy_O1L3 && state_prev == O1L3) begin
                             state <= O2L1;
                         end
                         uart_txd <= O1L3_txd;
+                        led[5] <= 1;
                     end
                 O2L1:
                     begin
-                        if (!tx_img_busy_O2L1) begin
+                        if (!tx_img_busy_O2L1 && state_prev == O2L1) begin
                             state <= O2L2;
                         end
                         uart_txd <= O2L1_txd;
+                        led[6] <= 1;
                     end
                 O2L2:
                     begin
-                        if (!tx_img_busy_O2L2) begin
+                        if (!tx_img_busy_O2L2 && state_prev == O2L2) begin
                             state <= O2L3;
                         end
                         uart_txd <= O2L2_txd;
+                        led[7] <= 1;
                     end
                 O2L3:
                     begin
-                        if (!tx_img_busy_O2L3) begin
+                        if (!tx_img_busy_O2L3 && state_prev == O2L3) begin
                             state <= O3L1;
                         end
                         uart_txd <= O2L3_txd;
+                        led[8] <= 1;
                     end
                 O3L1:
                     begin
-                        if (!tx_img_busy_O3L1) begin
+                        if (!tx_img_busy_O3L1 && state_prev == O3L1) begin
                             state <= O3L2;
                         end
                         uart_txd <= O3L1_txd;
+                        led[9] <= 1;
                     end
                 O3L2:
                     begin
-                        if (!tx_img_busy_O3L2) begin
+                        if (!tx_img_busy_O3L2 && state_prev == O3L2) begin
                             state <= O3L3;
                         end
                         uart_txd <= O3L2_txd;
+                        led[10] <= 1;
                     end
                 O3L3:
                     begin
-                        if (!tx_img_busy_O3L3) begin
+                        if (!tx_img_busy_O3L3 && state_prev == O3L3) begin
                             state <= IDLE;
                         end
                         uart_txd <= O3L3_txd;
+                        led[11] <= 1;
                     end
                 default:
                     begin
@@ -510,16 +521,16 @@ module top_level(
         end
     end
 
-    assign led[2] = (state == IDLE);
-    assign led[3] = (state == O1L1);
-    assign led[4] = (state == O1L2);
-    assign led[5] = (state == O1L3);
-    assign led[6] = (state == O2L1);
-    assign led[7] = (state == O2L2);
-    assign led[8] = (state == O2L3);
-    assign led[9] = (state == O3L1);
-    assign led[10] = (state == O3L2);
-    assign led[11] = (state == O3L3);
+    assign led[12] = (state == IDLE);
+    // assign led[3] = (state == O1L1);
+    // assign led[4] = (state == O1L2);
+    // assign led[5] = (state == O1L3);
+    // assign led[6] = (state == O2L1);
+    // assign led[7] = (state == O2L2);
+    // assign led[8] = (state == O2L3);
+    // assign led[9] = (state == O3L1);
+    // assign led[10] = (state == O3L2);
+    // assign led[11] = (state == O3L3);
 
     send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O1L1 (
       .clk(clk_100mhz),

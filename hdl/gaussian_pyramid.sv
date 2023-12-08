@@ -537,151 +537,291 @@ module gaussian_pyramid #(
         end
     end
 
-    always_comb begin // connect correct BRAM inputs and outputs here based on state
-        case (state)
-            // IDLE:
-            //     // Nothing needs to be connected here
-            O1L1:
-            begin
-                // set O1Buffer1 write inputs and O1L1 write inputs to equal original BRAM read outputs
-                O1Buffer1_write_addr = ext_read_addr;
-                O1Buffer1_write_valid = ext_read_addr_valid_pipe_1;
-                O1Buffer1_pixel_in = ext_pixel_in;
-                
-                O1L1_write_addr = ext_read_addr;
-                O1L1_write_valid = ext_read_addr_valid_pipe_1;
-                O1L1_pixel_out = ext_pixel_in;
-            end
-            O1L2:
-            begin
-                // Set O1Blur read inputs to equal O1Buffer1 outputs
-                O1Buffer1_read_addr = O1_blur_read_addr;
-                O1Buffer1_read_addr_valid = O1_blur_read_addr_valid;
-                O1_blur_pixel_in = O1Buffer1_pixel_out;
-
-                // Set O1Buffer2 write inputs and O1L2 write inputs to equal O1Blur write outputs
-                O1Buffer2_write_addr = O1_blur_write_addr;
-                O1Buffer2_write_valid = O1_blur_write_valid;
-                O1Buffer2_pixel_in = O1_blur_pixel_out;
-                
-                O1L2_write_addr = O1_blur_write_addr;
-                O1L2_write_valid = O1_blur_write_valid;
-                O1L2_pixel_out = O1_blur_pixel_out;
-            end
-            O1L3:
-            begin
-                // Set O1Blur read inputs to equal O1Buffer2 outputs
-                O1Buffer2_read_addr = O1_blur_read_addr;
-                O1Buffer2_read_addr_valid = O1_blur_read_addr_valid;
-                O1_blur_pixel_in = O1Buffer2_pixel_out;
-
-                // Set O1Buffer1 write inputs and O1L3 write inputs to equal O1Blur write outputs
-                O1Buffer1_write_addr = O1_blur_write_addr;
-                O1Buffer1_write_valid = O1_blur_write_valid;
-                O1Buffer1_pixel_in = O1_blur_pixel_out;
-                
-                O1L3_write_addr = O1_blur_write_addr;
-                O1L3_write_valid = O1_blur_write_valid;
-                O1L3_pixel_out = O1_blur_pixel_out;
-            end
-            O2L1:
-            begin
-                // Set O1_to_O2 read inputs to equal O1Buffer1 write outputs
-                O1Buffer1_read_addr = O1_resize_read_addr;
-                O1Buffer1_read_addr_valid = O1_resize_read_addr_valid;
-                O1_resize_pixel_in = O1Buffer1_pixel_out;
-
-                // Set O2Buffer1 write inputs and O2L1 write inputs to equal O1_to_O2 write outputs
-                O2Buffer1_write_addr = O2_resize_write_addr;
-                O2Buffer1_write_valid = O2_resize_write_addr_valid;
-                O2Buffer1_pixel_in = O2_resize_pixel_out;
-                
-                O2L1_write_addr = O2_resize_write_addr;
-                O2L1_write_valid = O2_resize_write_addr_valid;
-                O2L1_pixel_out = O2_resize_pixel_out;
-            end
-            O2L2:
-            begin
-                // Set O2Blur read inputs to equal O2Buffer1 outputs
-                O2Buffer1_read_addr = O2_blur_read_addr;
-                O2Buffer1_read_addr_valid = O2_blur_read_addr_valid;
-                O2_blur_pixel_in = O2Buffer1_pixel_out;
-
-                // Set O2Buffer2 write inputs and O2L2 write inputs to equal O2Blur write outputs
-                O2Buffer2_write_addr = O2_blur_write_addr;
-                O2Buffer2_write_valid = O2_blur_write_valid;
-                O2Buffer2_pixel_in = O2_blur_pixel_out;
-                
-                O2L2_write_addr = O2_blur_write_addr;
-                O2L2_write_valid = O2_blur_write_valid;
-                O2L2_pixel_out = O2_blur_pixel_out;
-            end
-            O2L3:
-            begin
-                // Set O2Blur read inputs to equal O2Buffer2 outputs
-                O2Buffer2_read_addr = O2_blur_read_addr;
-                O2Buffer2_read_addr_valid = O2_blur_read_addr_valid;
-                O2_blur_pixel_in = O2Buffer2_pixel_out;
-
-                // Set O2Buffer1 write inputs and O2L3 write inputs to equal O2Blur write outputs
-                O2Buffer1_write_addr = O2_blur_write_addr;
-                O2Buffer1_write_valid = O2_blur_write_valid;
-                O2Buffer1_pixel_in = O2_blur_pixel_out;
-                
-                O2L3_write_addr = O2_blur_write_addr;
-                O2L3_write_valid = O2_blur_write_valid;
-                O2L3_pixel_out = O2_blur_pixel_out;
-            end
-            O3L1:
-            begin
-                // Set O2_to_O3 read inputs to equal O2Buffer1 write outputs
-                O2Buffer1_read_addr = O2_resize_read_addr;
-                O2Buffer1_read_addr_valid = O2_resize_read_addr_valid;
-                O2_resize_pixel_in = O2Buffer1_pixel_out;
-
-                // Set O3Buffer1 write inputs and O3L1 write inputs to equal O2_to_O3 write outputs
-                O3Buffer1_write_addr = O3_resize_write_addr;
-                O3Buffer1_write_valid = O3_resize_write_addr_valid;
-                O3Buffer1_pixel_in = O3_resize_pixel_out;
-                
-                O3L1_write_addr = O3_resize_write_addr;
-                O3L1_write_valid = O3_resize_write_addr_valid;
-                O3L1_pixel_out = O3_resize_pixel_out;
-            end
-            O3L2:
-            begin
-                // Set O3Blur read inputs to equal O3Buffer1 outputs
-                O3Buffer1_read_addr = O3_blur_read_addr;
-                O3Buffer1_read_addr_valid = O3_blur_read_addr_valid;
-                O3_blur_pixel_in = O3Buffer1_pixel_out;
-
-                // Set O3Buffer2 write inputs and O3L2 write inputs to equal O3Blur write outputs
-                O3Buffer2_write_addr = O3_blur_write_addr;
-                O3Buffer2_write_valid = O3_blur_write_valid;
-                O3Buffer2_pixel_in = O3_blur_pixel_out;
-                
-                O3L2_write_addr = O3_blur_write_addr;
-                O3L2_write_valid = O3_blur_write_valid;
-                O3L2_pixel_out = O3_blur_pixel_out;
-            end
-            O3L3:
-            begin
-                // Set O3Blur read inputs to equal O3Buffer2 outputs
-                O3Buffer2_read_addr = O3_blur_read_addr;
-                O3Buffer2_read_addr_valid = O3_blur_read_addr_valid;
-                O3_blur_pixel_in = O3Buffer2_pixel_out;
-
-                // Set O3Buffer1 write inputs and O3L3 write inputs to equal O3Blur write outputs
-                O3Buffer1_write_addr = O3_blur_write_addr;
-                O3Buffer1_write_valid = O3_blur_write_valid;
-                O3Buffer1_pixel_in = O3_blur_pixel_out;
-                
-                O3L3_write_addr = O3_blur_write_addr;
-                O3L3_write_valid = O3_blur_write_valid;
-                O3L3_pixel_out = O3_blur_pixel_out;
-            end
-        endcase
+    always_comb begin
+        O1Buffer1_write_addr = (state == O1L1) ? ext_read_addr : ((state == O1L3) ? O1_blur_write_addr : 0);
+        O1Buffer1_write_valid = (state == O1L1) ? ext_read_addr_valid_pipe_1 : ((state == O1L3) ? O1_blur_write_valid : 0);
+        O1Buffer1_pixel_in = (state == O1L1) ? ext_pixel_in : ((state == O1L3) ? O1_blur_pixel_out : 0);
     end
+    
+    always_comb begin
+        O1L1_write_addr = (state == O1L1) ? ext_read_addr : 0;
+        O1L1_write_valid = (state == O1L1) ? ext_read_addr_valid_pipe_1 : 0;
+        O1L1_pixel_out = (state == O1L1) ? ext_pixel_in : 0;
+    end
+    
+    always_comb begin
+        O1Buffer1_read_addr = (state == O1L2) ? O1_blur_read_addr : ((state == O2L1) ? O1_resize_read_addr : 0);
+        O1Buffer1_read_addr_valid = (state == O1L2) ? O1_blur_read_addr_valid : ((state == O2L1) ? O1_resize_read_addr_valid : 0);
+    end
+
+    always_comb begin
+        O1_blur_pixel_in = (state == O1L2) ? O1Buffer1_pixel_out : ((state == O1L3) ? O1Buffer2_pixel_out : 0);
+    end
+
+    always_comb begin
+        O1Buffer2_write_addr = (state == O1L2) ? O1_blur_write_addr : 0;
+        O1Buffer2_write_valid = (state == O1L2) ? O1_blur_write_valid : 0;
+        O1Buffer2_pixel_in = (state == O1L2) ? O1_blur_pixel_out : 0;
+    end
+
+    always_comb begin
+        O1L2_write_addr = (state == O1L2) ? O1_blur_write_addr : 0;
+        O1L2_write_valid = (state == O1L2) ? O1_blur_write_valid : 0;
+        O1L2_pixel_out = (state == O1L2) ? O1_blur_pixel_out : 0;
+    end
+
+    always_comb begin
+        O1Buffer2_read_addr = (state == O1L3) ? O1_blur_read_addr : 0;
+        O1Buffer2_read_addr_valid = (state == O1L3) ? O1_blur_read_addr_valid : 0;
+    end
+
+    always_comb begin
+        O1L3_write_addr = (state == O1L3) ? O1_blur_write_addr : 0;
+        O1L3_write_valid = (state == O1L3) ? O1_blur_write_valid : 0;
+        O1L3_pixel_out = (state == O1L3) ? O1_blur_pixel_out : 0;
+    end
+
+    always_comb begin
+        O1_resize_pixel_in = (state == O2L1) ? O1Buffer1_pixel_out : 0;
+    end
+
+    always_comb begin
+        O2Buffer1_write_addr = (state == O2L1) ? O2_resize_write_addr : ((state == O2L3) ? O2_blur_write_addr : 0);
+        O2Buffer1_write_valid = (state == O2L1) ? O2_resize_write_addr_valid : ((state == O2L3) ? O2_blur_write_valid : 0);
+        O2Buffer1_pixel_in = (state == O2L1) ? O2_resize_pixel_out : ((state == O2L3) ? O2_blur_pixel_out : 0);
+    end
+
+    always_comb begin
+        O2L1_write_addr = (state == O2L1) ? O2_resize_write_addr;
+        O2L1_write_valid = (state == O2L1) ? O2_resize_write_addr_valid;
+        O2L1_pixel_out = (state == O2L1) ? O2_resize_pixel_out;
+    end
+
+    always_comb begin
+        O2Buffer1_read_addr = (state == O2L2) ? O2_blur_read_addr : ((state == O3L1) ? O2_resize_read_addr : 0);
+        O2Buffer1_read_addr_valid = (state == O2L2) ? O2_blur_read_addr_valid : ((state == O3L1) ? O2_resize_read_addr_valid : 0);
+    end
+
+    always_comb begin
+        O2_blur_pixel_in = (state == O2L2) ? O2Buffer1_pixel_out : ((state == O2L3) ? O2Buffer2_pixel_out : 0);
+    end
+
+    always_comb begin
+        O2Buffer2_write_addr = (state == O2L2) ? O2_blur_write_addr : 0;
+        O2Buffer2_write_valid = (state == O2L2) ? O2_blur_write_valid : 0;
+        O2Buffer2_pixel_in = (state == O2L2) ? O2_blur_pixel_out : 0;
+    end
+
+    always_comb begin
+        O2L2_write_addr = (state == O2L2) ? O2_blur_write_addr : 0;
+        O2L2_write_valid = (state == O2L2) ? O2_blur_write_valid : 0;
+        O2L2_pixel_out = (state == O2L2) ? O2_blur_pixel_out : 0;
+    end
+
+    always_comb begin
+        O2Buffer2_read_addr = (state == O2L3) ? O2_blur_read_addr : 0;
+        O2Buffer2_read_addr_valid = (state == O2L3) ? O2_blur_read_addr_valid : 0;
+    end
+
+    always_comb begin
+        O2L3_write_addr = (state == O2L3) ? O2_blur_write_addr : 0;
+        O2L3_write_valid = (state == O2L3) ? O2_blur_write_valid : 0;
+        O2L3_pixel_out = (state == O2L3) ? O2_blur_pixel_out : 0;
+    end
+
+    always_comb begin
+        O2_resize_pixel_in = (state == O3L1) ? O2Buffer1_pixel_out : 0;
+    end
+
+    always_comb begin
+        O3Buffer1_write_addr = (state == O3L1) ? O3_resize_write_addr : ((state == O3L3) ? O3_blur_write_addr : 0);
+        O3Buffer1_write_valid = (state == O3L1) ? O3_resize_write_addr_valid : ((state == O3L3) ? O3_blur_write_valid : 0);
+        O3Buffer1_pixel_in = (state == O3L1) ? O3_resize_pixel_out : ((state == O3L3) ? O3_blur_pixel_out : 0);
+    end
+
+    always_comb begin
+        O3L1_write_addr = (state == O3L1) ? O3_resize_write_addr;
+        O3L1_write_valid = (state == O3L1) ? O3_resize_write_addr_valid;
+        O3L1_pixel_out = (state == O3L1) ? O3_resize_pixel_out;
+    end
+
+    always_comb begin
+        O3Buffer1_read_addr = (state == O3L2) ? O3_blur_read_addr;
+        O3Buffer1_read_addr_valid = (state == O3L2) ? O3_blur_read_addr_valid;
+    end
+
+    always_comb begin
+        O3_blur_pixel_in = (state == O3L2) ? O3Buffer1_pixel_out : ((state == O3L3) ? O3Buffer2_pixel_out : 0);
+    end
+
+    always_comb begin
+        O3Buffer2_write_addr = (state == O3L2) ? O3_blur_write_addr : 0;
+        O3Buffer2_write_valid = (state == O3L2) ? O3_blur_write_valid : 0;
+        O3Buffer2_pixel_in = (state == O3L2) ? O3_blur_pixel_out : 0;
+    end
+
+    always_comb begin
+        O3L2_write_addr = (state == O3L2) ? O3_blur_write_addr : 0;
+        O3L2_write_valid = (state == O3L2) ? O3_blur_write_valid : 0;
+        O3L2_pixel_out = (state == O3L2) ? 03_blur_pixel_out : 0;
+    end
+
+    always_comb begin
+        O3Buffer2_read_addr = (state == O3L3) ? O3_blur_read_addr : 0;
+        O3Buffer2_read_addr_valid = (state == O3L3) ? O3_blur_read_addr_valid : 0;
+    end
+
+    always_comb begin
+        O3L3_write_addr = (state == O3L3) ? O3_blur_write_addr : 0;
+        O3L3_write_valid = (state == O3L3) ? O3_blur_write_valid : 0;
+        O3L3_pixel_out = (state == O3L3) ? O3_blur_pixel_out : 0;
+    end
+
+    // always_comb begin // connect correct BRAM inputs and outputs here based on state
+    //     case (state)
+    //         // IDLE:
+    //         //     // Nothing needs to be connected here
+    //         O1L1:
+    //         begin
+    //             // set O1Buffer1 write inputs and O1L1 write inputs to equal original BRAM read outputs
+    //             O1Buffer1_write_addr = ext_read_addr;
+    //             O1Buffer1_write_valid = ext_read_addr_valid_pipe_1;
+    //             O1Buffer1_pixel_in = ext_pixel_in;
+                
+    //             O1L1_write_addr = ext_read_addr;
+    //             O1L1_write_valid = ext_read_addr_valid_pipe_1;
+    //             O1L1_pixel_out = ext_pixel_in;
+    //         end
+    //         O1L2:
+    //         begin
+    //             // Set O1Blur read inputs to equal O1Buffer1 outputs
+    //             O1Buffer1_read_addr = O1_blur_read_addr;
+    //             O1Buffer1_read_addr_valid = O1_blur_read_addr_valid;
+    //             O1_blur_pixel_in = O1Buffer1_pixel_out;
+
+    //             // Set O1Buffer2 write inputs and O1L2 write inputs to equal O1Blur write outputs
+    //             O1Buffer2_write_addr = O1_blur_write_addr;
+    //             O1Buffer2_write_valid = O1_blur_write_valid;
+    //             O1Buffer2_pixel_in = O1_blur_pixel_out;
+                
+    //             O1L2_write_addr = O1_blur_write_addr;
+    //             O1L2_write_valid = O1_blur_write_valid;
+    //             O1L2_pixel_out = O1_blur_pixel_out;
+    //         end
+    //         O1L3:
+    //         begin
+    //             // Set O1Blur read inputs to equal O1Buffer2 outputs
+    //             O1Buffer2_read_addr = O1_blur_read_addr;
+    //             O1Buffer2_read_addr_valid = O1_blur_read_addr_valid;
+    //             O1_blur_pixel_in = O1Buffer2_pixel_out;
+
+    //             // Set O1Buffer1 write inputs and O1L3 write inputs to equal O1Blur write outputs
+    //             O1Buffer1_write_addr = O1_blur_write_addr;
+    //             O1Buffer1_write_valid = O1_blur_write_valid;
+    //             O1Buffer1_pixel_in = O1_blur_pixel_out;
+                
+    //             O1L3_write_addr = O1_blur_write_addr;
+    //             O1L3_write_valid = O1_blur_write_valid;
+    //             O1L3_pixel_out = O1_blur_pixel_out;
+    //         end
+    //         O2L1:
+    //         begin
+    //             // Set O1_to_O2 read inputs to equal O1Buffer1 write outputs
+    //             O1Buffer1_read_addr = O1_resize_read_addr;
+    //             O1Buffer1_read_addr_valid = O1_resize_read_addr_valid;
+    //             O1_resize_pixel_in = O1Buffer1_pixel_out;
+
+    //             // Set O2Buffer1 write inputs and O2L1 write inputs to equal O1_to_O2 write outputs
+    //             O2Buffer1_write_addr = O2_resize_write_addr;
+    //             O2Buffer1_write_valid = O2_resize_write_addr_valid;
+    //             O2Buffer1_pixel_in = O2_resize_pixel_out;
+                
+    //             O2L1_write_addr = O2_resize_write_addr;
+    //             O2L1_write_valid = O2_resize_write_addr_valid;
+    //             O2L1_pixel_out = O2_resize_pixel_out;
+    //         end
+    //         O2L2:
+    //         begin
+    //             // Set O2Blur read inputs to equal O2Buffer1 outputs
+    //             O2Buffer1_read_addr = O2_blur_read_addr;
+    //             O2Buffer1_read_addr_valid = O2_blur_read_addr_valid;
+    //             O2_blur_pixel_in = O2Buffer1_pixel_out;
+
+    //             // Set O2Buffer2 write inputs and O2L2 write inputs to equal O2Blur write outputs
+    //             O2Buffer2_write_addr = O2_blur_write_addr;
+    //             O2Buffer2_write_valid = O2_blur_write_valid;
+    //             O2Buffer2_pixel_in = O2_blur_pixel_out;
+                
+    //             O2L2_write_addr = O2_blur_write_addr;
+    //             O2L2_write_valid = O2_blur_write_valid;
+    //             O2L2_pixel_out = O2_blur_pixel_out;
+    //         end
+    //         O2L3:
+    //         begin
+    //             // Set O2Blur read inputs to equal O2Buffer2 outputs
+    //             O2Buffer2_read_addr = O2_blur_read_addr;
+    //             O2Buffer2_read_addr_valid = O2_blur_read_addr_valid;
+    //             O2_blur_pixel_in = O2Buffer2_pixel_out;
+
+    //             // Set O2Buffer1 write inputs and O2L3 write inputs to equal O2Blur write outputs
+    //             O2Buffer1_write_addr = O2_blur_write_addr;
+    //             O2Buffer1_write_valid = O2_blur_write_valid;
+    //             O2Buffer1_pixel_in = O2_blur_pixel_out;
+                
+    //             O2L3_write_addr = O2_blur_write_addr;
+    //             O2L3_write_valid = O2_blur_write_valid;
+    //             O2L3_pixel_out = O2_blur_pixel_out;
+    //         end
+    //         O3L1:
+    //         begin
+    //             // Set O2_to_O3 read inputs to equal O2Buffer1 write outputs
+    //             O2Buffer1_read_addr = O2_resize_read_addr;
+    //             O2Buffer1_read_addr_valid = O2_resize_read_addr_valid;
+    //             O2_resize_pixel_in = O2Buffer1_pixel_out;
+
+    //             // Set O3Buffer1 write inputs and O3L1 write inputs to equal O2_to_O3 write outputs
+    //             O3Buffer1_write_addr = O3_resize_write_addr;
+    //             O3Buffer1_write_valid = O3_resize_write_addr_valid;
+    //             O3Buffer1_pixel_in = O3_resize_pixel_out;
+                
+    //             O3L1_write_addr = O3_resize_write_addr;
+    //             O3L1_write_valid = O3_resize_write_addr_valid;
+    //             O3L1_pixel_out = O3_resize_pixel_out;
+    //         end
+    //         O3L2:
+    //         begin
+    //             // Set O3Blur read inputs to equal O3Buffer1 outputs
+    //             O3Buffer1_read_addr = O3_blur_read_addr;
+    //             O3Buffer1_read_addr_valid = O3_blur_read_addr_valid;
+    //             O3_blur_pixel_in = O3Buffer1_pixel_out;
+
+    //             // Set O3Buffer2 write inputs and O3L2 write inputs to equal O3Blur write outputs
+    //             O3Buffer2_write_addr = O3_blur_write_addr;
+    //             O3Buffer2_write_valid = O3_blur_write_valid;
+    //             O3Buffer2_pixel_in = O3_blur_pixel_out;
+                
+    //             O3L2_write_addr = O3_blur_write_addr;
+    //             O3L2_write_valid = O3_blur_write_valid;
+    //             O3L2_pixel_out = O3_blur_pixel_out;
+    //         end
+    //         O3L3:
+    //         begin
+    //             // Set O3Blur read inputs to equal O3Buffer2 outputs
+    //             O3Buffer2_read_addr = O3_blur_read_addr;
+    //             O3Buffer2_read_addr_valid = O3_blur_read_addr_valid;
+    //             O3_blur_pixel_in = O3Buffer2_pixel_out;
+
+    //             // Set O3Buffer1 write inputs and O3L3 write inputs to equal O3Blur write outputs
+    //             O3Buffer1_write_addr = O3_blur_write_addr;
+    //             O3Buffer1_write_valid = O3_blur_write_valid;
+    //             O3Buffer1_pixel_in = O3_blur_pixel_out;
+                
+    //             O3L3_write_addr = O3_blur_write_addr;
+    //             O3L3_write_valid = O3_blur_write_valid;
+    //             O3L3_pixel_out = O3_blur_pixel_out;
+    //         end
+    //     endcase
+    // end
 
 endmodule
 
