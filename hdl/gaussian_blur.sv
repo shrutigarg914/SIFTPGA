@@ -18,8 +18,6 @@ module gaussian #(parameter WIDTH = 8) (
                     output logic error_out,
                     output logic busy_out);
 
-    integer i;
-
     //  3x3 kernel
     logic [7:0] kernel [8:0];
     // KERNEL DEFINITION: 3X3 GAUSSIAN BLUR
@@ -61,13 +59,13 @@ module gaussian #(parameter WIDTH = 8) (
     always_ff@(posedge clk_in) begin
         if(rst_in) begin
             stage1_valid <= 0;
-            for(i=0; i<9; i=i+1) begin
+            for(integer i=0; i<9; i=i+1) begin
                 stage1_data[i] <= 0;
             end
         end
         else begin
             stage1_valid <= data_valid_in;
-            for(i=0; i<9; i=i+1) begin
+            for(integer i=0; i<9; i=i+1) begin
                 stage1_data[i] <= $signed(kernel[i]) * 
                                   $signed({1'b0, rowdata[i*8+:8]});
             end
@@ -78,13 +76,13 @@ module gaussian #(parameter WIDTH = 8) (
     always_ff@(posedge clk_in) begin
         if(rst_in) begin
             stage1_reg_valid <= 0;
-            for(i=0; i<9; i=i+1) begin
+            for(integer i=0; i<9; i=i+1) begin
                 stage1_data_reg[i] <= 0;
             end
         end
         else begin
             stage1_reg_valid <= stage1_valid;
-            for(i=0; i<9; i=i+1) begin
+            for(integer i=0; i<9; i=i+1) begin
                 stage1_data_reg[i] <= stage1_data[i];
             end
         end
@@ -95,7 +93,7 @@ module gaussian #(parameter WIDTH = 8) (
     // sum all the stage 1 data
     always_comb begin
         stage2_accumulator = 0;
-        for(i=0;  i<9; i=i+1) begin
+        for(integer i=0;  i<9; i=i+1) begin
             stage2_accumulator = $signed(stage2_accumulator) +
                                  $signed(stage1_data_reg[i]);
         end

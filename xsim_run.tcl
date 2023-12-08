@@ -1,5 +1,5 @@
 open_vcd
 log_vcd  *
-run all
+run 4000000ns
 close_vcd
 quit

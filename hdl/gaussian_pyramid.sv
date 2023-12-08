@@ -394,7 +394,9 @@ module gaussian_pyramid #(
                             state <= O1L2;
                             state_initialized <= 0;
                         end else begin
-                            ext_read_addr <= ext_read_addr + 1;
+                            if (ext_read_addr_valid_pipe_1) begin
+                                ext_read_addr <= ext_read_addr + 1;
+                            end
                             ext_read_addr_valid <= 1;
                         end
                     end

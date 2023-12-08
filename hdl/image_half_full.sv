@@ -30,6 +30,8 @@ module image_half_full #(
     logic [$clog2(OLD_WIDTH)-1:0] center_addr_x;
     logic [$clog2(OLD_HEIGHT)-1:0] center_addr_y;
     logic busy;
+    logic resize_in_valid;
+    logic [BIT_DEPTH-1:0] resize_in;
     
     logic [1:0] ext_read_addr_valid_pipe;
     always_ff @(posedge clk_in) begin
@@ -101,8 +103,6 @@ module image_half_full #(
             .data_valid_out(ext_write_valid),
             .done_out()
     );
-    logic resize_in_valid;
-    logic [BIT_DEPTH-1:0] resize_in;
 
 endmodule
 

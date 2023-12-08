@@ -4,7 +4,7 @@
 `ifdef SYNTHESIS
 `define FPATH(X) `"X`"
 `else /* ! SYNTHESIS */
-`define FPATH(X) `"util/X`"
+`define FPATH(X) `"X`"
 `endif  /* ! SYNTHESIS */
 
 module gaussian_pyramid_tb;

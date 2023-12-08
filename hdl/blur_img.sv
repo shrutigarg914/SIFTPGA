@@ -36,6 +36,7 @@ module blur_img #(
     logic[BIT_DEPTH-1:0] blur_out;
     logic blur_data_valid_out;
     logic busy;
+    logic wait_for_last_pixel;
 
     logic [1:0] ext_read_addr_valid_pipe;
     always_ff @(posedge clk_in) begin
@@ -79,6 +80,7 @@ module blur_img #(
         kernel_ind <= 0;
         blur_done <= 0;
         busy <= 0;
+        wait_for_last_pixel <= 0;
       end else begin
         if (ext_read_addr_valid) begin
             ext_read_addr_valid <= 0;
@@ -91,6 +93,17 @@ module blur_img #(
         end
         if (busy || start_in) begin
             // we either just started the blurring part or we just finished reading the last pixel from the BRAM
+            if (wait_for_last_pixel && blur_data_valid_out) begin
+                blur_done <= 1;
+                center_addr_x <= 0;
+                center_addr_y <= 0;
+                center_addr_x_prev <= 0;
+                center_addr_y_prev <= 0;
+                blur_data_valid_in <= 0;
+                kernel_ind <= 0;
+                busy <= 0;
+                wait_for_last_pixel <= 0;
+            end
             if (ext_read_addr_valid_pipe[1] || start_in) begin 
                 if (!start_in) begin
                     // write the previous read result to correct row
@@ -150,14 +163,7 @@ module blur_img #(
                     center_addr_y_prev <= center_addr_y;
                     if (center_addr_x == WIDTH - 1) begin
                         if (center_addr_y == HEIGHT - 1) begin
-                            blur_done <= 1;
-                            center_addr_x <= 0;
-                            center_addr_y <= 0;
-                            center_addr_x_prev <= 0;
-                            center_addr_y_prev <= 0;
-                            blur_data_valid_in <= 0;
-                            kernel_ind <= 0;
-                            busy <= 0;
+                            wait_for_last_pixel <= 1;
                         end else begin
                             center_addr_x <= 0;
                             center_addr_y <= center_addr_y + 1;
