@@ -383,11 +383,14 @@ module gaussian_pyramid #(
             end
             case (state)
                 IDLE:
+                begin
                     if (start_in) begin
                         state <= O1L1;
                         start_read_original <= 1;
                     end
+                end
                 O1L1:
+                begin
                     // Read from original image BRAM by iterating through all addresses and reading
                     if (ext_read_addr_valid_pipe_1 || start_read_original) begin
                         if (ext_read_addr == TOP_WIDTH * TOP_HEIGHT - 1) begin
@@ -400,7 +403,9 @@ module gaussian_pyramid #(
                             ext_read_addr_valid <= 1;
                         end
                     end
+                end
                 O1L2:
+                begin
                     // Start O1Blur, wait for it to be done, go next state
                     if (!state_initialized) begin
                         O1_start_blurring <= 1;
@@ -414,7 +419,9 @@ module gaussian_pyramid #(
                             state_initialized <= 0;
                         end
                     end
+                end
                 O1L3:
+                begin
                     // Start O1Blur, wait for it to be done, go next state
                     if (!state_initialized) begin
                         O1_start_blurring <= 1;
@@ -428,7 +435,9 @@ module gaussian_pyramid #(
                             state_initialized <= 0;
                         end
                     end
+                end
                 O2L1:
+                begin
                     // Start O1_to_O2, wait for it to be done, go next state
                     if (!state_initialized) begin
                         O12_start_resizing <= 1;
@@ -442,7 +451,9 @@ module gaussian_pyramid #(
                             state_initialized <= 0;
                         end
                     end
+                end
                 O2L2:
+                begin
                     // Start O2Blur, wait for it to be done, go next state
                     if (!state_initialized) begin
                         O2_start_blurring <= 1;
@@ -456,7 +467,9 @@ module gaussian_pyramid #(
                             state_initialized <= 0;
                         end
                     end
+                end
                 O2L3:
+                begin
                     // Start O2Blur, wait for it to be done, go next state
                     if (!state_initialized) begin
                         O2_start_blurring <= 1;
@@ -470,7 +483,9 @@ module gaussian_pyramid #(
                             state_initialized <= 0;
                         end
                     end
+                end
                 O3L1:
+                begin
                     // Start O2_to_O3, wait for it to be done, go next state
                     if (!state_initialized) begin
                         O23_start_resizing <= 1;
@@ -484,7 +499,9 @@ module gaussian_pyramid #(
                             state_initialized <= 0;
                         end
                     end
+                end
                 O3L2:
+                begin
                     // Start O3Blur, wait for it to be done, go next state
                     if (!state_initialized) begin
                         O3_start_blurring <= 1;
@@ -498,7 +515,9 @@ module gaussian_pyramid #(
                             state_initialized <= 0;
                         end
                     end
+                end
                 O3L3:
+                begin
                     // Start O3Blur, wait for it to be done, go back to IDLE
                     if (!state_initialized) begin
                         O3_start_blurring <= 1;
@@ -513,6 +532,7 @@ module gaussian_pyramid #(
                             pyramid_done <= 1;
                         end
                     end
+                end
             endcase
         end
     end

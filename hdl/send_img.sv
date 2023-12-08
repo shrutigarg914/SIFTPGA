@@ -7,7 +7,7 @@ module send_img #(
   input wire clk,
   input wire rst_in,//sys_rst
   input wire img_ready,//full_image_received
-  input wire tx,//uart_txd
+  output logic tx,//uart_txd
   input wire [7:0] data,
   output logic [13:0] address, // gets wired to the BRAM
   output logic busy, //or we could do img_sent whichever makes more sense

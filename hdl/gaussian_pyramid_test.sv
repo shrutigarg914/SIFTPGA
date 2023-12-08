@@ -58,7 +58,6 @@ module top_level(
       if (sys_rst) begin
         pixel_addr <= 0;
         full_image_received <= 1'b0;
-        pyramid_done <= 0;
         pyramid_done_latched <= 0;
         start_pyramid <= 0;
       end
@@ -130,10 +129,10 @@ module top_level(
         .regceb(1'b1),
         .doutb(O1L1_pixel_out)
     );
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O1L1_write_addr;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L1_write_addr;
     logic O1L1_write_valid;
     logic [BIT_DEPTH-1:0] O1L1_pixel_in;
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O1L1_read_addr;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L1_read_addr;
     logic [BIT_DEPTH-1:0] O1L1_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -157,10 +156,10 @@ module top_level(
         .regceb(1'b1),
         .doutb(O1L2_pixel_out)
     );
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O1L2_write_addr;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L2_write_addr;
     logic O1L2_write_valid;
     logic [BIT_DEPTH-1:0] O1L2_pixel_in;
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O1L2_read_addr;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L2_read_addr;
     logic [BIT_DEPTH-1:0] O1L2_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -184,10 +183,10 @@ module top_level(
         .regceb(1'b1),
         .doutb(O1L3_pixel_out)
     );
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O1L3_write_addr;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L3_write_addr;
     logic O1L3_write_valid;
     logic [BIT_DEPTH-1:0] O1L3_pixel_in;
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O1L3_read_addr;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L3_read_addr;
     logic [BIT_DEPTH-1:0] O1L3_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -292,10 +291,10 @@ module top_level(
         .regceb(1'b1),
         .doutb(O3L1_pixel_out)
     );
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O3L1_write_addr;
+    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L1_write_addr;
     logic O3L1_write_valid;
     logic [BIT_DEPTH-1:0] O3L1_pixel_in;
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O3L1_read_addr;
+    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L1_read_addr;
     logic [BIT_DEPTH-1:0] O3L1_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -319,10 +318,10 @@ module top_level(
         .regceb(1'b1),
         .doutb(O3L2_pixel_out)
     );
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O3L2_write_addr;
+    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L2_write_addr;
     logic O3L2_write_valid;
     logic [BIT_DEPTH-1:0] O3L2_pixel_in;
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O3L2_read_addr;
+    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L2_read_addr;
     logic [BIT_DEPTH-1:0] O3L2_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -346,10 +345,10 @@ module top_level(
         .regceb(1'b1),
         .doutb(O3L3_pixel_out)
     );
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O3L3_write_addr;
+    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L3_write_addr;
     logic O3L3_write_valid;
     logic [BIT_DEPTH-1:0] O3L3_pixel_in;
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O3L3_read_addr;
+    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L3_read_addr;
     logic [BIT_DEPTH-1:0] O3L3_pixel_out;
     
 
@@ -426,6 +425,8 @@ module top_level(
     tx_state state;
     tx_state state_prev;
 
+    assign led[15] = 1;
+
     always_ff @(posedge clk_100mhz) begin
         if (sys_rst) begin
             state <= IDLE;
@@ -433,48 +434,92 @@ module top_level(
             state_prev <= state;
             case (state)
                 IDLE:
-                    if (btn_edge && pyramid_done_latched) begin
-                        state <= O1L1;
+                    begin
+                        if (btn_edge && pyramid_done_latched) begin
+                            state <= O1L1;
+                        end
                     end
                 O1L1:
-                    if (!tx_img_busy_O1L1) begin
-                        state <= O1L2;
+                    begin
+                        if (!tx_img_busy_O1L1) begin
+                            state <= O1L2;
+                        end
+                        uart_txd <= O1L1_txd;
                     end
                 O1L2:
-                    if (!tx_img_busy_O1L2) begin
-                        state <= O1L3;
+                    begin
+                        if (!tx_img_busy_O1L2) begin
+                            state <= O1L3;
+                        end
+                        uart_txd <= O1L2_txd;
                     end
                 O1L3:
-                    if (!tx_img_busy_O1L3) begin
-                        state <= O2L1;
+                    begin
+                        if (!tx_img_busy_O1L3) begin
+                            state <= O2L1;
+                        end
+                        uart_txd <= O1L3_txd;
                     end
                 O2L1:
-                    if (!tx_img_busy_O2L1) begin
-                        state <= O2L2;
+                    begin
+                        if (!tx_img_busy_O2L1) begin
+                            state <= O2L2;
+                        end
+                        uart_txd <= O2L1_txd;
                     end
                 O2L2:
-                    if (!tx_img_busy_O2L2) begin
-                        state <= O2L3;
+                    begin
+                        if (!tx_img_busy_O2L2) begin
+                            state <= O2L3;
+                        end
+                        uart_txd <= O2L2_txd;
                     end
                 O2L3:
-                    if (!tx_img_busy_O2L3) begin
-                        state <= O3L1;
+                    begin
+                        if (!tx_img_busy_O2L3) begin
+                            state <= O3L1;
+                        end
+                        uart_txd <= O2L3_txd;
                     end
                 O3L1:
-                    if (!tx_img_busy_O3L1) begin
-                        state <= O3L2;
+                    begin
+                        if (!tx_img_busy_O3L1) begin
+                            state <= O3L2;
+                        end
+                        uart_txd <= O3L1_txd;
                     end
                 O3L2:
-                    if (!tx_img_busy_O3L2) begin
-                        state <= O3L3;
+                    begin
+                        if (!tx_img_busy_O3L2) begin
+                            state <= O3L3;
+                        end
+                        uart_txd <= O3L2_txd;
                     end
                 O3L3:
-                    if (!tx_img_busy_O3L3) begin
+                    begin
+                        if (!tx_img_busy_O3L3) begin
+                            state <= IDLE;
+                        end
+                        uart_txd <= O3L3_txd;
+                    end
+                default:
+                    begin
                         state <= IDLE;
                     end
             endcase
         end
     end
+
+    assign led[2] = (state == IDLE);
+    assign led[3] = (state == O1L1);
+    assign led[4] = (state == O1L2);
+    assign led[5] = (state == O1L3);
+    assign led[6] = (state == O2L1);
+    assign led[7] = (state == O2L2);
+    assign led[8] = (state == O2L3);
+    assign led[9] = (state == O3L1);
+    assign led[10] = (state == O3L2);
+    assign led[11] = (state == O3L3);
 
     send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O1L1 (
       .clk(clk_100mhz),
@@ -593,46 +638,46 @@ module top_level(
     logic tx_img_busy_O3L3;
     logic O3L3_txd;
 
-    always_comb begin
-        case (state)
-            O1L1:
-                begin
-                    uart_txd = O1L1_txd;
-                end
-            O1L2:
-                begin
-                    uart_txd = O1L2_txd;
-                end
-            O1L3:
-                begin
-                    uart_txd = O1L3_txd;
-                end
-            O2L1:
-                begin
-                    uart_txd = O2L1_txd;
-                end
-            O2L2:
-                begin
-                    uart_txd = O2L2_txd;
-                end
-            O2L3:
-                begin
-                    uart_txd = O2L3_txd;
-                end
-            O3L1:
-                begin
-                    uart_txd = O3L1_txd;
-                end
-            O3L2:
-                begin
-                    uart_txd = O3L2_txd;
-                end
-            O3L3:
-                begin
-                    uart_txd = O3L3_txd;
-                end
-        endcase
-    end
+    // always_comb begin
+    //     case (state)
+    //         O1L1:
+    //             begin
+    //                 uart_txd = O1L1_txd;
+    //             end
+    //         O1L2:
+    //             begin
+    //                 uart_txd = O1L2_txd;
+    //             end
+    //         O1L3:
+    //             begin
+    //                 uart_txd = O1L3_txd;
+    //             end
+    //         O2L1:
+    //             begin
+    //                 uart_txd = O2L1_txd;
+    //             end
+    //         O2L2:
+    //             begin
+    //                 uart_txd = O2L2_txd;
+    //             end
+    //         O2L3:
+    //             begin
+    //                 uart_txd = O2L3_txd;
+    //             end
+    //         O3L1:
+    //             begin
+    //                 uart_txd = O3L1_txd;
+    //             end
+    //         O3L2:
+    //             begin
+    //                 uart_txd = O3L2_txd;
+    //             end
+    //         O3L3:
+    //             begin
+    //                 uart_txd = O3L3_txd;
+    //             end
+    //     endcase
+    // end
   
     
 endmodule // top_level
