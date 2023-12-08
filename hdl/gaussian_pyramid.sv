@@ -592,9 +592,9 @@ module gaussian_pyramid #(
     end
 
     always_comb begin
-        O2L1_write_addr = (state == O2L1) ? O2_resize_write_addr;
-        O2L1_write_valid = (state == O2L1) ? O2_resize_write_addr_valid;
-        O2L1_pixel_out = (state == O2L1) ? O2_resize_pixel_out;
+        O2L1_write_addr = (state == O2L1) ? O2_resize_write_addr : 0;
+        O2L1_write_valid = (state == O2L1) ? O2_resize_write_addr_valid : 0;
+        O2L1_pixel_out = (state == O2L1) ? O2_resize_pixel_out : 0;
     end
 
     always_comb begin
@@ -640,14 +640,14 @@ module gaussian_pyramid #(
     end
 
     always_comb begin
-        O3L1_write_addr = (state == O3L1) ? O3_resize_write_addr;
-        O3L1_write_valid = (state == O3L1) ? O3_resize_write_addr_valid;
-        O3L1_pixel_out = (state == O3L1) ? O3_resize_pixel_out;
+        O3L1_write_addr = (state == O3L1) ? O3_resize_write_addr : 0;
+        O3L1_write_valid = (state == O3L1) ? O3_resize_write_addr_valid : 0;
+        O3L1_pixel_out = (state == O3L1) ? O3_resize_pixel_out : 0;
     end
 
     always_comb begin
-        O3Buffer1_read_addr = (state == O3L2) ? O3_blur_read_addr;
-        O3Buffer1_read_addr_valid = (state == O3L2) ? O3_blur_read_addr_valid;
+        O3Buffer1_read_addr = (state == O3L2) ? O3_blur_read_addr : 0;
+        O3Buffer1_read_addr_valid = (state == O3L2) ? O3_blur_read_addr_valid : 0;
     end
 
     always_comb begin
@@ -663,7 +663,7 @@ module gaussian_pyramid #(
     always_comb begin
         O3L2_write_addr = (state == O3L2) ? O3_blur_write_addr : 0;
         O3L2_write_valid = (state == O3L2) ? O3_blur_write_valid : 0;
-        O3L2_pixel_out = (state == O3L2) ? 03_blur_pixel_out : 0;
+        O3L2_pixel_out = (state == O3L2) ? O3_blur_pixel_out : 0;
     end
 
     always_comb begin

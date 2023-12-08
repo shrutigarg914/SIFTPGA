@@ -443,7 +443,7 @@ module top_level(
                     end
                 O1L1:
                     begin
-                        if (!tx_img_busy_O1L1 && state_prev == O1L1) begin
+                        if (!tx_img_busy_O1L1 && btn_edge) begin
                             state <= O1L2;
                         end
                         uart_txd <= O1L1_txd;
@@ -451,7 +451,7 @@ module top_level(
                     end
                 O1L2:
                     begin
-                        if (!tx_img_busy_O1L2 && state_prev == O1L2) begin
+                        if (!tx_img_busy_O1L2 && btn_edge) begin
                             state <= O1L3;
                         end
                         uart_txd <= O1L2_txd;
@@ -459,7 +459,7 @@ module top_level(
                     end
                 O1L3:
                     begin
-                        if (!tx_img_busy_O1L3 && state_prev == O1L3) begin
+                        if (!tx_img_busy_O1L3 && btn_edge) begin
                             state <= O2L1;
                         end
                         uart_txd <= O1L3_txd;
@@ -467,7 +467,7 @@ module top_level(
                     end
                 O2L1:
                     begin
-                        if (!tx_img_busy_O2L1 && state_prev == O2L1) begin
+                        if (!tx_img_busy_O2L1 && btn_edge) begin
                             state <= O2L2;
                         end
                         uart_txd <= O2L1_txd;
@@ -475,7 +475,7 @@ module top_level(
                     end
                 O2L2:
                     begin
-                        if (!tx_img_busy_O2L2 && state_prev == O2L2) begin
+                        if (!tx_img_busy_O2L2 && btn_edge) begin
                             state <= O2L3;
                         end
                         uart_txd <= O2L2_txd;
@@ -483,7 +483,7 @@ module top_level(
                     end
                 O2L3:
                     begin
-                        if (!tx_img_busy_O2L3 && state_prev == O2L3) begin
+                        if (!tx_img_busy_O2L3 && btn_edge) begin
                             state <= O3L1;
                         end
                         uart_txd <= O2L3_txd;
@@ -491,7 +491,7 @@ module top_level(
                     end
                 O3L1:
                     begin
-                        if (!tx_img_busy_O3L1 && state_prev == O3L1) begin
+                        if (!tx_img_busy_O3L1 && btn_edge) begin
                             state <= O3L2;
                         end
                         uart_txd <= O3L1_txd;
@@ -499,7 +499,7 @@ module top_level(
                     end
                 O3L2:
                     begin
-                        if (!tx_img_busy_O3L2 && state_prev == O3L2) begin
+                        if (!tx_img_busy_O3L2 && btn_edge) begin
                             state <= O3L3;
                         end
                         uart_txd <= O3L2_txd;
@@ -507,7 +507,7 @@ module top_level(
                     end
                 O3L3:
                     begin
-                        if (!tx_img_busy_O3L3 && state_prev == O3L3) begin
+                        if (!tx_img_busy_O3L3 && btn_edge) begin
                             state <= IDLE;
                         end
                         uart_txd <= O3L3_txd;
