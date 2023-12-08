@@ -114,13 +114,20 @@ module gaussian #(parameter WIDTH = 8) (
     // PIPELINE STAGE 3 (1 cycle)
     //
     // divide by 16 and output
+    logic [2:0] stage2_valid_pipe;
+    always_ff@(posedge clk_in) begin
+        stage2_valid_pipe[0] <= stage2_valid;
+        stage2_valid_pipe[1] <= stage2_valid_pipe[0];
+        stage2_valid_pipe[2] <= stage2_valid_pipe[1];
+    end
+
     always_ff@(posedge clk_in) begin
         if(rst_in) begin
             data_valid_out <= 0;
             data_out  <= 0;
         end
         else begin
-            data_valid_out <= stage2_valid;
+            data_valid_out <= stage2_valid_pipe[2]; // idk why the timing is off without this?
             data_out  <= stage2_data >> 4; // stage2 is WIDTH+3 bits, output is WIDTH bits
         end
     end

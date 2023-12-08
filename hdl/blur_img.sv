@@ -28,7 +28,7 @@ module blur_img #(
     logic [$clog2(WIDTH)-1:0] center_addr_x_prev;
     logic [$clog2(HEIGHT)-1:0] center_addr_y_prev;
     logic [3:0] kernel_ind;
-    logic [3:0] kernel_ind_pipe [1:0];
+    logic [3:0] kernel_ind_pipe [2:0];
     logic[BIT_DEPTH*3-1:0] row1;
     logic[BIT_DEPTH*3-1:0] row2;
     logic[BIT_DEPTH*3-1:0] row3;
@@ -45,6 +45,7 @@ module blur_img #(
 
         kernel_ind_pipe[0] <= kernel_ind;
         kernel_ind_pipe[1] <= kernel_ind_pipe[0];
+        kernel_ind_pipe[2] <= kernel_ind_pipe[1];
     end
 
     gaussian #(
@@ -107,7 +108,7 @@ module blur_img #(
             if (ext_read_addr_valid_pipe[1] || start_in) begin 
                 if (!start_in) begin
                     // write the previous read result to correct row
-                    case (kernel_ind_pipe[1]) // use the index from when we started reading because we've changed it by now
+                    case (kernel_ind_pipe[2]) // use the index from when we started reading because we've changed it by now
                         0: row1[BIT_DEPTH*3-1:BIT_DEPTH*2] <= ext_pixel_in;
                         1: row1[BIT_DEPTH*2-1:BIT_DEPTH] <= ext_pixel_in;
                         2: row1[BIT_DEPTH-1:0] <= ext_pixel_in;
