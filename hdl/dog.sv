@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
+// TODO: fix address lengths to be more general and not hard coded in!!!
+
 // WARNING THE DOG PYRAMIDS ARE GOING TO HAVE SIGNED VALUES
 // this module takes a signal for when an Octave's BRAM is ready 
 // parameterized by the size of the image corresponding to the octave we're at
@@ -83,53 +85,6 @@ module dog #(parameter DIMENSION) (
         endcase
       end
     end
-
-
-
-  //   xilinx_true_dual_port_read_first_2_clock_ram #(
-  //   .RAM_WIDTH(9), // we expect 8 bit greyscale images
-  //   .RAM_DEPTH(DIMENSION*DIMENSION)) //we expect a 128*128 image with 16384 pixels total
-  //   pixel_bram (
-  //   .addra(sharper_img),
-  //   .clka(clk),
-  //   .wea(0),
-  //   .dina(),
-  //   .ena(1'b1),
-  //   .regcea(1'b1),
-  //   .rsta(rst_in),
-  //   .douta(), //never read from this side
-  //   .addrb(blurrier_img),// transformed lookup pixel
-  //   .dinb(),
-  //   .clkb(clk),
-  //   .web(1'b0),
-  //   .enb(1'b1),
-  //   .rstb(rst_in),
-  //   .regceb(1'b1),
-  //   .doutb(pixel_out)
-  // );
-
-  // xilinx_true_dual_port_read_first_2_clock_ram #(
-  //   .RAM_WIDTH(9), // we expect 8 bit greyscale images
-  //   .RAM_DEPTH(DIMENSION*DIMENSION)) //we expect a 128*128 image with 16384 pixels total
-  //   dog_bram (
-  //   .addra(sharper_img),
-  //   .clka(clk),
-  //   .wea(0),
-  //   .dina(),
-  //   .ena(1'b1),
-  //   .regcea(1'b1),
-  //   .rsta(rst_in),
-  //   .douta(), //never read from this side
-  //   .addrb(blurrier_img),// transformed lookup pixel
-  //   .dinb(),
-  //   .clkb(clk),
-  //   .web(1'b0),
-  //   .enb(1'b1),
-  //   .rstb(rst_in),
-  //   .regceb(1'b1),
-  //   .doutb(pixel_out)
-  // );
-
 
   
 endmodule // top_level

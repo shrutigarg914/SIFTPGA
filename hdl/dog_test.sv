@@ -67,6 +67,7 @@ module top_level(
         pixel_addr <= pixel_addr + 1;
         if (pixel_addr== DIMENSION*DIMENSION - 1) begin
           full_image_received <= 1'b1;
+          pixel_addr <= 0;
         end
       end else if (old_image_number!=image_number) begin
         full_image_received <= 1'b0;
@@ -116,24 +117,67 @@ module top_level(
     .regceb(1'b1),
     .doutb(img2_out)
   );
+  logic ready_for_dog;
 
   logic dog_busy;
-  assign led[3] = ~dog_busy;
+  assign ready_for_dog = full_image_received & image_number;
+  assign led[4] = ready_for_dog;
   logic signed [8:0] dog_out;
   // assign pixel_out = {dog_out[8], dog_out[7:1]};
-  logic ready_for_dog;
-  assign ready_for_dog = full_image_received & image_number;
+  logic start_dog;
+  logic dog_was_busy;
+  assign led[15] = dog_was_busy;
+  logic [2:0] dog_state_counter;
+
+  typedef enum {BUILDING=0, START=1, STARTED=2} dog_state;
+  dog_state dog_state_keeper;
+  always_ff @(posedge clk_100mhz) begin
+    if (sys_rst) begin
+      dog_state_keeper <= BUILDING;
+      dog_was_busy <= 1'b0;
+      dog_state_counter <= 2'b00;
+    end else begin// this little state machine exists because there's one cycle where ready for dog is high
+    // erroneously because full_image_received gets reset after image_number changes F
+    // TODO (sgrg):  handle this more elegantly in actual top level but
+      case(dog_state_keeper)
+        BUILDING: if (ready_for_dog) begin
+          dog_state_counter <= dog_state_counter + 2'b01;
+          if (dog_state_counter==2'b11) begin
+            dog_state_keeper <= START;
+          end
+        end else begin
+          dog_state_counter <= 2'b00;
+        end
+        START: dog_state_keeper <= STARTED;
+        STARTED: dog_state_keeper <= STARTED;
+      endcase
+      if (dog_busy) begin
+        dog_was_busy <= 1'b1;
+      end
+    end
+  end
+
+  assign start_dog = (dog_state_keeper==START);
+  assign led[14] = 1'b0;
+  assign led[13] = btn[2];
+  assign led[10:9] = dog_state_keeper;
 
   dog #(.DIMENSION(DIMENSION)) builder (
     .clk(clk_100mhz),
-    .rst_in(sys_rst),//
-    .bram_ready(dog_edge),
+    .rst_in(sys_rst),
+    .bram_ready(start_dog),
     .sharper_pix(img1_out),
     .fuzzier_pix(img2_out),
     .busy(dog_busy),
     .address(dog_address),
-    .data_out(dog_out)
+    .data_out(dog_out),
+    .wea(dog_wea),
+    .state_num(led[6:5])
   );
+
+  // assign led[6:5] = dog_state;
+  // assign led[13:6] 
+  logic dog_wea;
 
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(9), // we expect 8 bit greyscale images
@@ -141,7 +185,7 @@ module top_level(
     out (
     .addra(dog_address),
     .clka(clk_100mhz),
-    .wea(ready_for_dog),
+    .wea(dog_wea), // FIX THIS
     .dina(dog_out),
     .ena(1'b1),
     .regcea(1'b1),
@@ -163,6 +207,7 @@ module top_level(
     // button press detected by 
     logic btn_edge;
     logic dog_edge;
+    assign dog_edge = ~old_dog_pulse & dog_pulse;
 
     //rest of the logic here
     logic btn_pulse;
@@ -191,12 +236,7 @@ module top_level(
         old_btn_pulse <= btn_pulse;
         btn_edge <= btn_pulse;
       end
-      if (dog_pulse==old_dog_pulse) begin
-        dog_edge <= 1'b0;
-      end else begin
-        old_dog_pulse <= dog_pulse;
-        dog_edge <= dog_pulse;
-      end
+      old_dog_pulse <= dog_pulse;
     end
 
     send_img  tx_img (
@@ -216,7 +256,7 @@ module top_level(
   logic [7:0] img1_out, img2_out;
   logic [13:0] read_pixel_addr, dog_address;
   assign led[1] = tx_img_busy;
-  assign led[15:4] = dog_address[12:1];
+  // assign led[15:4] = dog_address[12:1];
   
     
 endmodule // top_level
