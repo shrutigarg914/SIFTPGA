@@ -9,7 +9,6 @@
 
 // NOTE: the data is SIGNED!!!!!!!!!!!!!!!!!!!
 
-
 // INPUT: given two BRAMs, andis active when enable low
 // ACTION: finds all extrema 
 // HOW: for each x, y, check if that is extremum
@@ -21,7 +20,7 @@
 module check_extrema #(
   parameter BIT_DEPTH = 9,// 8 bit greyscale --> signed differences gives us 9 bits
   parameter DIMENSION,
-  paramter ABS_CONTRAST_THRESHOLD = 4 // in the ref cpp code the threshold is set for 0.015
+  parameter ABS_CONTRAST_THRESHOLD = 4 // in the ref cpp code the threshold is set for 0.015
   ) (
   input wire clk,
   input wire rst_in,
@@ -108,22 +107,26 @@ module check_extrema #(
         read_x = x - 1'b1;
         read_y = y;
       end
+      default : begin
+        read_x = x;
+        read_y = y;
+      end
     endcase
     // static combinaorial check to see if the first pixel is an extremum
     first_is_min = (first_middle < first_left) && (first_middle < first_right) &&
     (first_middle < first_top) && (first_middle < first_top_right) && (first_middle < first_top_left) &&
-    (first_middle < first_bottom) && (first_middle < first_bottom_right) && (first_middle < first_bottom_left)
+    (first_middle < first_bottom) && (first_middle < first_bottom_right) && (first_middle < first_bottom_left);
     first_is_max = (first_middle > first_left) && (first_middle > first_right) &&
     (first_middle > first_top) && (first_middle > first_top_right) && (first_middle > first_top_left) &&
-    (first_middle > first_bottom) && (first_middle > first_bottom_right) && (first_middle > first_bottom_left)
+    (first_middle > first_bottom) && (first_middle > first_bottom_right) && (first_middle > first_bottom_left);
     
     // static combinaorial check to see if the second pixel is an extremum
     second_is_min = (second_middle < second_left) && (second_middle < second_right) &&
     (second_middle < second_top) && (second_middle < second_top_right) && (second_middle < second_top_left) &&
-    (second_middle < second_bottom) && (second_middle < second_bottom_right) && (second_middle < second_bottom_left)
+    (second_middle < second_bottom) && (second_middle < second_bottom_right) && (second_middle < second_bottom_left);
     second_is_max = (second_middle > second_left) && (second_middle > second_right) &&
     (second_middle > second_top) && (second_middle > second_top_right) && (second_middle > second_top_left) &&
-    (second_middle > second_bottom) && (second_middle > second_bottom_right) && (second_middle > second_bottom_left)    
+    (second_middle > second_bottom) && (second_middle > second_bottom_right) && (second_middle > second_bottom_left);   
   end
 
   // if we set read_x, read_y and then set read high, 
@@ -157,6 +160,11 @@ module check_extrema #(
       state <= IDLE;
       pixel_pos <= NULL;
       read <= 1'b0;
+      first_is_extremum <= 1'b0;
+      second_is_extremum <= 1'b0;
+      x <= 1'b1;
+      y <= 1'b1;
+      done_checking <= 1'b0;
     end
     case(state)
       IDLE : if (enable) begin
@@ -165,9 +173,11 @@ module check_extrema #(
         state <= START_ROW;
         pixel_pos <= NULL;
         read <= 1'b1;
+        done_checking <= 1'b0;
       end else begin
         state <= IDLE;
         read <= 1'b0;
+        done_checking <= 1'b0;
       end
       START_ROW : case(pixel_pos)
         TOP : if (reader_done) begin
@@ -368,8 +378,6 @@ module read_pixel #(
             state <= BUSY;
             first_address <= address;
             second_address <= address;
-            first_wea <= 1'b1;
-            second_wea <= 1'b1;
             counter <= 0; 
             busy <= 1'b1;
             done <= 1'b0;
@@ -383,8 +391,6 @@ module read_pixel #(
             busy <= 1'b0;
           end else begin
             counter <= counter + 1'b1;
-            first_wea <= 1'b0;
-            second_wea <= 1'b0;
           end
         endcase
       end
