@@ -37,19 +37,20 @@ module gradient_image #(
   logic [$clog2(HEIGHT)-1:0] center_addr_y;
 
   logic [1:0] ext_read_addr_valid_pipe;
-  always_ff @(posedge clk) begin
+  always_ff @(posedge clk_in) begin
     ext_read_addr_valid_pipe[0] = ext_read_addr_valid;
     ext_read_addr_valid_pipe[1] = ext_read_addr_valid_pipe[0];
   end
 
   // wait for two cycles for read
   // only need the one cycle for write
-  always_ff @(posedge clk) begin
+  always_ff @(posedge clk_in) begin
     if (rst_in) begin
       state <= IDLE;
       busy <= 0;
       center_addr_x <= 0;
       center_addr_y <= 0;
+      gradient_done <= 0;
     end else begin
       if (ext_read_addr_valid) begin
         ext_read_addr_valid <= 0;

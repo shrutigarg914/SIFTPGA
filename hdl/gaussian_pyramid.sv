@@ -66,7 +66,7 @@ module gaussian_pyramid #(
     // Octave 1
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
-    .RAM_DEPTH(TOP_WIDTH*TOP_HEIGHT)) //we expect a 64*64 image with 16384 pixels total
+    .RAM_DEPTH(TOP_WIDTH*TOP_HEIGHT)) //we expect a 64*64 image with 4096 pixels total
     O1Buffer1 (
         .addra(O1Buffer1_write_addr),
         .clka(clk_in),
@@ -94,7 +94,7 @@ module gaussian_pyramid #(
     
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
-    .RAM_DEPTH(TOP_WIDTH*TOP_HEIGHT)) //we expect a 64*64 image with 16384 pixels total
+    .RAM_DEPTH(TOP_WIDTH*TOP_HEIGHT)) //we expect a 64*64 image with 4096 pixels total
     O1Buffer2 (
         .addra(O1Buffer2_write_addr),
         .clka(clk_in),
@@ -123,7 +123,7 @@ module gaussian_pyramid #(
     // Octave 2
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
-    .RAM_DEPTH(TOP_WIDTH/2*TOP_HEIGHT/2)) //we expect a 64*64 image with 16384 pixels total
+    .RAM_DEPTH(TOP_WIDTH/2*TOP_HEIGHT/2)) //we expect a 64*64 image with 4096 pixels total
     O2Buffer1 (
         .addra(O2Buffer1_write_addr),
         .clka(clk_in),
@@ -151,7 +151,7 @@ module gaussian_pyramid #(
     
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
-    .RAM_DEPTH(TOP_WIDTH/2*TOP_HEIGHT/2)) //we expect a 64*64 image with 16384 pixels total
+    .RAM_DEPTH(TOP_WIDTH/2*TOP_HEIGHT/2)) //we expect a 64*64 image with 4096 pixels total
     O2Buffer2 (
         .addra(O2Buffer2_write_addr),
         .clka(clk_in),
@@ -180,7 +180,7 @@ module gaussian_pyramid #(
     // Octave 3
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
-    .RAM_DEPTH(TOP_WIDTH/4*TOP_HEIGHT/4)) //we expect a 64*64 image with 16384 pixels total
+    .RAM_DEPTH(TOP_WIDTH/4*TOP_HEIGHT/4)) //we expect a 64*64 image with 4096 pixels total
     O3Buffer1 (
         .addra(O3Buffer1_write_addr),
         .clka(clk_in),
@@ -208,7 +208,7 @@ module gaussian_pyramid #(
     
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
-    .RAM_DEPTH(TOP_WIDTH/4*TOP_HEIGHT/4)) //we expect a 64*64 image with 16384 pixels total
+    .RAM_DEPTH(TOP_WIDTH/4*TOP_HEIGHT/4)) //we expect a 64*64 image with 4096 pixels total
     O3Buffer2 (
         .addra(O3Buffer2_write_addr),
         .clka(clk_in),

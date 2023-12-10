@@ -81,7 +81,7 @@ module top_level(
     // the start image BRAM
     xilinx_true_dual_port_read_first_2_clock_ram #(
         .RAM_WIDTH(8), // we expect 8 bit greyscale images
-        .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 16384 pixels total
+        .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
         rx_img (
         .addra(pixel_addr),
         .clka(clk_100mhz),
@@ -114,7 +114,7 @@ module top_level(
     // the start blurred image BRAM
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
-    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 16384 pixels total
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
     blur_img (
         .addra(write_addr),
         .clka(clk_100mhz),

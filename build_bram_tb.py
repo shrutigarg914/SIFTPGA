@@ -28,7 +28,7 @@ else:
   pass
   #save("vivado.log")
 
-proc = subprocess.Popen(f"{xelab} -svlog ./sim/blur_img_tb.sv --debug wave",
+proc = subprocess.Popen(f"{xelab} -svlog ./sim/gaussian_pyramid_tb.sv --debug wave",
 	shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
 while True:
@@ -46,7 +46,7 @@ else:
   #save("vivado.log")
 
 
-proc = subprocess.Popen(f"{xsim} blur_img_tb -t xsim_run.tcl",
+proc = subprocess.Popen(f"{xsim} gaussian_pyramid_tb -t xsim_run.tcl",
 	shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
 while True:
