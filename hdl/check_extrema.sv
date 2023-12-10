@@ -203,146 +203,28 @@ module check_extrema #(
       x <= 1'b1;
       y <= 1'b1;
       done_checking <= 1'b0;
-    end
-    case(state)
-      IDLE : if (enable) begin
-        x <= 1'b1;
-        y <= 1'b1;
-        state <= START_ROW;
-        pixel_pos <= NULL;
-        // read <= 1'b1;
-        done_checking <= 1'b0;
-      end else begin
-        state <= IDLE;
-        read <= 1'b0;
-        done_checking <= 1'b0;
-      end
-      START_ROW : case(pixel_pos)
-        TOP : if (reader_done) begin
-          first_top <= first_data;
-          second_top <= second_data;
-          pixel_pos <= TOPR;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        TOPR : if (reader_done) begin
-          first_top_right <= first_data;
-          second_top_right <= second_data;
-          pixel_pos <= RIGHT;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        RIGHT : if (reader_done) begin
-          first_right <= first_data;
-          second_right <= second_data;
-          pixel_pos <= BOTR;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        BOTR : if (reader_done) begin
-          first_bottom_right <= first_data;
-          second_bottom_right <= second_data;
-          pixel_pos <= BOT;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        BOT : if (reader_done) begin
-          first_bottom <= first_data;
-          second_bottom <= second_data;
-          pixel_pos <= BOTL;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        BOTL : if (reader_done) begin
-          first_bottom_left <= first_data;
-          second_bottom_left <= second_data;
-          pixel_pos <= LEFT;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        LEFT : if (reader_done) begin
-          first_left <= first_data;
-          second_left <= second_data;
-          pixel_pos <= TOPL;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        TOPL : if (reader_done) begin
-          first_top_left <= first_data;
-          second_top_left <= second_data;
-          pixel_pos <= MIDDLE;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        MIDDLE : if (reader_done) begin
-          first_middle <= first_data;
-          second_middle <= second_data;
-          pixel_pos <= NULL;
-          state <= CHECK;
-        end else begin
-          read <= 1'b0;
-        end
-        NULL : begin
-          pixel_pos <= TOP;
-          read <= 1'b1;
-        end
-      endcase
-      CHECK : begin 
-        if (first_is_min || first_is_max) begin
-          first_is_extremum <= 1'b1;
-        end
-        if (second_is_min || second_is_max) begin
-          second_is_extremum <= 1'b1;
-        end
-        state <= INCREMENT;
-      end
-      INCREMENT : begin
-        first_is_extremum <= 1'b0;
-        second_is_extremum <= 1'b0;
-        if (x < DIMENSION - 2) begin
-          x <= x + 1'b1;
-          state <= SHIFT_RIGHT;
-          pixel_pos <= NULL;
-        end else if (y < DIMENSION - 2) begin
+    end else begin
+      case(state)
+        IDLE : if (enable) begin
           x <= 1'b1;
-          y <= y+1'b1;
+          y <= 1'b1;
           state <= START_ROW;
           pixel_pos <= NULL;
+          // read <= 1'b1;
+          done_checking <= 1'b0;
         end else begin
           state <= IDLE;
-          done_checking <= 1'b1;
+          read <= 1'b0;
+          done_checking <= 1'b0;
         end
-      end
-      SHIFT_RIGHT : begin
-        case(pixel_pos)
-          NULL : begin
-            // move values over for the first BRAM
-            first_top_left <= first_top;
-            first_bottom_left <= first_bottom;
-            first_left <= first_middle;
-            first_top <= first_top_right;
-            first_bottom <= first_bottom_right;
-            first_middle <= first_right;
-
-            // move values over for the second BRAM
-            second_top_left <= second_top;
-            second_bottom_left <= second_bottom;
-            second_left <= second_middle;
-            second_top <= second_top_right;
-            second_bottom <= second_bottom_right;
-            second_middle <= second_right;
-            
-            // start loading the three remaining pixels
+        START_ROW : case(pixel_pos)
+          TOP : if (reader_done) begin
+            first_top <= first_data;
+            second_top <= second_data;
             pixel_pos <= TOPR;
             read <= 1'b1;
+          end else begin
+            read <= 1'b0;
           end
           TOPR : if (reader_done) begin
             first_top_right <= first_data;
@@ -363,15 +245,134 @@ module check_extrema #(
           BOTR : if (reader_done) begin
             first_bottom_right <= first_data;
             second_bottom_right <= second_data;
+            pixel_pos <= BOT;
+            read <= 1'b1;
+          end else begin
+            read <= 1'b0;
+          end
+          BOT : if (reader_done) begin
+            first_bottom <= first_data;
+            second_bottom <= second_data;
+            pixel_pos <= BOTL;
+            read <= 1'b1;
+          end else begin
+            read <= 1'b0;
+          end
+          BOTL : if (reader_done) begin
+            first_bottom_left <= first_data;
+            second_bottom_left <= second_data;
+            pixel_pos <= LEFT;
+            read <= 1'b1;
+          end else begin
+            read <= 1'b0;
+          end
+          LEFT : if (reader_done) begin
+            first_left <= first_data;
+            second_left <= second_data;
+            pixel_pos <= TOPL;
+            read <= 1'b1;
+          end else begin
+            read <= 1'b0;
+          end
+          TOPL : if (reader_done) begin
+            first_top_left <= first_data;
+            second_top_left <= second_data;
+            pixel_pos <= MIDDLE;
+            read <= 1'b1;
+          end else begin
+            read <= 1'b0;
+          end
+          MIDDLE : if (reader_done) begin
+            first_middle <= first_data;
+            second_middle <= second_data;
             pixel_pos <= NULL;
             state <= CHECK;
           end else begin
             read <= 1'b0;
           end
-          default : pixel_pos <= NULL;
+          NULL : begin
+            pixel_pos <= TOP;
+            read <= 1'b1;
+          end
         endcase
-      end
-    endcase
+        CHECK : begin 
+          if (first_is_min || first_is_max) begin
+            first_is_extremum <= 1'b1;
+          end
+          if (second_is_min || second_is_max) begin
+            second_is_extremum <= 1'b1;
+          end
+          state <= INCREMENT;
+        end
+        INCREMENT : begin
+          first_is_extremum <= 1'b0;
+          second_is_extremum <= 1'b0;
+          if (x < DIMENSION - 2) begin
+            x <= x + 1'b1;
+            state <= SHIFT_RIGHT;
+            pixel_pos <= NULL;
+          end else if (y < DIMENSION - 2) begin
+            x <= 1'b1;
+            y <= y+1'b1;
+            state <= START_ROW;
+            pixel_pos <= NULL;
+          end else begin
+            state <= IDLE;
+            done_checking <= 1'b1;
+          end
+        end
+        SHIFT_RIGHT : begin
+          case(pixel_pos)
+            NULL : begin
+              // move values over for the first BRAM
+              first_top_left <= first_top;
+              first_bottom_left <= first_bottom;
+              first_left <= first_middle;
+              first_top <= first_top_right;
+              first_bottom <= first_bottom_right;
+              first_middle <= first_right;
+
+              // move values over for the second BRAM
+              second_top_left <= second_top;
+              second_bottom_left <= second_bottom;
+              second_left <= second_middle;
+              second_top <= second_top_right;
+              second_bottom <= second_bottom_right;
+              second_middle <= second_right;
+              
+              // start loading the three remaining pixels
+              pixel_pos <= TOPR;
+              read <= 1'b1;
+            end
+            TOPR : if (reader_done) begin
+              first_top_right <= first_data;
+              second_top_right <= second_data;
+              pixel_pos <= RIGHT;
+              read <= 1'b1;
+            end else begin
+              read <= 1'b0;
+            end
+            RIGHT : if (reader_done) begin
+              first_right <= first_data;
+              second_right <= second_data;
+              pixel_pos <= BOTR;
+              read <= 1'b1;
+            end else begin
+              read <= 1'b0;
+            end
+            BOTR : if (reader_done) begin
+              first_bottom_right <= first_data;
+              second_bottom_right <= second_data;
+              pixel_pos <= NULL;
+              state <= CHECK;
+            end else begin
+              read <= 1'b0;
+            end
+            default : pixel_pos <= NULL;
+          endcase
+        end
+      endcase
+    end
   end
 
 endmodule // extrema

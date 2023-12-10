@@ -19,6 +19,7 @@ module dog #(parameter DIMENSION) (
   input wire [7:0] sharper_pix,
   input wire [7:0] fuzzier_pix,
   output logic busy,
+  output logic done,
   output logic [11:0] address,
   output logic signed [8:0] data_out,
   output logic wea,
@@ -42,17 +43,21 @@ module dog #(parameter DIMENSION) (
         counter <= 0;
         address <= 0;
         busy<=1'b0;
+        done <= 1'b0;
         write <= 1'b0;
         wea <= 0;
       end else begin
         case(state)
         INACTIVE: if (bram_ready & ~old_bram) begin
             busy <= 1'b1;
+            done <= 1'b0;
             state <= WAIT;
             state_num <= 1'b1;
             address <= 0;
             counter <= 0;
             wea <= 0;
+        end else begin
+          done <= 1'b0;
         end
         WAIT: if (counter==2'b10) begin
           state <= WRITE;
@@ -76,6 +81,7 @@ module dog #(parameter DIMENSION) (
             state <= INACTIVE;
             state_num <= 1'b0;
             busy <= 1'b0;
+            done<=1'b1;
           end else begin
             address <= address + 1'b1;
             state <= WAIT;
