@@ -9,7 +9,7 @@
 
 module find_keypts_tb;
     parameter BIT_DEPTH = 8;
-    parameter DIMENSION = 4;
+    parameter DIMENSION = 64;
     parameter TOP_HEIGHT = DIMENSION;
     parameter TOP_WIDTH = DIMENSION;
     logic signed [BIT_DEPTH-1:0] first_data, second_data, third_data;
@@ -147,7 +147,8 @@ module find_keypts_tb;
                 $display("DOG ONE DONE");
             end
             if (O1key_wea) begin
-                $display("Writing  (", O1_keypoint_out[4:3], ", ", O1_keypoint_out[2:1], ") in BRAM ", O1_keypoint_out[0], ", at address ", O1key_write_addr);
+                // $display("Writing  (", O1_keypoint_out[7:4], ", ", O1_keypoint_out[3:1], ") in BRAM ", O1_keypoint_out[0], ", at address ", O1key_write_addr);
+                $display("Writing  (", O1_keypoint_out, ", ", O1_keypoint_out, ") in BRAM ", O1_keypoint_out[0], ", at address ", O1key_write_addr);
                 number_keypt = number_keypt + 1'b1;
             end
             #10;

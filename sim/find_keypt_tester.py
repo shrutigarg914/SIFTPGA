@@ -57,7 +57,7 @@ def dog(array_one, array_two):
     return array_one - array_two
 
 if __name__ == "__main__":
-    DIMENSION = 4
+    DIMENSION = 64
     first_bram = np.random.randint(0,high = 255, size=(DIMENSION, DIMENSION))
     convert_to_mem(first_bram, 'first_test_bram.mem')
     second_bram = np.random.randint(0,high = 255, size=(DIMENSION, DIMENSION))
