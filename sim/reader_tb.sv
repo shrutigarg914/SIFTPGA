@@ -7,7 +7,7 @@
 `define FPATH(X) `"X`"
 `endif  /* ! SYNTHESIS */
 
-module check_extrema_tb;
+module reader_tb;
     parameter BIT_DEPTH = 9;
     parameter DIMENSION = 4;
     logic signed [BIT_DEPTH-1:0] first_data, second_data;
@@ -16,31 +16,21 @@ module check_extrema_tb;
     logic [$clog2(DIMENSION)-1:0] x, y;
     logic read, rst_in, clk_in, busy, reader_done;
 
-check_extrema #(
-  .DIMENSION(4)
-) finder (
-  input wire clk,
-  input wire rst_in,
-  // input wire have_prev,
-  // input wire have_next,
-
-  input wire signed [BIT_DEPTH-1:0] first_data,
-  output logic [$clog2(DIMENSION*DIMENSION)-1:0] first_address,
-  
-  input wire signed [BIT_DEPTH-1:0] second_data,
-  output logic [$clog2(DIMENSION*DIMENSION)-1:0] second_address,
-  
-  input wire enable,
-  // input wire [BIT_DEPTH-1:0] next_data,
-  // input wire [$clog2(DIMENSION*DIMENSION)-1:0] next_address,
-  // input wire [BIT_DEPTH-1:0] prev_data,
-  // input wire [$clog2(DIMENSION*DIMENSION)-1:0] prev_address,
-  output logic [$clog2(DIMENSION)-1:0] x,
-  output logic [$clog2(DIMENSION)-1:0] y,
-  output logic first_is_extremum,
-  output logic second_is_extremum,
-  output logic done_checking
-  );
+    read_pixel #(.DIMENSION(DIMENSION)) reader(
+        .clk(clk_in),
+        .rst_in(rst_in),
+        .first_data(first_data),
+        .first_address(first_address),
+        .second_data(second_data),
+        .second_address(second_address),
+        .input_ready(read),
+        .x(x),
+        .y(y),
+        // .first_pixel_value(first_pixel_value),
+        // .second_pixel_value(second_pixel_value),
+        .busy(busy),
+        .done(reader_done)// goes high for one cycle when read is done
+    );
 
     xilinx_single_port_ram_read_first #(
         .RAM_WIDTH(9),                       // Specify RAM data width
@@ -79,8 +69,8 @@ check_extrema #(
         clk_in = !clk_in;
     end
     initial begin
-        $dumpfile("check_extrema.vcd"); //file to store value change dump (vcd)
-        $dumpvars(0,check_extrema_tb); //store everything at the current level and below
+        $dumpfile("reader.vcd"); //file to store value change dump (vcd)
+        $dumpvars(0,reader_tb); //store everything at the current level and below
         $display("Starting Sim"); //print nice message
         clk_in = 0; //initialize clk (super important)
         rst_in = 0; //initialize rst (super important)
@@ -106,5 +96,5 @@ check_extrema #(
         $finish;
     end
 
-endmodule //check_extrema_tb
+endmodule //reader_tb
 `default_nettype wire
