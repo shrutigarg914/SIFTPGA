@@ -107,17 +107,17 @@ module top_level(
     
     logic [$clog2(WIDTH * HEIGHT)-1:0] x_write_addr;
     logic x_write_valid;
-    logic [BIT_DEPTH:0] x_pixel_out;
+    logic [BIT_DEPTH-1:0] x_pixel_out;
     
     logic [$clog2(WIDTH * HEIGHT)-1:0] y_write_addr;
     logic y_write_valid;
-    logic [BIT_DEPTH:0] y_pixel_out;
+    logic [BIT_DEPTH-1:0] y_pixel_out;
 
     logic gradient_done;
 
     // the start x gradient BRAM
     xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(9), // we expect 9 bit signed
+    .RAM_WIDTH(8), // we expect 8 bit signed
     .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
     x_grad (
         .addra(x_write_addr),
@@ -138,11 +138,11 @@ module top_level(
         .doutb(x_stored_out)
     );
     logic [$clog2(WIDTH * HEIGHT)-1:0] x_read_addr;
-    logic [BIT_DEPTH:0] x_stored_out;
+    logic [BIT_DEPTH-1:0] x_stored_out;
 
     // the start y gradient BRAM
     xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(9), // we expect 9 bit signed
+    .RAM_WIDTH(8), // we expect 8 bit signed
     .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
     y_grad (
         .addra(y_write_addr),
@@ -163,7 +163,7 @@ module top_level(
         .doutb(y_stored_out)
     );
     logic [$clog2(WIDTH * HEIGHT)-1:0] y_read_addr;
-    logic [BIT_DEPTH:0] y_stored_out;
+    logic [BIT_DEPTH-1:0] y_stored_out;
 
 
     gradient_image #(
@@ -217,9 +217,9 @@ module top_level(
     send_img  tx_img_x (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
-      .img_ready(btn_edge && gradient_done_latched),//full_image_received
+      .img_ready((state == X) && (state_prev != X)),//full_image_received
       .tx(x_uart_txd),//uart_txd
-      .data({x_stored_out[8], x_stored_out[6:0]}),
+      .data(x_stored_out),
       .address(x_read_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(x_tx_img_busy) //or we could do img_sent whichever makes more sense
@@ -230,37 +230,77 @@ module top_level(
     send_img  tx_img_y (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
-      .img_ready(!x_tx_img_busy && !x_just_started),//full_image_received
+      .img_ready((state == Y) && (state_prev != Y)),//full_image_received
       .tx(y_uart_txd),//uart_txd
       .data(y_stored_out),
-      .address({y_stored_out[8], y_stored_out[6:0]}), // gets wired to the BRAM
+      .address(y_read_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(y_tx_img_busy) //or we could do img_sent whichever makes more sense
     );
     logic y_tx_img_busy;
     logic y_uart_txd;
+    
+    typedef enum {IDLE=0, X=1, Y=2} tx_state;
+    tx_state state;
+    tx_state state_prev;
+    logic x_tx_img_busy_latched;
+    logic y_tx_img_busy_latched;
+    logic ever_not_zero;
 
-    logic x_just_started;
+    assign led[15] = x_tx_img_busy_latched;
+    assign led[14] = y_tx_img_busy_latched;
+    assign led[13] = ever_not_zero;
+
     always_ff @(posedge clk_100mhz) begin
       if (sys_rst) begin
-        x_just_started <= 0;
+        state <= IDLE;
+        led[4:2] <= 0;
+        x_tx_img_busy_latched <= 0;
+        y_tx_img_busy_latched <= 0;
+        ever_not_zero <= 0;
       end else begin
-        if (x_just_started) begin
-          x_just_started <= 0;
+        state_prev <= state;
+        if (x_stored_out != 0) begin
+          ever_not_zero <= 1;
         end
-        if (btn_edge && gradient_done_latched) begin
-          x_just_started <= 1;
-        end
-
         if (x_tx_img_busy) begin
-          uart_txd <= x_uart_txd;
-        end else if (y_tx_img_busy) begin
-          uart_txd <= y_uart_txd;
-        end else begin
-          uart_txd <= 0;
+          x_tx_img_busy_latched <= 1;
         end
+        if (y_tx_img_busy) begin
+          y_tx_img_busy_latched <= 1;
+        end
+        case (state)
+          IDLE:
+          begin
+            if (btn_edge && gradient_done_latched) begin
+                state <= X;
+                ever_not_zero <= 0;
+            end
+            led[2] <= 1;
+          end
+          X:
+          begin
+            if (!x_tx_img_busy && btn_edge) begin
+                state <= Y;
+            end
+            uart_txd <= x_uart_txd;
+            led[3] <= 1;
+          end
+          Y:
+          begin
+            if (!y_tx_img_busy && btn_edge) begin
+                state <= IDLE;
+            end
+            uart_txd <= y_uart_txd;
+            led[4] <= 1;
+          end
+        endcase
       end
     end
+    
+    // assign led[2] = (state == IDLE);
+    // assign led[3] = (state == X);
+    // assign led[4] = (state == Y);
 
     
 endmodule // top_level

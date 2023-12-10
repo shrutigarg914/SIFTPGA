@@ -53,18 +53,26 @@ if __name__ == "__main__":
 
         s = serial.Serial(port='COM5', baudrate=2000000, bytesize=8)
         print("setup ready")
+        # time.sleep(10)
         packets_sent = 0
         while packets_sent<len(pixels):
-            s.write(struct.pack('B', pixels[packets_sent]))
+            # char = bytes(input("send: "), 'ascii')
+            # print(struct.pack('B', 3))
+            # print(pixels[packets_sent])
+            s.write(struct.pack('B', int(pixels[packets_sent])))
+            # print(".", end='', flush=True)
             packets_sent +=1
-        input("DONE SENDING!")
+        print("DONE SENDING!")
 
         image_rx = []
-        while len(image_rx) <len(pixels) * 2:
+        while len(image_rx) <len(pixels)*2:
+            # print(".", end='', flush=True)
             res = s.read()
             image_rx.append(struct.unpack('B', res)[0])
-        print("IMAGEs RECEIVED")
-        print(image_rx)
+            print(len(image_rx), len(pixels), struct.unpack('B', res)[0])
+            # ind = input("Index investigating:  ")
+            # print(pixels[ind])
+        print("IMAGE RECEIVED")
 
         im_res_x_correct = np.asarray(x_grad).reshape((64, 64))
         im_res_y_correct = np.asarray(y_grad).reshape((64, 64))

@@ -425,8 +425,6 @@ module top_level(
     tx_state state;
     tx_state state_prev;
 
-    assign led[15] = 1;
-
     always_ff @(posedge clk_100mhz) begin
         if (sys_rst) begin
             state <= IDLE;
@@ -637,47 +635,6 @@ module top_level(
     );
     logic tx_img_busy_O3L3;
     logic O3L3_txd;
-
-    // always_comb begin
-    //     case (state)
-    //         O1L1:
-    //             begin
-    //                 uart_txd = O1L1_txd;
-    //             end
-    //         O1L2:
-    //             begin
-    //                 uart_txd = O1L2_txd;
-    //             end
-    //         O1L3:
-    //             begin
-    //                 uart_txd = O1L3_txd;
-    //             end
-    //         O2L1:
-    //             begin
-    //                 uart_txd = O2L1_txd;
-    //             end
-    //         O2L2:
-    //             begin
-    //                 uart_txd = O2L2_txd;
-    //             end
-    //         O2L3:
-    //             begin
-    //                 uart_txd = O2L3_txd;
-    //             end
-    //         O3L1:
-    //             begin
-    //                 uart_txd = O3L1_txd;
-    //             end
-    //         O3L2:
-    //             begin
-    //                 uart_txd = O3L2_txd;
-    //             end
-    //         O3L3:
-    //             begin
-    //                 uart_txd = O3L3_txd;
-    //             end
-    //     endcase
-    // end
   
     
 endmodule // top_level

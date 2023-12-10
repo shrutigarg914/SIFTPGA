@@ -18,20 +18,20 @@ module gradient_image #(
   // connect to BRAM that we are writing to for x gradient
   output logic [$clog2(WIDTH * HEIGHT)-1:0] x_write_addr,
   output logic x_write_valid,
-  output logic [BIT_DEPTH:0] x_pixel_out, // signed
+  output logic [BIT_DEPTH-1:0] x_pixel_out, // signed
 
   // connect to BRAM that we are writing to for y gradient
   output logic [$clog2(WIDTH * HEIGHT)-1:0] y_write_addr,
   output logic y_write_valid,
-  output logic [BIT_DEPTH:0] y_pixel_out, // signed
+  output logic [BIT_DEPTH-1:0] y_pixel_out, // signed
 
   input wire start_in, // one clock cycle signal high when starting graident
   output logic gradient_done // one clock cycle signal high when finishing gradient
 );
   typedef enum {IDLE=0, READ_X1=1, READ_X2=2, WRITE_X=3, READ_Y1=4, READ_Y2=5, WRITE_Y=6} module_state;
   module_state state; 
-  logic signed [8:0] pixel1_signed;
-  logic signed [8:0] pixel2_signed;
+  logic signed [BIT_DEPTH:0] pixel1_signed;
+  logic signed [BIT_DEPTH:0] pixel2_signed;
   logic busy;
   logic [$clog2(WIDTH)-1:0] center_addr_x;
   logic [$clog2(HEIGHT)-1:0] center_addr_y;
@@ -94,7 +94,7 @@ module gradient_image #(
         WRITE_X:
         begin
           x_write_addr <= center_addr_x + center_addr_y * WIDTH;
-          x_pixel_out <= ((pixel2_signed - pixel1_signed) >> 1);
+          x_pixel_out <= ((pixel2_signed - pixel1_signed) >>> 1);
           x_write_valid <= 1;
           state <= READ_Y1;
         end
@@ -119,7 +119,7 @@ module gradient_image #(
         WRITE_Y:
         begin
           y_write_addr <= center_addr_x + center_addr_y * WIDTH;
-          y_pixel_out <= ((pixel2_signed - pixel1_signed) >> 1);
+          y_pixel_out <= ((pixel2_signed - pixel1_signed) >>> 1);
           y_write_valid <= 1;
           if (center_addr_x == WIDTH - 1) begin
             if (center_addr_y == HEIGHT - 1) begin

@@ -22,11 +22,11 @@ module gradient_tb;
     
     logic [$clog2(WIDTH * HEIGHT)-1:0] x_write_addr;
     logic x_write_valid;
-    logic [BIT_DEPTH:0] x_pixel_out;
+    logic [BIT_DEPTH-1:0] x_pixel_out;
     
     logic [$clog2(WIDTH * HEIGHT)-1:0] y_write_addr;
     logic y_write_valid;
-    logic [BIT_DEPTH:0] y_pixel_out;
+    logic [BIT_DEPTH-1:0] y_pixel_out;
 
     logic start_in;
     logic gradient_done;
