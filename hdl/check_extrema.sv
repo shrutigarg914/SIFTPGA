@@ -212,6 +212,8 @@ module check_extrema #(
       x <= 1'b1;
       y <= 1'b1;
       done_checking <= 1'b0;
+      key_wea <= 1'b0;
+      key_out <= 0;
     end else begin
       case(state)
         IDLE : if (enable) begin
@@ -317,8 +319,9 @@ module check_extrema #(
             key_out <= {x, y, 1'b1};
             key_wea <= 1'b1;
             state <= FINISH_WRITE;
+          end else begin
+            state <= INCREMENT;
           end
-          state <= INCREMENT;
         end
         WRITE_ANOTHER: if (key_wea) begin
           key_wea <= 1'b0;

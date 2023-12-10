@@ -48,7 +48,7 @@ module find_keypts_tb;
     .start(start_keypt),
     .keypoints_done(keypoints_done),
 
-    .O1_DOG_L1L2_done(dog_one_done)
+    .O1_DOG_L2L3_done(dog_one_done)
 
     );
 
@@ -147,10 +147,9 @@ module find_keypts_tb;
                 $display("DOG ONE DONE");
             end
             if (O1key_wea) begin
-                $display("Writing  ", O1_keypoint_out, ", at address ", O1key_write_addr);
+                $display("Writing  (", O1_keypoint_out[4:3], ", ", O1_keypoint_out[2:1], ") in BRAM ", O1_keypoint_out[0], ", at address ", O1key_write_addr);
                 number_keypt = number_keypt + 1'b1;
             end
-            // $display("checked  (", x, ", ", y, ")");
             #10;
         end
         $display("found ", number_keypt, " extrema total");
