@@ -42,15 +42,23 @@ module check_extrema #(
   output logic [$clog2(DIMENSION)-1:0] y,
   output logic first_is_extremum,
   output logic second_is_extremum,
-  output logic done_checking
+  output logic done_checking,
+  output logic [2:0] state_number,
+  output logic first_is_min,
+  output logic first_is_max,
+  output logic second_is_min,
+  output logic second_is_max,  
+  output logic [$clog2(DIMENSION)-1:0] read_x,
+  output logic [$clog2(DIMENSION)-1:0] read_y,
+  output logic read
   );
     
   typedef enum {TOP=0, TOPR=1, TOPL=2, BOT=3, BOTR=4, BOTL=5, RIGHT=6, LEFT=7, MIDDLE=8, NULL=9} sub_module_state;
   sub_module_state pixel_pos;
 
 
-  logic [$clog2(DIMENSION)-1:0] read_x;
-  logic [$clog2(DIMENSION)-1:0] read_y;
+  // logic [$clog2(DIMENSION)-1:0] read_x;
+  // logic [$clog2(DIMENSION)-1:0] read_y;
 
   // pixel for first BRAM
   logic signed [BIT_DEPTH-1:0] first_top;
@@ -74,8 +82,19 @@ module check_extrema #(
   logic signed [BIT_DEPTH-1:0] second_left;
   logic signed [BIT_DEPTH-1:0] second_middle;
 
-  logic first_is_min, first_is_max;
-  logic second_is_min, second_is_max;
+  // logic first_is_min, first_is_max;
+  // logic second_is_min, second_is_max;
+
+  // IDLE=0, START_ROW=1, CHECK=2, INCREMENT=3, SHIFT_RIGHT=4
+  always_comb begin
+    case(state)
+      IDLE : state_number = 0;
+      START_ROW : state_number = 1'b1;
+      CHECK : state_number = 2'b10;
+      INCREMENT : state_number = 2'b11;
+      SHIFT_RIGHT : state_number = 3'b100;
+    endcase
+  end
 
   // this logic combinatorially sets read addresses depending on which neighbour we want to be setting 
   always_comb begin
@@ -112,7 +131,7 @@ module check_extrema #(
         read_x = x - 1'b1;
         read_y = y;
       end
-      default : begin
+      MIDDLE : begin
         read_x = x;
         read_y = y;
       end
@@ -153,7 +172,7 @@ module check_extrema #(
   // first and second read values as the values at that location 
   // logic signed [BIT_DEPTH-1:0] first_read_value;
   // logic signed [BIT_DEPTH-1:0] second_read_value;
-  logic reader_busy, read, reader_done;
+  logic reader_busy, reader_done;
   
   read_pixel #(.DIMENSION(DIMENSION)) reader (
   .clk(clk),
@@ -191,7 +210,7 @@ module check_extrema #(
         y <= 1'b1;
         state <= START_ROW;
         pixel_pos <= NULL;
-        read <= 1'b1;
+        // read <= 1'b1;
         done_checking <= 1'b0;
       end else begin
         state <= IDLE;
@@ -263,14 +282,6 @@ module check_extrema #(
         end else begin
           read <= 1'b0;
         end
-        TOPL : if (reader_done) begin
-          first_top_left <= first_data;
-          second_top_left <= second_data;
-          pixel_pos <= MIDDLE;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
         MIDDLE : if (reader_done) begin
           first_middle <= first_data;
           second_middle <= second_data;
@@ -279,12 +290,16 @@ module check_extrema #(
         end else begin
           read <= 1'b0;
         end
-        NULL : pixel_pos <= TOP;
+        NULL : begin
+          pixel_pos <= TOP;
+          read <= 1'b1;
+        end
       endcase
       CHECK : begin 
         if (first_is_min || first_is_max) begin
           first_is_extremum <= 1'b1;
-        end else if (second_is_min || second_is_max) begin
+        end
+        if (second_is_min || second_is_max) begin
           second_is_extremum <= 1'b1;
         end
         state <= INCREMENT;
