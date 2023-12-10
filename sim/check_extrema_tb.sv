@@ -9,7 +9,7 @@
 
 module check_extrema_tb;
     parameter BIT_DEPTH = 9;
-    parameter DIMENSION = 5;
+    parameter DIMENSION = 64;
     logic signed [BIT_DEPTH-1:0] first_data, second_data;
     logic [$clog2(DIMENSION*DIMENSION)-1:0] first_address, second_address;
     // logic signed [BIT_DEPTH-1:0] first_pixel_value, second_pixel_value;
@@ -23,6 +23,7 @@ module check_extrema_tb;
     // logic read;   
     logic [$clog2(DIMENSION)-1:0] read_x;
     logic [$clog2(DIMENSION)-1:0] read_y;
+    logic [10:0] number_extrema;
 
 
 check_extrema #(
@@ -52,7 +53,7 @@ check_extrema #(
 
     xilinx_single_port_ram_read_first #(
         .RAM_WIDTH(9),                       // Specify RAM data width
-        .RAM_DEPTH(25),                     // Specify RAM depth (number of entries)
+        .RAM_DEPTH(DIMENSION*DIMENSION),                     // Specify RAM depth (number of entries)
         .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
         .INIT_FILE(`FPATH(first_test_bram.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
     ) first_bram (
@@ -68,7 +69,7 @@ check_extrema #(
 
     xilinx_single_port_ram_read_first #(
         .RAM_WIDTH(9),                       // Specify RAM data width
-        .RAM_DEPTH(25),                     // Specify RAM depth (number of entries)
+        .RAM_DEPTH(DIMENSION*DIMENSION),                     // Specify RAM depth (number of entries)
         .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
         .INIT_FILE(`FPATH(second_test_bram.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
     ) second_bram (
@@ -94,6 +95,7 @@ check_extrema #(
         $display("Starting Sim"); //print nice message
         clk_in = 0; //initialize clk (super important)
         rst_in = 0; //initialize rst (super important)
+        number_extrema = 0;
         #10;
         rst_in = 1'b1;
         #10;
@@ -106,13 +108,16 @@ check_extrema #(
         while (~done_checking) begin
             if (first_is_extremum) begin
                 $display("Extremum in BRAM 1  (", x, ", ", y, ")");
+                number_extrema = number_extrema +1'b1;
             end
             if (second_is_extremum) begin
                 $display("Extremum in BRAM 2  (", x, ", ", y, ")");
+                number_extrema = number_extrema +1'b1;
             end
             // $display("checked  (", x, ", ", y, ")");
             #10;
         end
+        $display("found ", number_extrema, " extrema total");
         $finish;
     end
 
