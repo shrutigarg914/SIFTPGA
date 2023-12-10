@@ -37,6 +37,8 @@ module find_keypoints #(
   
   output logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1L3_read_addr,
   input wire [IMG_BIT_DEPTH-1:0] O1L3_data,
+
+  output logic O1_DOG_L1L2_done,
   
   // // Octave 2
   // output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L1_read_addr,
@@ -123,7 +125,7 @@ module find_keypoints #(
 
 
   // Diff of Gaussian module for Octave 1 between L1, L2
-  logic O1_DOG_L1L2_done;
+  // logic O1_DOG_L1L2_done;
   logic O1_DOG_L2L3_done;
 
   always_comb begin

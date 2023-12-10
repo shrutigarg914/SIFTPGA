@@ -48,7 +48,8 @@ module dog #(parameter DIMENSION) (
         wea <= 0;
       end else begin
         case(state)
-        INACTIVE: if (bram_ready & ~old_bram) begin
+        INACTIVE: if (bram_ready & ~old_bram) begin//Not sure why this is rising edge of bram_ready? 
+        //But leaving as is for now since I don't want to break something inadvertantly
             busy <= 1'b1;
             done <= 1'b0;
             state <= WAIT;

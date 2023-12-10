@@ -16,14 +16,16 @@ module find_keypts_tb;
     logic [$clog2(DIMENSION*DIMENSION)-1:0] first_address, second_address, third_address;
     logic rst_in, clk_in;
     logic [10:0] number_keypt;
+    logic dog_one_done;
     
     logic [$clog2(TOP_HEIGHT * TOP_WIDTH)-1:0] O1key_write_addr;
     logic O1key_wea;
     logic [(2*$clog2(DIMENSION)):0] O1_keypoint_out;
 
-    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1L1_read_addr, O1L2_read_addr, O1L3_read_addr;
+    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1L1_read_addr, O1L2_read_addr, O1L3_read_addr, O1L1L2_address;
     logic [BIT_DEPTH-1:0] O1L1_data, O1L2_data, O1L3_data;
     logic keypoints_done, start_keypt;
+    logic signed [BIT_DEPTH:0] O1L1L2_data_write;
 
     find_keypoints #(.DIMENSION(DIMENSION)
     ) finder (
@@ -44,7 +46,9 @@ module find_keypts_tb;
     
     // start and done signals
     .start(start_keypt),
-    .keypoints_done(keypoints_done)
+    .keypoints_done(keypoints_done),
+
+    .O1_DOG_L1L2_done(dog_one_done)
 
     );
 
@@ -96,6 +100,24 @@ module find_keypts_tb;
         .douta(third_data)      // RAM output data, width determined from RAM_WIDTH
     );
 
+    // assign first_address = O1L1L2_address;
+    // assign second_address = O1L1L2_address;
+    logic O1L1L2_wea;
+    // logic [2:0] O1L1L2_state;
+
+    // dog #(.DIMENSION(DIMENSION)) O1_DOG_L1L2 (
+    // .clk(clk_in),
+    // .rst_in(rst_in),//sys_rst
+    // .bram_ready(start_keypt),//we can start populating this BRAM first
+    // .sharper_pix(O1L1_data),
+    // .fuzzier_pix(O1L2_data),
+    // .done(dog_one_done),
+    // .address(O1L1L2_address),
+    // .data_out(O1L1L2_data_write),
+    // .wea(O1L1L2_wea),
+    // .state_num(O1L1L2_state)
+    // );
+
     always begin
         #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
         clk_in = !clk_in;
@@ -110,15 +132,23 @@ module find_keypts_tb;
         rst_in = 1'b1;
         #10;
         rst_in = 0;
+        number_keypt = 0;
+        #10;
+        // need to low high low the start so dog will start :skull:
+        start_keypt = 1'b0;
         #10;
         // set start_checking to true
         start_keypt = 1'b1;
         #10;
         start_keypt = 1'b0;
+
         while (~keypoints_done) begin
+            if (dog_one_done) begin
+                $display("DOG ONE DONE");
+            end
             if (O1key_wea) begin
                 $display("Writing  ", O1_keypoint_out, ", at address ", O1key_write_addr);
-                number_keypt = number_keypt +1'b1;
+                number_keypt = number_keypt + 1'b1;
             end
             // $display("checked  (", x, ", ", y, ")");
             #10;
