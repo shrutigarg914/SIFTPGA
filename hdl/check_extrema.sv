@@ -27,6 +27,15 @@ module check_extrema #(
   // input wire have_prev,
   // input wire have_next,
 
+  // write enable and data handles for keypt BRAM
+  // we're assuming that the outer module is handling setting the address 
+  // (so we can write to that same BRAM from multiple instantiations)
+  // FOR OCTAVE 1
+  // output logic [$clog2(TOP_HEIGHT * TOP_WIDTH)-1:0] key_write_addr,
+  output logic key_wea,
+  output logic [(2*$clog2(DIMENSION)):0] key_out,
+
+
   input wire signed [BIT_DEPTH-1:0] first_data,
   output logic [$clog2(DIMENSION*DIMENSION)-1:0] first_address,
   
@@ -190,7 +199,7 @@ module check_extrema #(
   .done(reader_done)
   );
 
-  typedef enum {IDLE=0, START_ROW=1, CHECK=2, INCREMENT=3, SHIFT_RIGHT=4} module_state;
+  typedef enum {IDLE=0, START_ROW=1, CHECK=2, INCREMENT=3, SHIFT_RIGHT=4, WRITE_ANOTHER=5, FINISH_WRITE=6, WRAP_UP=7} module_state;
   module_state state;
 
   always_ff @(posedge clk) begin
@@ -297,11 +306,29 @@ module check_extrema #(
         endcase
         CHECK : begin 
           if (first_is_min || first_is_max) begin
-            first_is_extremum <= 1'b1;
+            key_out <= {x, y, 1'b0};
+            key_wea <= 1'b1;
+            if (second_is_min || second_is_max) begin
+              state <= WRITE_ANOTHER;
+            end else begin
+              state <= FINISH_WRITE;
+            end
+          end else if (second_is_min || second_is_max) begin
+            key_out <= {x, y, 1'b1};
+            key_wea <= 1'b1;
+            state <= FINISH_WRITE;
           end
-          if (second_is_min || second_is_max) begin
-            second_is_extremum <= 1'b1;
-          end
+          state <= INCREMENT;
+        end
+        WRITE_ANOTHER: if (key_wea) begin
+          key_wea <= 1'b0;
+        end else begin
+          key_out <= {x, y, 1'b1};
+          key_wea <= 1'b1;
+          state <= FINISH_WRITE;
+        end
+        FINISH_WRITE : begin
+          key_wea <= 1'b0;
           state <= INCREMENT;
         end
         INCREMENT : begin
@@ -317,9 +344,15 @@ module check_extrema #(
             state <= START_ROW;
             pixel_pos <= NULL;
           end else begin
-            state <= IDLE;
+            state <= WRAP_UP;
             done_checking <= 1'b1;
+            key_out <= 0;
+            key_wea<= 1'b1;
           end
+        end
+        WRAP_UP : begin
+          key_wea <= 1'b0;
+          state <= IDLE;
         end
         SHIFT_RIGHT : begin
           case(pixel_pos)

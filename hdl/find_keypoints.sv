@@ -8,11 +8,10 @@
 // GOAL: given the gaussian pyramid, write the keypoint BRAM
 
 module find_keypoints #(
-  parameter TOP_HEIGHT = 64, 
-  parameter TOP_WIDTH = 64, 
+  parameter DIMENSION = 64,
   parameter NUMBER_KEYPOINTS = 1000, 
   parameter NUMBER_OCTAVES = 3,
-  parameter DOG_IMAGES_PER_OCTAVE = 2// the check extrema module currently assumes this is 2 always 
+  parameter DOG_IMAGES_PER_OCTAVE = 2,// the check extrema module currently assumes this is 2 always 
   parameter IMG_BIT_DEPTH = 8
   ) (
   input wire clk,
@@ -22,8 +21,8 @@ module find_keypoints #(
 
   // FOR OCTAVE 1
   output logic [$clog2(TOP_HEIGHT * TOP_WIDTH)-1:0] O1key_write_addr,
-  output logic O1key_write_valid,
-  output logic [((2*$clog2(DIMENSION)) + $clog2(NUMBER_OCTAVES) + $clog2(DOG_IMAGES_PER_OCTAVE))- 1:0] O1_keypoint_out,
+  output logic O1key_wea,
+  output logic [(2*$clog2(DIMENSION)):0] O1_keypoint_out,
 
 
   // stealing the inputs/outputs from gaussian pyramid for consistency in naming
@@ -69,9 +68,13 @@ module find_keypoints #(
   // output logic [((2*$clog2(DIMENSION)) + $clog2(NUMBER_OCTAVES) + $clog2(DOG_IMAGES_PER_OCTAVE))- 1:0] keypoint_data,
   // output logic write_keypoint_enable,
 
-  );
-  local parameter DIMENSION = TOP_HEIGHT;
 
+  );
+  parameter TOP_HEIGHT = DIMENSION; 
+  parameter TOP_WIDTH = DIMENSION;
+  logic signed [IMG_BIT_DEPTH:0] O1L1L2_data_write, O1L2L3_data_write, O1L1L2_read_data, O1L2L3_read_data;
+  logic O1L1L2_wea, O1L2L3_wea;
+  logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1L1L2_address, O1L2L3_address, O1L1L2_read_address, O1L2L3_read_address;
   // DOG O1L1L2 BRAM
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(IMG_BIT_DEPTH+1), // we expect 8 bit greyscale images
@@ -99,7 +102,7 @@ module find_keypoints #(
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(IMG_BIT_DEPTH+1), // we expect 8 bit greyscale images
     .RAM_DEPTH(TOP_HEIGHT*TOP_WIDTH)) //we expect a 64*64 image with 4096 pixels total
-    O1L1L2 (
+    O1L2L3 (
     .addra(O1L2L3_address),
     .clka(clk),
     .wea(O1L2L3_wea),
@@ -123,13 +126,19 @@ module find_keypoints #(
   logic O1_DOG_L1L2_done;
   logic O1_DOG_L2L3_done;
 
+  always_comb begin
+    O1L1_read_addr = (O1L2L3_busy) ? O1L2L3_address : O1L1L2_address;
+    O1L2_read_addr = (O1L2L3_busy) ? O1L2L3_address : O1L1L2_address;
+  end
 
   // TODO: transition addresses!!!
   // assign O1L1_read_addr = O1L1L2_address;
   // assign O1L2_read_addr = O1L1L2_address;
+
+
   logic [1:0] O1L1L2_state;
   logic [1:0] O1L2L3_state;
-  dog #(.DIMENSION(TOP_HEIGHT)) O1_DOG_L1L2 (
+  dog #(.DIMENSION(DIMENSION)) O1_DOG_L1L2 (
   .clk(clk),
   .rst_in(rst_in),//sys_rst
   .bram_ready(start),//we can start populating this BRAM first
@@ -142,6 +151,7 @@ module find_keypoints #(
   .state_num(O1L1L2_state)
   );
 
+  logic O1L2L3_busy;
   dog #(.DIMENSION(TOP_HEIGHT)) O1_DOG_L2L3 (
   .clk(clk),
   .rst_in(rst_in),//sys_rst
@@ -152,13 +162,16 @@ module find_keypoints #(
   .address(O1L2L3_address),
   .data_out(O1L2L3_data_write),
   .wea(O1L2L3_wea),
-  .state_num(O1L2L3_state)
+  .state_num(O1L2L3_state),
+  .busy(O1L2L3_busy)
   );
 
 
 // Once Diff of G is done, find the extrema from that BRAM
 // this sets up the module
 // the actual logic of populating the BRAM is in the always_ff smwhere below
+  logic O1_key_done;
+  assign keypoints_done = O1_key_done;
 check_extrema #(
   .DIMENSION(DIMENSION)
 ) finder (
@@ -168,12 +181,14 @@ check_extrema #(
   .first_address(O1L1L2_read_address),
   .second_data(O1L2L3_read_data),
   .second_address(O1L2L3_read_address),
-  .enable(O1_DOG_done),
-  .x(O1_keypt_x),
-  .y(O1_keypt_y),
-  .first_is_extremum(O1_L1L2_extremum),
-  .second_is_extremum(O1_L2L3_extremum),
-  .done_checking(O1_key_done)
+  .enable(O1_DOG_L2L3_done),
+  // .x(O1_keypt_x),
+  // .y(O1_keypt_y),
+  // .first_is_extremum(O1_L1L2_extremum),
+  // .second_is_extremum(O1_L2L3_extremum),
+  .done_checking(O1_key_done),
+  .key_wea(O1key_wea),
+  .key_out(O1_keypoint_out)
   // .state_number(module_state),
   // .first_is_max(first_is_max),
   // .first_is_min(first_is_min),
@@ -183,6 +198,19 @@ check_extrema #(
   // .read_y(read_y),
   // .read(read)
   );
+  logic old_O1key_wea;
+  // logic [(2*$clog2(DIMENSION)):0] key_out;
+
+  always_ff @(posedge clk) begin
+    if (rst_in) begin
+      O1key_write_addr <= 0;
+    end else begin
+      old_O1key_wea <= O1key_wea;
+      if (old_O1key_wea && ~O1key_wea) begin// falling edge
+        O1key_write_addr <= O1key_write_addr + 1'b1;
+      end
+    end
+  end
 
 
 

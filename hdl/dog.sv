@@ -20,7 +20,7 @@ module dog #(parameter DIMENSION) (
   input wire [7:0] fuzzier_pix,
   output logic busy,
   output logic done,
-  output logic [11:0] address,
+  output logic [$clog2(DIMENSION * DIMENSION)-1:0] address,
   output logic signed [8:0] data_out,
   output logic wea,
   output logic [1:0] state_num
