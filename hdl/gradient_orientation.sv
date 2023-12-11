@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
+// angles on boundaries fall counterclockwise
 module gradient_orientation #(
   parameter WIDTH=64,
   parameter HEIGHT=64,
@@ -19,13 +20,13 @@ module gradient_orientation #(
   output logic y_read_addr_valid,
   input wire [BIT_DEPTH-1:0] y_pixel_in,
 
-  input wire [$clog2(WIDTH)-1:0] center_addr_x;
-  input wire [$clog2(HEIGHT)-1:0] center_addr_y;
+  input wire [$clog2(WIDTH)-1:0] center_addr_x,
+  input wire [$clog2(HEIGHT)-1:0] center_addr_y,
 
   input wire valid_in, // one clock cycle signal high when center address is ready
   output logic valid_out, // one clock cycle signal high when output is valid
   output logic [2:0] bin_out, // 8 bins total, 3 bits should be enough
-  output logic[1:0] state_num,
+  output logic[1:0] state_num
 );
   typedef enum {IDLE=0, READ_X=1, READ_Y=2, OUTPUT=3} module_state;
   module_state state;
@@ -115,38 +116,54 @@ module gradient_orientation #(
         OUTPUT:
         begin
           if (x_grad[BIT_DEPTH-1] == 0 && y_grad[BIT_DEPTH-1] == 0) begin
-            // 8thdrants 0, 1
-            if (x_grad >= y_grad) begin
-                bin_out <= 0;
+            // handle boundary
+            if (x_grad == 0 && y_grad != 0) begin
+                bin_out <= 2;
             end else begin
-                bin_out <= 1;
+                // 8thdrants 0, 1
+                if (x_grad > y_grad) begin
+                    bin_out <= 0;
+                end else begin
+                    bin_out <= 1;
+                end
             end
           end
           if (x_grad[BIT_DEPTH-1] == 1 && y_grad[BIT_DEPTH-1] == 0) begin
-            // 8thdrants 2, 3
-            if (x_grad_neg >= y_grad) begin
-                bin_out <= 2;
+            // handle boundary
+            if (x_grad != 0 && y_grad == 0) begin
+                bin_out <= 4;
             end else begin
-                bin_out <= 3;
+                // 8thdrants 2, 3
+                if (x_grad_neg < y_grad) begin
+                    bin_out <= 2;
+                end else begin
+                    bin_out <= 3;
+                end
             end
           end
           if (x_grad[BIT_DEPTH-1] == 1 && y_grad[BIT_DEPTH-1] == 1) begin
-            // 8thdrants 4, 5
-            if (x_grad_neg >= y_grad_neg) begin
-                bin_out <= 4;
+            // handle boundary
+            if (x_grad == 0 && y_grad != 0) begin
+                bin_out <= 6;
             end else begin
-                bin_out <= 5;
+                // 8thdrants 4, 5
+                if (x_grad_neg > y_grad_neg) begin
+                    bin_out <= 4;
+                end else begin
+                    bin_out <= 5;
+                end
             end
           end
           if (x_grad[BIT_DEPTH-1] == 0 && y_grad[BIT_DEPTH-1] == 1) begin
             // 8thdrants 6, 7
-            if (x_grad >= y_grad_neg) begin
+            if (x_grad < y_grad_neg) begin
                 bin_out <= 6;
             end else begin
                 bin_out <= 7;
             end
           end
           valid_out <= 1;
+          state <= IDLE;
         end
       endcase
     end
