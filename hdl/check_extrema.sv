@@ -27,6 +27,15 @@ module check_extrema #(
   // input wire have_prev,
   // input wire have_next,
 
+  // write enable and data handles for keypt BRAM
+  // we're assuming that the outer module is handling setting the address 
+  // (so we can write to that same BRAM from multiple instantiations)
+  // FOR OCTAVE 1
+  // output logic [$clog2(TOP_HEIGHT * TOP_WIDTH)-1:0] key_write_addr,
+  output logic key_wea,
+  output logic [(2*$clog2(DIMENSION)):0] key_out,
+
+
   input wire signed [BIT_DEPTH-1:0] first_data,
   output logic [$clog2(DIMENSION*DIMENSION)-1:0] first_address,
   
@@ -42,15 +51,23 @@ module check_extrema #(
   output logic [$clog2(DIMENSION)-1:0] y,
   output logic first_is_extremum,
   output logic second_is_extremum,
-  output logic done_checking
+  output logic done_checking,
+  output logic [2:0] state_number,
+  output logic first_is_min,
+  output logic first_is_max,
+  output logic second_is_min,
+  output logic second_is_max,  
+  output logic [$clog2(DIMENSION)-1:0] read_x,
+  output logic [$clog2(DIMENSION)-1:0] read_y,
+  output logic read
   );
     
   typedef enum {TOP=0, TOPR=1, TOPL=2, BOT=3, BOTR=4, BOTL=5, RIGHT=6, LEFT=7, MIDDLE=8, NULL=9} sub_module_state;
   sub_module_state pixel_pos;
 
 
-  logic [$clog2(DIMENSION)-1:0] read_x;
-  logic [$clog2(DIMENSION)-1:0] read_y;
+  // logic [$clog2(DIMENSION)-1:0] read_x;
+  // logic [$clog2(DIMENSION)-1:0] read_y;
 
   // pixel for first BRAM
   logic signed [BIT_DEPTH-1:0] first_top;
@@ -74,8 +91,19 @@ module check_extrema #(
   logic signed [BIT_DEPTH-1:0] second_left;
   logic signed [BIT_DEPTH-1:0] second_middle;
 
-  logic first_is_min, first_is_max;
-  logic second_is_min, second_is_max;
+  // logic first_is_min, first_is_max;
+  // logic second_is_min, second_is_max;
+
+  // IDLE=0, START_ROW=1, CHECK=2, INCREMENT=3, SHIFT_RIGHT=4
+  always_comb begin
+    case(state)
+      IDLE : state_number = 0;
+      START_ROW : state_number = 1'b1;
+      CHECK : state_number = 2'b10;
+      INCREMENT : state_number = 2'b11;
+      SHIFT_RIGHT : state_number = 3'b100;
+    endcase
+  end
 
   // this logic combinatorially sets read addresses depending on which neighbour we want to be setting 
   always_comb begin
@@ -112,7 +140,7 @@ module check_extrema #(
         read_x = x - 1'b1;
         read_y = y;
       end
-      default : begin
+      MIDDLE : begin
         read_x = x;
         read_y = y;
       end
@@ -153,7 +181,7 @@ module check_extrema #(
   // first and second read values as the values at that location 
   // logic signed [BIT_DEPTH-1:0] first_read_value;
   // logic signed [BIT_DEPTH-1:0] second_read_value;
-  logic reader_busy, read, reader_done;
+  logic reader_busy, reader_done;
   
   read_pixel #(.DIMENSION(DIMENSION)) reader (
   .clk(clk),
@@ -171,7 +199,7 @@ module check_extrema #(
   .done(reader_done)
   );
 
-  typedef enum {IDLE=0, START_ROW=1, CHECK=2, INCREMENT=3, SHIFT_RIGHT=4} module_state;
+  typedef enum {IDLE=0, START_ROW=1, CHECK=2, INCREMENT=3, SHIFT_RIGHT=4, WRITE_ANOTHER=5, FINISH_WRITE=6, WRAP_UP=7} module_state;
   module_state state;
 
   always_ff @(posedge clk) begin
@@ -184,150 +212,30 @@ module check_extrema #(
       x <= 1'b1;
       y <= 1'b1;
       done_checking <= 1'b0;
-    end
-    case(state)
-      IDLE : if (enable) begin
-        x <= 1'b1;
-        y <= 1'b1;
-        state <= START_ROW;
-        pixel_pos <= NULL;
-        read <= 1'b1;
-        done_checking <= 1'b0;
-      end else begin
-        state <= IDLE;
-        read <= 1'b0;
-        done_checking <= 1'b0;
-      end
-      START_ROW : case(pixel_pos)
-        TOP : if (reader_done) begin
-          first_top <= first_data;
-          second_top <= second_data;
-          pixel_pos <= TOPR;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        TOPR : if (reader_done) begin
-          first_top_right <= first_data;
-          second_top_right <= second_data;
-          pixel_pos <= RIGHT;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        RIGHT : if (reader_done) begin
-          first_right <= first_data;
-          second_right <= second_data;
-          pixel_pos <= BOTR;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        BOTR : if (reader_done) begin
-          first_bottom_right <= first_data;
-          second_bottom_right <= second_data;
-          pixel_pos <= BOT;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        BOT : if (reader_done) begin
-          first_bottom <= first_data;
-          second_bottom <= second_data;
-          pixel_pos <= BOTL;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        BOTL : if (reader_done) begin
-          first_bottom_left <= first_data;
-          second_bottom_left <= second_data;
-          pixel_pos <= LEFT;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        LEFT : if (reader_done) begin
-          first_left <= first_data;
-          second_left <= second_data;
-          pixel_pos <= TOPL;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        TOPL : if (reader_done) begin
-          first_top_left <= first_data;
-          second_top_left <= second_data;
-          pixel_pos <= MIDDLE;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        TOPL : if (reader_done) begin
-          first_top_left <= first_data;
-          second_top_left <= second_data;
-          pixel_pos <= MIDDLE;
-          read <= 1'b1;
-        end else begin
-          read <= 1'b0;
-        end
-        MIDDLE : if (reader_done) begin
-          first_middle <= first_data;
-          second_middle <= second_data;
-          pixel_pos <= NULL;
-          state <= CHECK;
-        end else begin
-          read <= 1'b0;
-        end
-        NULL : pixel_pos <= TOP;
-      endcase
-      CHECK : begin 
-        if (first_is_min || first_is_max) begin
-          first_is_extremum <= 1'b1;
-        end else if (second_is_min || second_is_max) begin
-          second_is_extremum <= 1'b1;
-        end
-        state <= INCREMENT;
-      end
-      INCREMENT : begin
-        first_is_extremum <= 1'b0;
-        second_is_extremum <= 1'b0;
-        if (x < DIMENSION - 2) begin
-          x <= x + 1'b1;
-          state <= SHIFT_RIGHT;
-          pixel_pos <= NULL;
-        end else if (y < DIMENSION - 2) begin
+      key_wea <= 1'b0;
+      key_out <= 0;
+    end else begin
+      case(state)
+        IDLE : if (enable) begin
           x <= 1'b1;
-          y <= y+1'b1;
+          y <= 1'b1;
           state <= START_ROW;
           pixel_pos <= NULL;
+          // read <= 1'b1;
+          done_checking <= 1'b0;
         end else begin
           state <= IDLE;
-          done_checking <= 1'b1;
+          read <= 1'b0;
+          done_checking <= 1'b0;
         end
-      end
-      SHIFT_RIGHT : begin
-        case(pixel_pos)
-          NULL : begin
-            // move values over for the first BRAM
-            first_top_left <= first_top;
-            first_bottom_left <= first_bottom;
-            first_left <= first_middle;
-            first_top <= first_top_right;
-            first_bottom <= first_bottom_right;
-            first_middle <= first_right;
-
-            // move values over for the second BRAM
-            second_top_left <= second_top;
-            second_bottom_left <= second_bottom;
-            second_left <= second_middle;
-            second_top <= second_top_right;
-            second_bottom <= second_bottom_right;
-            second_middle <= second_right;
-            
-            // start loading the three remaining pixels
+        START_ROW : case(pixel_pos)
+          TOP : if (reader_done) begin
+            first_top <= first_data;
+            second_top <= second_data;
             pixel_pos <= TOPR;
             read <= 1'b1;
+          end else begin
+            read <= 1'b0;
           end
           TOPR : if (reader_done) begin
             first_top_right <= first_data;
@@ -348,18 +256,216 @@ module check_extrema #(
           BOTR : if (reader_done) begin
             first_bottom_right <= first_data;
             second_bottom_right <= second_data;
+            pixel_pos <= BOT;
+            read <= 1'b1;
+          end else begin
+            read <= 1'b0;
+          end
+          BOT : if (reader_done) begin
+            first_bottom <= first_data;
+            second_bottom <= second_data;
+            pixel_pos <= BOTL;
+            read <= 1'b1;
+          end else begin
+            read <= 1'b0;
+          end
+          BOTL : if (reader_done) begin
+            first_bottom_left <= first_data;
+            second_bottom_left <= second_data;
+            pixel_pos <= LEFT;
+            read <= 1'b1;
+          end else begin
+            read <= 1'b0;
+          end
+          LEFT : if (reader_done) begin
+            first_left <= first_data;
+            second_left <= second_data;
+            pixel_pos <= TOPL;
+            read <= 1'b1;
+          end else begin
+            read <= 1'b0;
+          end
+          TOPL : if (reader_done) begin
+            first_top_left <= first_data;
+            second_top_left <= second_data;
+            pixel_pos <= MIDDLE;
+            read <= 1'b1;
+          end else begin
+            read <= 1'b0;
+          end
+          MIDDLE : if (reader_done) begin
+            first_middle <= first_data;
+            second_middle <= second_data;
             pixel_pos <= NULL;
             state <= CHECK;
           end else begin
             read <= 1'b0;
           end
-          default : pixel_pos <= NULL;
+          NULL : begin
+            pixel_pos <= TOP;
+            read <= 1'b1;
+          end
         endcase
-      end
-    endcase
+        CHECK : begin 
+          if (first_is_min || first_is_max) begin
+            key_out <= {x, y, 1'b0};
+            key_wea <= 1'b1;
+            if (second_is_min || second_is_max) begin
+              state <= WRITE_ANOTHER;
+            end else begin
+              state <= FINISH_WRITE;
+            end
+          end else if (second_is_min || second_is_max) begin
+            key_out <= {x, y, 1'b1};
+            key_wea <= 1'b1;
+            state <= FINISH_WRITE;
+          end else begin
+            state <= INCREMENT;
+          end
+        end
+        WRITE_ANOTHER: if (key_wea) begin
+          key_wea <= 1'b0;
+        end else begin
+          key_out <= {x, y, 1'b1};
+          key_wea <= 1'b1;
+          state <= FINISH_WRITE;
+        end
+        FINISH_WRITE : begin
+          key_wea <= 1'b0;
+          state <= INCREMENT;
+        end
+        INCREMENT : begin
+          first_is_extremum <= 1'b0;
+          second_is_extremum <= 1'b0;
+          if (x < DIMENSION - 2) begin
+            x <= x + 1'b1;
+            state <= SHIFT_RIGHT;
+            pixel_pos <= NULL;
+          end else if (y < DIMENSION - 2) begin
+            x <= 1'b1;
+            y <= y+1'b1;
+            state <= START_ROW;
+            pixel_pos <= NULL;
+          end else begin
+            state <= WRAP_UP;
+            done_checking <= 1'b1;
+            key_out <= 0;
+            key_wea<= 1'b1;
+          end
+        end
+        WRAP_UP : begin
+          key_wea <= 1'b0;
+          state <= IDLE;
+        end
+        SHIFT_RIGHT : begin
+          case(pixel_pos)
+            NULL : begin
+              // move values over for the first BRAM
+              first_top_left <= first_top;
+              first_bottom_left <= first_bottom;
+              first_left <= first_middle;
+              first_top <= first_top_right;
+              first_bottom <= first_bottom_right;
+              first_middle <= first_right;
+
+              // move values over for the second BRAM
+              second_top_left <= second_top;
+              second_bottom_left <= second_bottom;
+              second_left <= second_middle;
+              second_top <= second_top_right;
+              second_bottom <= second_bottom_right;
+              second_middle <= second_right;
+              
+              // start loading the three remaining pixels
+              pixel_pos <= TOPR;
+              read <= 1'b1;
+            end
+            TOPR : if (reader_done) begin
+              first_top_right <= first_data;
+              second_top_right <= second_data;
+              pixel_pos <= RIGHT;
+              read <= 1'b1;
+            end else begin
+              read <= 1'b0;
+            end
+            RIGHT : if (reader_done) begin
+              first_right <= first_data;
+              second_right <= second_data;
+              pixel_pos <= BOTR;
+              read <= 1'b1;
+            end else begin
+              read <= 1'b0;
+            end
+            BOTR : if (reader_done) begin
+              first_bottom_right <= first_data;
+              second_bottom_right <= second_data;
+              pixel_pos <= NULL;
+              state <= CHECK;
+            end else begin
+              read <= 1'b0;
+            end
+            default : pixel_pos <= NULL;
+          endcase
+        end
+      endcase
+    end
   end
 
 endmodule // extrema
+
+// a sub module to check for extrema, and owns the address setters for both BRAMs
+module read_pixel #(
+  parameter BIT_DEPTH = 9,
+  parameter DIMENSION = 4
+  ) (
+  input wire clk,
+  input wire rst_in,
+
+  input wire signed [BIT_DEPTH-1:0] first_data,
+  output logic [$clog2(DIMENSION*DIMENSION)-1:0] first_address,
+  
+  input wire signed [BIT_DEPTH-1:0] second_data,
+  output logic [$clog2(DIMENSION*DIMENSION)-1:0] second_address,
+
+  input wire input_ready,
+  input wire [$clog2(DIMENSION)-1:0] x,
+  input wire [$clog2(DIMENSION)-1:0] y,
+  output logic busy,
+  output logic done// goes high for one cycle when read is done
+  );
+    typedef enum {IDLE=0, BUSY=1} reader_state;
+    reader_state state;
+
+    logic [1:0] counter;
+    logic [$clog2(DIMENSION*DIMENSION)-1:0] address;
+    assign address = y * DIMENSION + x;
+    always_ff @(posedge clk) begin
+      if (rst_in) begin
+        counter <= 0;
+      end else begin
+        case(state)
+          IDLE: if (input_ready) begin
+            state <= BUSY;
+            first_address <= address;
+            second_address <= address;
+            counter <= 0; 
+            busy <= 1'b1;
+            done <= 1'b0;
+          end else begin
+            state <= IDLE;
+            done <= 1'b0;
+          end
+          BUSY: if (counter==2'b10) begin
+            state <= IDLE;
+            done <= 1'b1;
+            busy <= 1'b0;
+          end else begin
+            counter <= counter + 1'b1;
+          end
+        endcase
+      end
+    end       
+endmodule //read_pixel
 
 
 `default_nettype wire

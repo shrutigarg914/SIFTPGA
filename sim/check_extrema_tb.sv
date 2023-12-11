@@ -9,42 +9,51 @@
 
 module check_extrema_tb;
     parameter BIT_DEPTH = 9;
-    parameter DIMENSION = 4;
+    parameter DIMENSION = 64;
     logic signed [BIT_DEPTH-1:0] first_data, second_data;
     logic [$clog2(DIMENSION*DIMENSION)-1:0] first_address, second_address;
     // logic signed [BIT_DEPTH-1:0] first_pixel_value, second_pixel_value;
     logic [$clog2(DIMENSION)-1:0] x, y;
-    logic read, rst_in, clk_in, busy, reader_done;
+    logic read, rst_in, clk_in, start_checking, done_checking;
+    logic first_is_extremum, second_is_extremum;
+    logic [2:0] module_state;
+
+    logic first_is_min, first_is_max;
+    logic second_is_min, second_is_max; 
+    // logic read;   
+    logic [$clog2(DIMENSION)-1:0] read_x;
+    logic [$clog2(DIMENSION)-1:0] read_y;
+    logic [10:0] number_extrema;
+
 
 check_extrema #(
-  .DIMENSION(4)
+  .DIMENSION(DIMENSION)
 ) finder (
-  input wire clk,
-  input wire rst_in,
-  // input wire have_prev,
-  // input wire have_next,
-
-  input wire signed [BIT_DEPTH-1:0] first_data,
-  output logic [$clog2(DIMENSION*DIMENSION)-1:0] first_address,
-  
-  input wire signed [BIT_DEPTH-1:0] second_data,
-  output logic [$clog2(DIMENSION*DIMENSION)-1:0] second_address,
-  
-  input wire enable,
-  // input wire [BIT_DEPTH-1:0] next_data,
-  // input wire [$clog2(DIMENSION*DIMENSION)-1:0] next_address,
-  // input wire [BIT_DEPTH-1:0] prev_data,
-  // input wire [$clog2(DIMENSION*DIMENSION)-1:0] prev_address,
-  output logic [$clog2(DIMENSION)-1:0] x,
-  output logic [$clog2(DIMENSION)-1:0] y,
-  output logic first_is_extremum,
-  output logic second_is_extremum,
-  output logic done_checking
+  .clk(clk_in),
+  .rst_in(rst_in),
+  .first_data(first_data),
+  .first_address(first_address),
+  .second_data(second_data),
+  .second_address(second_address),
+  .enable(start_checking),
+  .x(x),
+  .y(y),
+  .first_is_extremum(first_is_extremum),
+  .second_is_extremum(second_is_extremum),
+  .done_checking(done_checking),
+  .state_number(module_state),
+  .first_is_max(first_is_max),
+  .first_is_min(first_is_min),
+  .second_is_max(second_is_max),
+  .second_is_min(second_is_min),
+  .read_x(read_x),
+  .read_y(read_y),
+  .read(read)
   );
 
     xilinx_single_port_ram_read_first #(
         .RAM_WIDTH(9),                       // Specify RAM data width
-        .RAM_DEPTH(16),                     // Specify RAM depth (number of entries)
+        .RAM_DEPTH(DIMENSION*DIMENSION),                     // Specify RAM depth (number of entries)
         .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
         .INIT_FILE(`FPATH(first_test_bram.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
     ) first_bram (
@@ -60,7 +69,7 @@ check_extrema #(
 
     xilinx_single_port_ram_read_first #(
         .RAM_WIDTH(9),                       // Specify RAM data width
-        .RAM_DEPTH(16),                     // Specify RAM depth (number of entries)
+        .RAM_DEPTH(DIMENSION*DIMENSION),                     // Specify RAM depth (number of entries)
         .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
         .INIT_FILE(`FPATH(second_test_bram.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
     ) second_bram (
@@ -74,6 +83,8 @@ check_extrema #(
         .douta(second_data)      // RAM output data, width determined from RAM_WIDTH
     );
 
+
+
     always begin
         #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
         clk_in = !clk_in;
@@ -84,25 +95,29 @@ check_extrema #(
         $display("Starting Sim"); //print nice message
         clk_in = 0; //initialize clk (super important)
         rst_in = 0; //initialize rst (super important)
+        number_extrema = 0;
         #10;
         rst_in = 1'b1;
         #10;
         rst_in = 0;
-        // for x, y 0,0 to 3,3 lets read everything and check we're getting what we want
-        for (int i=0; i<4; i = i +1) begin
-            for (int j=0; j<4; j=j+1) begin
-                x = j;
-                y = i;
-                #10;
-                read = 1'b1;
-                while (!reader_done) begin
-                    #10;
-                    read = 1'b0;
-                end
-                $display("Pixel position  (", x, ", ", y, ")");
-                $display("Values:", first_data, ", ", second_data);
+        #10;
+        // set start_checking to true
+        start_checking = 1'b1;
+        #10;
+        start_checking = 1'b0;
+        while (~done_checking) begin
+            if (first_is_extremum) begin
+                $display("Extremum in BRAM 1  (", x, ", ", y, ")");
+                number_extrema = number_extrema +1'b1;
             end
+            if (second_is_extremum) begin
+                $display("Extremum in BRAM 2  (", x, ", ", y, ")");
+                number_extrema = number_extrema +1'b1;
+            end
+            // $display("checked  (", x, ", ", y, ")");
+            #10;
         end
+        $display("found ", number_extrema, " extrema total");
         $finish;
     end
 
