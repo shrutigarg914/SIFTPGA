@@ -2,14 +2,15 @@
 `default_nettype none
 
 module send_img #(
-    parameter BRAM_LENGTH = 64 * 64
+    parameter BRAM_LENGTH = 64 * 64,
+    parameter BIT_DEPTH = 8
     ) (
   input wire clk,
   input wire rst_in,//sys_rst
   input wire img_ready,//full_image_received
   output logic tx,//uart_txd
-  input wire [7:0] data,
-  output logic [13:0] address, // gets wired to the BRAM
+  input wire [BIT_DEPTH-1:0] data,
+  output logic [$clog2(BRAM_LENGTH)-1:0] address, // gets wired to the BRAM
   output logic busy, //or we could do img_sent whichever makes more sense
   output logic send,
   output logic [1:0] out_state,
