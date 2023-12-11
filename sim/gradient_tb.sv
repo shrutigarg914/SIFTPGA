@@ -84,7 +84,7 @@ module gradient_tb;
         start_in = 1;
         #10
         start_in = 0;
-        #350000
+        #630000
 
         $display("Finishing Sim"); //print nice message
         $finish;

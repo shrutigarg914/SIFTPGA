@@ -68,8 +68,8 @@ if __name__ == "__main__":
         while len(image_rx) <len(pixels)*2:
             # print(".", end='', flush=True)
             res = s.read()
-            image_rx.append(struct.unpack('B', res)[0])
-            print(len(image_rx), len(pixels), struct.unpack('B', res)[0])
+            image_rx.append(struct.unpack('b', res)[0])
+            print(len(image_rx), len(pixels), struct.unpack('b', res)[0])
             # ind = input("Index investigating:  ")
             # print(pixels[ind])
         print("IMAGE RECEIVED")

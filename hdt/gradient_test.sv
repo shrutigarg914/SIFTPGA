@@ -22,13 +22,14 @@ module top_level(
     parameter HEIGHT = 64;
     parameter BIT_DEPTH = 8;
 
-    logic [13:0] pixel_addr;
-    logic [7:0] rx_data;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] pixel_addr;
+    logic [BIT_DEPTH-1:0] rx_data;
 
     logic valid_o;
     logic valid_o_edge;
     logic old_valid_o;
     logic start_gradient;
+    logic gradient_done;
     logic gradient_done_latched;
 
     always_ff @(posedge clk_100mhz) begin
@@ -58,6 +59,7 @@ module top_level(
         pixel_addr <= 0;
         full_image_received <= 1'b0;
         gradient_done_latched <= 0;
+        start_gradient <= 0;
       end
       else if (valid_o_edge) begin
         // pixel <= data_o; I'm assuming that data doesn't need to be held
@@ -67,10 +69,6 @@ module top_level(
           full_image_received <= 1'b1;
           start_gradient <= 1'b1;
         end
-      end
-
-      if (start_gradient) begin
-        start_gradient <= 0;
       end
 
       if (gradient_done) begin
@@ -112,8 +110,6 @@ module top_level(
     logic [$clog2(WIDTH * HEIGHT)-1:0] y_write_addr;
     logic y_write_valid;
     logic [BIT_DEPTH-1:0] y_pixel_out;
-
-    logic gradient_done;
 
     // the start x gradient BRAM
     xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -165,6 +161,8 @@ module top_level(
     logic [$clog2(WIDTH * HEIGHT)-1:0] y_read_addr;
     logic [BIT_DEPTH-1:0] y_stored_out;
 
+    logic[2:0] state_num;
+    assign led[7:5] = state_num;
 
     gradient_image #(
         .BIT_DEPTH(BIT_DEPTH),
@@ -181,7 +179,8 @@ module top_level(
                          .y_write_valid(y_write_valid),
                          .y_pixel_out(y_pixel_out), 
                          .start_in(start_gradient),
-                         .gradient_done(gradient_done));
+                         .gradient_done(gradient_done),
+                         .state_num(state_num));
 
     // when btn[1] pressed if gradient is done, send what's stored in the x and y BRAMs to the laptop
     
@@ -214,6 +213,10 @@ module top_level(
       end
     end
 
+    typedef enum {IDLE=0, X=1, Y=2} tx_state;
+    tx_state state;
+    tx_state state_prev;
+
     send_img  tx_img_x (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
@@ -239,44 +242,18 @@ module top_level(
     );
     logic y_tx_img_busy;
     logic y_uart_txd;
-    
-    typedef enum {IDLE=0, X=1, Y=2} tx_state;
-    tx_state state;
-    tx_state state_prev;
-    logic x_tx_img_busy_latched;
-    logic y_tx_img_busy_latched;
-    logic ever_not_zero;
-
-    assign led[15] = x_tx_img_busy_latched;
-    assign led[14] = y_tx_img_busy_latched;
-    assign led[13] = ever_not_zero;
 
     always_ff @(posedge clk_100mhz) begin
       if (sys_rst) begin
         state <= IDLE;
-        led[4:2] <= 0;
-        x_tx_img_busy_latched <= 0;
-        y_tx_img_busy_latched <= 0;
-        ever_not_zero <= 0;
       end else begin
         state_prev <= state;
-        if (x_stored_out != 0) begin
-          ever_not_zero <= 1;
-        end
-        if (x_tx_img_busy) begin
-          x_tx_img_busy_latched <= 1;
-        end
-        if (y_tx_img_busy) begin
-          y_tx_img_busy_latched <= 1;
-        end
         case (state)
           IDLE:
           begin
             if (btn_edge && gradient_done_latched) begin
                 state <= X;
-                ever_not_zero <= 0;
             end
-            led[2] <= 1;
           end
           X:
           begin
@@ -284,7 +261,6 @@ module top_level(
                 state <= Y;
             end
             uart_txd <= x_uart_txd;
-            led[3] <= 1;
           end
           Y:
           begin
@@ -292,15 +268,14 @@ module top_level(
                 state <= IDLE;
             end
             uart_txd <= y_uart_txd;
-            led[4] <= 1;
           end
         endcase
       end
     end
     
-    // assign led[2] = (state == IDLE);
-    // assign led[3] = (state == X);
-    // assign led[4] = (state == Y);
+    assign led[2] = (state == IDLE);
+    assign led[3] = (state == X);
+    assign led[4] = (state == Y);
 
     
 endmodule // top_level
