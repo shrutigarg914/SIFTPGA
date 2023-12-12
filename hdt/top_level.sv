@@ -53,7 +53,6 @@ module top_level(
     logic keypoints_done_latched;
     assign led[0] = full_image_received;
     assign led[1] = pyramid_done_latched;
-    // assign led[13] = dog_one_done;
     assign led[14] = keypoints_done_latched;
 
     // if we have a valid_o, update pixel location for BRAM 
@@ -118,7 +117,7 @@ module top_level(
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
     .RAM_DEPTH(WIDTH*HEIGHT))
-    o1_l1 (
+    o1_l1_DOG (
         .addra(O1L1_write_addr),
         .clka(clk_100mhz),
         .wea(O1L1_write_valid),
@@ -127,25 +126,48 @@ module top_level(
         .regcea(1'b1),
         .rsta(sys_rst),
         .douta(), //never read from this side
-        .addrb(O1L1_read_addr),// transformed lookup pixel
+        .addrb(O1L1_DOG_read_addr),// transformed lookup pixel
         .dinb(),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(O1L1_pixel_out)
+        .doutb(O1L1_DOG_pixel_out)
+    );
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(WIDTH*HEIGHT))
+    o1_l1_grad (
+        .addra(O1L1_write_addr),
+        .clka(clk_100mhz),
+        .wea(O1L1_write_valid),
+        .dina(O1L1_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(O1L1_grad_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(O1L1_grad_pixel_out)
     );
     logic [$clog2(WIDTH * HEIGHT)-1:0] O1L1_write_addr;
     logic O1L1_write_valid;
     logic [BIT_DEPTH-1:0] O1L1_pixel_in;
-    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L1_read_addr;
-    logic [BIT_DEPTH-1:0] O1L1_pixel_out;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L1_DOG_read_addr;
+    logic [BIT_DEPTH-1:0] O1L1_DOG_pixel_out;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L1_grad_read_addr;
+    logic [BIT_DEPTH-1:0] O1L1_grad_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
     .RAM_DEPTH(WIDTH*HEIGHT))
-    o1_l2 (
+    o1_l2_DOG (
         .addra(O1L2_write_addr),
         .clka(clk_100mhz),
         .wea(O1L2_write_valid),
@@ -154,25 +176,48 @@ module top_level(
         .regcea(1'b1),
         .rsta(sys_rst),
         .douta(), //never read from this side
-        .addrb(O1L2_read_addr),// transformed lookup pixel
+        .addrb(O1L2_DOG_read_addr),// transformed lookup pixel
         .dinb(),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(O1L2_pixel_out)
+        .doutb(O1L2_DOG_pixel_out)
+    );
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(WIDTH*HEIGHT))
+    o1_l2_grad (
+        .addra(O1L2_write_addr),
+        .clka(clk_100mhz),
+        .wea(O1L2_write_valid),
+        .dina(O1L2_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(O1L2_grad_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(O1L2_grad_pixel_out)
     );
     logic [$clog2(WIDTH * HEIGHT)-1:0] O1L2_write_addr;
     logic O1L2_write_valid;
     logic [BIT_DEPTH-1:0] O1L2_pixel_in;
-    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L2_read_addr;
-    logic [BIT_DEPTH-1:0] O1L2_pixel_out;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L2_DOG_read_addr;
+    logic [BIT_DEPTH-1:0] O1L2_DOG_pixel_out;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L2_grad_read_addr;
+    logic [BIT_DEPTH-1:0] O1L2_grad_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
     .RAM_DEPTH(WIDTH*HEIGHT))
-    o1_l3 (
+    o1_l3_DOG (
         .addra(O1L3_write_addr),
         .clka(clk_100mhz),
         .wea(O1L3_write_valid),
@@ -181,25 +226,48 @@ module top_level(
         .regcea(1'b1),
         .rsta(sys_rst),
         .douta(), //never read from this side
-        .addrb(O1L3_read_addr),// transformed lookup pixel
+        .addrb(O1L3_DOG_read_addr),// transformed lookup pixel
         .dinb(),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(O1L3_pixel_out)
+        .doutb(O1L3_DOG_pixel_out)
+    );
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(WIDTH*HEIGHT))
+    o1_l3_grad (
+        .addra(O1L3_write_addr),
+        .clka(clk_100mhz),
+        .wea(O1L3_write_valid),
+        .dina(O1L3_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(O1L3_grad_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(O1L3_grad_pixel_out)
     );
     logic [$clog2(WIDTH * HEIGHT)-1:0] O1L3_write_addr;
     logic O1L3_write_valid;
     logic [BIT_DEPTH-1:0] O1L3_pixel_in;
-    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L3_read_addr;
-    logic [BIT_DEPTH-1:0] O1L3_pixel_out;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L3_DOG_read_addr;
+    logic [BIT_DEPTH-1:0] O1L3_DOG_pixel_out;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] O1L3_grad_read_addr;
+    logic [BIT_DEPTH-1:0] O1L3_grad_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
     .RAM_DEPTH(WIDTH/2*HEIGHT/2))
-    o2_l1 (
+    o2_l1_DOG (
         .addra(O2L1_write_addr),
         .clka(clk_100mhz),
         .wea(O2L1_write_valid),
@@ -208,25 +276,48 @@ module top_level(
         .regcea(1'b1),
         .rsta(sys_rst),
         .douta(), //never read from this side
-        .addrb(O2L1_read_addr),// transformed lookup pixel
+        .addrb(O2L1_DOG_read_addr),// transformed lookup pixel
         .dinb(),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(O2L1_pixel_out)
+        .doutb(O2L1_DOG_pixel_out)
+    );
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(WIDTH/2*HEIGHT/2))
+    o2_l1_grad (
+        .addra(O2L1_write_addr),
+        .clka(clk_100mhz),
+        .wea(O2L1_write_valid),
+        .dina(O2L1_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(O2L1_grad_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(O2L1_grad_pixel_out)
     );
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L1_write_addr;
     logic O2L1_write_valid;
     logic [BIT_DEPTH-1:0] O2L1_pixel_in;
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L1_read_addr;
-    logic [BIT_DEPTH-1:0] O2L1_pixel_out;
+    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L1_DOG_read_addr;
+    logic [BIT_DEPTH-1:0] O2L1_DOG_pixel_out;
+    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L1_grad_read_addr;
+    logic [BIT_DEPTH-1:0] O2L1_grad_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
     .RAM_DEPTH(WIDTH/2*HEIGHT/2))
-    o2_l2 (
+    o2_l2_DOG (
         .addra(O2L2_write_addr),
         .clka(clk_100mhz),
         .wea(O2L2_write_valid),
@@ -235,25 +326,48 @@ module top_level(
         .regcea(1'b1),
         .rsta(sys_rst),
         .douta(), //never read from this side
-        .addrb(O2L2_read_addr),// transformed lookup pixel
+        .addrb(O2L2_DOG_read_addr),// transformed lookup pixel
         .dinb(),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(O2L2_pixel_out)
+        .doutb(O2L2_DOG_pixel_out)
+    );
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(WIDTH/2*HEIGHT/2))
+    o2_l2_grad (
+        .addra(O2L2_write_addr),
+        .clka(clk_100mhz),
+        .wea(O2L2_write_valid),
+        .dina(O2L2_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(O2L2_grad_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(O2L2_grad_pixel_out)
     );
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L2_write_addr;
     logic O2L2_write_valid;
     logic [BIT_DEPTH-1:0] O2L2_pixel_in;
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L2_read_addr;
-    logic [BIT_DEPTH-1:0] O2L2_pixel_out;
+    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L2_DOG_read_addr;
+    logic [BIT_DEPTH-1:0] O2L2_DOG_pixel_out;
+    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L2_grad_read_addr;
+    logic [BIT_DEPTH-1:0] O2L2_grad_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
     .RAM_DEPTH(WIDTH/2*HEIGHT/2))
-    o2_l3 (
+    o2_l3_DOG (
         .addra(O2L3_write_addr),
         .clka(clk_100mhz),
         .wea(O2L3_write_valid),
@@ -262,25 +376,48 @@ module top_level(
         .regcea(1'b1),
         .rsta(sys_rst),
         .douta(), //never read from this side
-        .addrb(O2L3_read_addr),// transformed lookup pixel
+        .addrb(O2L3_DOG_read_addr),// transformed lookup pixel
         .dinb(),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(O2L3_pixel_out)
+        .doutb(O2L3_DOG_pixel_out)
+    );
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(WIDTH/2*HEIGHT/2))
+    o2_l3_grad (
+        .addra(O2L3_write_addr),
+        .clka(clk_100mhz),
+        .wea(O2L3_write_valid),
+        .dina(O2L3_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(O2L3_grad_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(O2L3_grad_pixel_out)
     );
     logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L3_write_addr;
     logic O2L3_write_valid;
     logic [BIT_DEPTH-1:0] O2L3_pixel_in;
-    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L3_read_addr;
-    logic [BIT_DEPTH-1:0] O2L3_pixel_out;
+    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L3_DOG_read_addr;
+    logic [BIT_DEPTH-1:0] O2L3_DOG_pixel_out;
+    logic [$clog2(WIDTH/2 * HEIGHT/2)-1:0] O2L3_grad_read_addr;
+    logic [BIT_DEPTH-1:0] O2L3_grad_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
     .RAM_DEPTH(WIDTH/4*HEIGHT/4))
-    o3_l1 (
+    o3_l1_DOG (
         .addra(O3L1_write_addr),
         .clka(clk_100mhz),
         .wea(O3L1_write_valid),
@@ -289,25 +426,48 @@ module top_level(
         .regcea(1'b1),
         .rsta(sys_rst),
         .douta(), //never read from this side
-        .addrb(O3L1_read_addr),// transformed lookup pixel
+        .addrb(O3L1_DOG_read_addr),// transformed lookup pixel
         .dinb(),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(O3L1_pixel_out)
+        .doutb(O3L1_DOG_pixel_out)
+    );
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(WIDTH/4*HEIGHT/4))
+    o3_l1_grad (
+        .addra(O3L1_write_addr),
+        .clka(clk_100mhz),
+        .wea(O3L1_write_valid),
+        .dina(O3L1_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(O3L1_grad_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(O3L1_grad_pixel_out)
     );
     logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L1_write_addr;
     logic O3L1_write_valid;
     logic [BIT_DEPTH-1:0] O3L1_pixel_in;
-    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L1_read_addr;
-    logic [BIT_DEPTH-1:0] O3L1_pixel_out;
+    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L1_DOG_read_addr;
+    logic [BIT_DEPTH-1:0] O3L1_DOG_pixel_out;
+    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L1_grad_read_addr;
+    logic [BIT_DEPTH-1:0] O3L1_grad_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
     .RAM_DEPTH(WIDTH/4*HEIGHT/4))
-    o3_l2 (
+    o3_l2_DOG (
         .addra(O3L2_write_addr),
         .clka(clk_100mhz),
         .wea(O3L2_write_valid),
@@ -316,25 +476,48 @@ module top_level(
         .regcea(1'b1),
         .rsta(sys_rst),
         .douta(), //never read from this side
-        .addrb(O3L2_read_addr),// transformed lookup pixel
+        .addrb(O3L2_DOG_read_addr),// transformed lookup pixel
         .dinb(),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(O3L2_pixel_out)
+        .doutb(O3L2_DOG_pixel_out)
+    );
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(WIDTH/4*HEIGHT/4))
+    o3_l2_grad (
+        .addra(O3L2_write_addr),
+        .clka(clk_100mhz),
+        .wea(O3L2_write_valid),
+        .dina(O3L2_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(O3L2_grad_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(O3L2_grad_pixel_out)
     );
     logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L2_write_addr;
     logic O3L2_write_valid;
     logic [BIT_DEPTH-1:0] O3L2_pixel_in;
-    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L2_read_addr;
-    logic [BIT_DEPTH-1:0] O3L2_pixel_out;
+    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L2_DOG_read_addr;
+    logic [BIT_DEPTH-1:0] O3L2_DOG_pixel_out;
+    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L2_grad_read_addr;
+    logic [BIT_DEPTH-1:0] O3L2_grad_pixel_out;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(8), // we expect 8 bit greyscale images
     .RAM_DEPTH(WIDTH/4*HEIGHT/4))
-    o3_l3 (
+    o3_l3_DOG (
         .addra(O3L3_write_addr),
         .clka(clk_100mhz),
         .wea(O3L3_write_valid),
@@ -343,20 +526,43 @@ module top_level(
         .regcea(1'b1),
         .rsta(sys_rst),
         .douta(), //never read from this side
-        .addrb(O3L3_read_addr),// transformed lookup pixel
+        .addrb(O3L3_DOG_read_addr),// transformed lookup pixel
         .dinb(),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(O3L3_pixel_out)
+        .doutb(O3L3_DOG_pixel_out)
+    );
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit greyscale images
+    .RAM_DEPTH(WIDTH/4*HEIGHT/4))
+    o3_l3_grad (
+        .addra(O3L3_write_addr),
+        .clka(clk_100mhz),
+        .wea(O3L3_write_valid),
+        .dina(O3L3_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(O3L3_grad_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(O3L3_grad_pixel_out)
     );
     logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L3_write_addr;
     logic O3L3_write_valid;
     logic [BIT_DEPTH-1:0] O3L3_pixel_in;
-    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L3_read_addr;
-    logic [BIT_DEPTH-1:0] O3L3_pixel_out;
+    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L3_DOG_read_addr;
+    logic [BIT_DEPTH-1:0] O3L3_DOG_pixel_out;
+    logic [$clog2(WIDTH/4 * HEIGHT/4)-1:0] O3L3_grad_read_addr;
+    logic [BIT_DEPTH-1:0] O3L3_grad_pixel_out;
     
 
     gaussian_pyramid #(
@@ -399,14 +605,14 @@ module top_level(
     
     parameter DIMENSION = HEIGHT;
     // FOR OCTAVE 1
-    logic [$clog2(HEIGHT * WIDTH)-1:0] key_write_addr, O1key_read_addr;
+    logic [$clog2(HEIGHT * WIDTH)-1:0] key_write_addr, key_read_addr;
     logic key_wea;
     logic [(2*$clog2(DIMENSION)):0] keypoint_write, O1_keypoint_read;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(2*$clog2(DIMENSION)+1), // we expect 8 bit greyscale images
     .RAM_DEPTH(2000))
-    o1_keypt (
+    keypoint (
         .addra(key_write_addr),
         .clka(clk_100mhz),
         .wea(key_wea),
@@ -415,7 +621,7 @@ module top_level(
         .regcea(1'b1),
         .rsta(sys_rst),
         .douta(), //never read from this side
-        .addrb(O1key_read_addr),// transformed lookup pixel
+        .addrb(key_read_addr),// transformed lookup pixel
         .dinb(),
         .clkb(clk_100mhz),
         .web(1'b0),
@@ -433,40 +639,720 @@ module top_level(
         .key_wea(key_wea),
         .keypoint_out(keypoint_write),
 
-        .O1L1_read_addr(O1L1_read_addr),
-        .O1L1_data(O1L1_pixel_out),
+        .O1L1_read_addr(O1L1_DOG_read_addr),
+        .O1L1_data(O1L1_DOG_pixel_out),
 
-        .O1L2_read_addr(O1L2_read_addr),
+        .O1L2_read_addr(O1L2_DOG_read_addr),
         .O1L2_data(O1L2_pixel_out),
 
-        .O1L3_read_addr(O1L2_read_addr),
-        .O1L3_data(O1L3_pixel_out),
+        .O1L3_read_addr(O1L2_DOG_read_addr),
+        .O1L3_data(O1L3_DOG_pixel_out),
 
-        .O2L1_read_addr(O2L1_read_addr),
-        .O2L1_data(O2L1_pixel_out),
+        .O2L1_read_addr(O2L1_DOG_read_addr),
+        .O2L1_data(O2L1_DOG_pixel_out),
 
-        .O2L2_read_addr(O2L2_read_addr),
-        .O2L2_data(O2L2_pixel_out),
+        .O2L2_read_addr(O2L2_DOG_read_addr),
+        .O2L2_data(O2L2_DOG_pixel_out),
       
-        .O2L3_read_addr(O2L3_read_addr),
-        .O2L3_data(O2L3_pixel_out),
+        .O2L3_read_addr(O2L3_DOG_read_addr),
+        .O2L3_data(O2L3_DOG_pixel_out),
 
-        .O3L1_read_addr(O3L1_read_addr),
-        .O3L1_data(O3L1_pixel_out),
+        .O3L1_read_addr(O3L1_DOG_read_addr),
+        .O3L1_data(O3L1_DOG_pixel_out),
 
-        .O3L2_read_addr(O3L2_read_addr),
-        .O3L2_data(O3L2_pixel_out),
+        .O3L2_read_addr(O3L2_DOG_read_addr),
+        .O3L2_data(O3L2_DOG_pixel_out),
       
-        .O3L3_read_addr(O3L3_read_addr),
-        .O3L3_data(O3L3_pixel_out),
+        .O3L3_read_addr(O3L3_DOG_read_addr),
+        .O3L3_data(O3L3_DOG_pixel_out),
         // start and done signals
         .start(pyramid_done),
-        .keypoints_done(keypoints_done),
+        .keypoints_done(keypoints_done)
 
-        .O1_DOG_L2L3_done(dog_one_done)
     );
 
-    logic keypoints_done, dog_one_done;
+    logic keypoints_done;
+
+    logic all_gradients_done;
+    assign all_gradients_done = O1L1_gradient_done && O1L2_gradient_done && O1L3_gradient_done
+                                && O2L1_gradient_done && O2L2_gradient_done && O2L3_gradient_done
+                                && O3L1_gradient_done && O3L2_gradient_done && O3L3_gradient_done;
+
+    logic O1L1_gradient_done;
+    gradient_image #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(WIDTH),
+        .HEIGHT(HEIGHT))
+    o1_l1_gradient (.clk_in(clk_100mhz), .rst_in(sys_rst),
+                         .ext_read_addr(O1L1_grad_read_addr),
+                         .ext_read_addr_valid(),
+                         .ext_pixel_in(O1L1_grad_pixel_out),
+                         .x_write_addr(o1_l1_x_write_addr),
+                         .x_write_valid(o1_l1_x_write_valid),
+                         .x_pixel_out(o1_l1_x_pixel_in), 
+                         .y_write_addr(o1_l1_y_write_addr),
+                         .y_write_valid(o1_l1_y_write_valid),
+                         .y_pixel_out(o1_l1_y_pixel_in), 
+                         .start_in(pyramid_done),
+                         .gradient_done(O1L1_gradient_done),
+                         .state_num());
+    
+    // the start x gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o1_l1_x_grad (
+        .addra(o1_l1_x_write_addr),
+        .clka(clk_100mhz),
+        .wea(o1_l1_x_write_valid),
+        .dina(o1_l1_x_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o1_l1_x_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o1_l1_x_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o1_l1_x_write_addr;
+    logic o1_l1_x_write_valid;
+    logic [BIT_DEPTH-1:0] o1_l1_x_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o1_l1_x_read_addr;
+    logic [BIT_DEPTH-1:0] o1_l1_x_pixel_out;
+
+    // the start y gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o1_l1_y_grad (
+        .addra(o1_l1_y_write_addr),
+        .clka(clk_100mhz),
+        .wea(o1_l1_y_write_valid),
+        .dina(o1_l1_y_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o1_l1_y_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o1_l1_y_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o1_l1_y_write_addr;
+    logic o1_l1_y_write_valid;
+    logic [BIT_DEPTH-1:0] o1_l1_y_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o1_l1_y_read_addr;
+    logic [BIT_DEPTH-1:0] o1_l1_y_pixel_out;
+
+    logic O1L2_gradient_done;
+    gradient_image #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(WIDTH),
+        .HEIGHT(HEIGHT))
+    o1_l2_gradient (.clk_in(clk_100mhz), .rst_in(sys_rst),
+                         .ext_read_addr(O1L2_grad_read_addr),
+                         .ext_read_addr_valid(),
+                         .ext_pixel_in(O1L2_grad_pixel_out),
+                         .x_write_addr(o1_l2_x_write_addr),
+                         .x_write_valid(o1_l2_x_write_valid),
+                         .x_pixel_out(o1_l2_x_pixel_in), 
+                         .y_write_addr(o1_l2_y_write_addr),
+                         .y_write_valid(o1_l2_y_write_valid),
+                         .y_pixel_out(o1_l2_y_pixel_in), 
+                         .start_in(pyramid_done),
+                         .gradient_done(O1L2_gradient_done),
+                         .state_num());
+    
+    // the start x gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o1_l2_x_grad (
+        .addra(o1_l2_x_write_addr),
+        .clka(clk_100mhz),
+        .wea(o1_l2_x_write_valid),
+        .dina(o1_l2_x_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o1_l2_x_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o1_l2_x_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o1_l2_x_write_addr;
+    logic o1_l2_x_write_valid;
+    logic [BIT_DEPTH-1:0] o1_l2_x_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o1_l2_x_read_addr;
+    logic [BIT_DEPTH-1:0] o1_l2_x_pixel_out;
+
+    // the start y gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o1_l2_y_grad (
+        .addra(o1_l2_y_write_addr),
+        .clka(clk_100mhz),
+        .wea(o1_l2_y_write_valid),
+        .dina(o1_l2_y_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o1_l2_y_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o1_l2_y_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o1_l2_y_write_addr;
+    logic o1_l2_y_write_valid;
+    logic [BIT_DEPTH-1:0] o1_l2_y_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o1_l2_y_read_addr;
+    logic [BIT_DEPTH-1:0] o1_l2_y_pixel_out;
+
+    logic O1L3_gradient_done;
+    gradient_image #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(WIDTH),
+        .HEIGHT(HEIGHT))
+    o1_l3_gradient (.clk_in(clk_100mhz), .rst_in(sys_rst),
+                         .ext_read_addr(O1L3_grad_read_addr),
+                         .ext_read_addr_valid(),
+                         .ext_pixel_in(O1L3_grad_pixel_out),
+                         .x_write_addr(o1_l3_x_write_addr),
+                         .x_write_valid(o1_l3_x_write_valid),
+                         .x_pixel_out(o1_l3_x_pixel_in), 
+                         .y_write_addr(o1_l3_y_write_addr),
+                         .y_write_valid(o1_l3_y_write_valid),
+                         .y_pixel_out(o1_l3_y_pixel_in), 
+                         .start_in(pyramid_done),
+                         .gradient_done(O1L3_gradient_done),
+                         .state_num());
+    
+    // the start x gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o1_l3_x_grad (
+        .addra(o1_l3_x_write_addr),
+        .clka(clk_100mhz),
+        .wea(o1_l3_x_write_valid),
+        .dina(o1_l3_x_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o1_l3_x_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o1_l3_x_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o1_l3_x_write_addr;
+    logic o1_l3_x_write_valid;
+    logic [BIT_DEPTH-1:0] o1_l3_x_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o1_l3_x_read_addr;
+    logic [BIT_DEPTH-1:0] o1_l3_x_pixel_out;
+
+    // the start y gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o1_l3_y_grad (
+        .addra(o1_l3_y_write_addr),
+        .clka(clk_100mhz),
+        .wea(o1_l3_y_write_valid),
+        .dina(o1_l3_y_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o1_l3_y_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o1_l3_y_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o1_l3_y_write_addr;
+    logic o1_l3_y_write_valid;
+    logic [BIT_DEPTH-1:0] o1_l3_y_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o1_l3_y_read_addr;
+    logic [BIT_DEPTH-1:0] o1_l3_y_pixel_out;
+
+    logic O2L1_gradient_done;
+    gradient_image #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(WIDTH),
+        .HEIGHT(HEIGHT))
+    o2_l1_gradient (.clk_in(clk_100mhz), .rst_in(sys_rst),
+                         .ext_read_addr(O2L1_grad_read_addr),
+                         .ext_read_addr_valid(),
+                         .ext_pixel_in(O2L1_grad_pixel_out),
+                         .x_write_addr(o2_l1_x_write_addr),
+                         .x_write_valid(o2_l1_x_write_valid),
+                         .x_pixel_out(o2_l1_x_pixel_in), 
+                         .y_write_addr(o2_l1_y_write_addr),
+                         .y_write_valid(o2_l1_y_write_valid),
+                         .y_pixel_out(o2_l1_y_pixel_in), 
+                         .start_in(pyramid_done),
+                         .gradient_done(O2L1_gradient_done),
+                         .state_num());
+    
+    // the start x gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o2_l1_x_grad (
+        .addra(o2_l1_x_write_addr),
+        .clka(clk_100mhz),
+        .wea(o2_l1_x_write_valid),
+        .dina(o2_l1_x_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o2_l1_x_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o2_l1_x_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o2_l1_x_write_addr;
+    logic o2_l1_x_write_valid;
+    logic [BIT_DEPTH-1:0] o2_l1_x_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o2_l1_x_read_addr;
+    logic [BIT_DEPTH-1:0] o2_l1_x_pixel_out;
+
+    // the start y gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o2_l1_y_grad (
+        .addra(o2_l1_y_write_addr),
+        .clka(clk_100mhz),
+        .wea(o2_l1_y_write_valid),
+        .dina(o2_l1_y_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o2_l1_y_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o2_l1_y_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o2_l1_y_write_addr;
+    logic o2_l1_y_write_valid;
+    logic [BIT_DEPTH-1:0] o2_l1_y_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o2_l1_y_read_addr;
+    logic [BIT_DEPTH-1:0] o2_l1_y_pixel_out;
+
+    logic O2L2_gradient_done;
+    gradient_image #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(WIDTH),
+        .HEIGHT(HEIGHT))
+    o2_l2_gradient (.clk_in(clk_100mhz), .rst_in(sys_rst),
+                         .ext_read_addr(O2L2_grad_read_addr),
+                         .ext_read_addr_valid(),
+                         .ext_pixel_in(O2L2_grad_pixel_out),
+                         .x_write_addr(o2_l2_x_write_addr),
+                         .x_write_valid(o2_l2_x_write_valid),
+                         .x_pixel_out(o2_l2_x_pixel_in), 
+                         .y_write_addr(o2_l2_y_write_addr),
+                         .y_write_valid(o2_l2_y_write_valid),
+                         .y_pixel_out(o2_l2_y_pixel_in), 
+                         .start_in(pyramid_done),
+                         .gradient_done(O2L2_gradient_done),
+                         .state_num());
+    
+    // the start x gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o2_l2_x_grad (
+        .addra(o2_l2_x_write_addr),
+        .clka(clk_100mhz),
+        .wea(o2_l2_x_write_valid),
+        .dina(o2_l2_x_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o2_l2_x_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o2_l2_x_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o2_l2_x_write_addr;
+    logic o2_l2_x_write_valid;
+    logic [BIT_DEPTH-1:0] o2_l2_x_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o2_l2_x_read_addr;
+    logic [BIT_DEPTH-1:0] o2_l2_x_pixel_out;
+
+    // the start y gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o2_l2_y_grad (
+        .addra(o2_l2_y_write_addr),
+        .clka(clk_100mhz),
+        .wea(o2_l2_y_write_valid),
+        .dina(o2_l2_y_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o2_l2_y_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o2_l2_y_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o2_l2_y_write_addr;
+    logic o2_l2_y_write_valid;
+    logic [BIT_DEPTH-1:0] o2_l2_y_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o2_l2_y_read_addr;
+    logic [BIT_DEPTH-1:0] o2_l2_y_pixel_out;
+
+    logic O2L3_gradient_done;
+    gradient_image #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(WIDTH),
+        .HEIGHT(HEIGHT))
+    o2_l3_gradient (.clk_in(clk_100mhz), .rst_in(sys_rst),
+                         .ext_read_addr(O2L3_grad_read_addr),
+                         .ext_read_addr_valid(),
+                         .ext_pixel_in(O2L3_grad_pixel_out),
+                         .x_write_addr(o2_l3_x_write_addr),
+                         .x_write_valid(o2_l3_x_write_valid),
+                         .x_pixel_out(o2_l3_x_pixel_in), 
+                         .y_write_addr(o2_l3_y_write_addr),
+                         .y_write_valid(o2_l3_y_write_valid),
+                         .y_pixel_out(o2_l3_y_pixel_in), 
+                         .start_in(pyramid_done),
+                         .gradient_done(O2L3_gradient_done),
+                         .state_num());
+    
+    // the start x gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o2_l3_x_grad (
+        .addra(o2_l3_x_write_addr),
+        .clka(clk_100mhz),
+        .wea(o2_l3_x_write_valid),
+        .dina(o2_l3_x_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o2_l3_x_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o2_l3_x_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o2_l3_x_write_addr;
+    logic o2_l3_x_write_valid;
+    logic [BIT_DEPTH-1:0] o2_l3_x_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o2_l3_x_read_addr;
+    logic [BIT_DEPTH-1:0] o2_l3_x_pixel_out;
+
+    // the start y gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o2_l3_y_grad (
+        .addra(o2_l3_y_write_addr),
+        .clka(clk_100mhz),
+        .wea(o2_l3_y_write_valid),
+        .dina(o2_l3_y_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o2_l3_y_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o2_l3_y_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o2_l3_y_write_addr;
+    logic o2_l3_y_write_valid;
+    logic [BIT_DEPTH-1:0] o2_l3_y_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o2_l3_y_read_addr;
+    logic [BIT_DEPTH-1:0] o2_l3_y_pixel_out;
+
+    logic O3L1_gradient_done;
+    gradient_image #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(WIDTH),
+        .HEIGHT(HEIGHT))
+    o3_l1_gradient (.clk_in(clk_100mhz), .rst_in(sys_rst),
+                         .ext_read_addr(O3L1_grad_read_addr),
+                         .ext_read_addr_valid(),
+                         .ext_pixel_in(O3L1_grad_pixel_out),
+                         .x_write_addr(o3_l1_x_write_addr),
+                         .x_write_valid(o3_l1_x_write_valid),
+                         .x_pixel_out(o3_l1_x_pixel_in), 
+                         .y_write_addr(o3_l1_y_write_addr),
+                         .y_write_valid(o3_l1_y_write_valid),
+                         .y_pixel_out(o3_l1_y_pixel_in), 
+                         .start_in(pyramid_done),
+                         .gradient_done(O3L1_gradient_done),
+                         .state_num());
+    
+    // the start x gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o3_l1_x_grad (
+        .addra(o3_l1_x_write_addr),
+        .clka(clk_100mhz),
+        .wea(o3_l1_x_write_valid),
+        .dina(o3_l1_x_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o3_l1_x_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o3_l1_x_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o3_l1_x_write_addr;
+    logic o3_l1_x_write_valid;
+    logic [BIT_DEPTH-1:0] o3_l1_x_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o3_l1_x_read_addr;
+    logic [BIT_DEPTH-1:0] o3_l1_x_pixel_out;
+
+    // the start y gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o3_l1_y_grad (
+        .addra(o3_l1_y_write_addr),
+        .clka(clk_100mhz),
+        .wea(o3_l1_y_write_valid),
+        .dina(o3_l1_y_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o3_l1_y_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o3_l1_y_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o3_l1_y_write_addr;
+    logic o3_l1_y_write_valid;
+    logic [BIT_DEPTH-1:0] o3_l1_y_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o3_l1_y_read_addr;
+    logic [BIT_DEPTH-1:0] o3_l1_y_pixel_out;
+
+    logic O3L2_gradient_done;
+    gradient_image #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(WIDTH),
+        .HEIGHT(HEIGHT))
+    o3_l2_gradient (.clk_in(clk_100mhz), .rst_in(sys_rst),
+                         .ext_read_addr(O3L2_grad_read_addr),
+                         .ext_read_addr_valid(),
+                         .ext_pixel_in(O3L2_grad_pixel_out),
+                         .x_write_addr(o3_l2_x_write_addr),
+                         .x_write_valid(o3_l2_x_write_valid),
+                         .x_pixel_out(o3_l2_x_pixel_in), 
+                         .y_write_addr(o3_l2_y_write_addr),
+                         .y_write_valid(o3_l2_y_write_valid),
+                         .y_pixel_out(o3_l2_y_pixel_in), 
+                         .start_in(pyramid_done),
+                         .gradient_done(O3L2_gradient_done),
+                         .state_num());
+    
+    // the start x gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o3_l2_x_grad (
+        .addra(o3_l2_x_write_addr),
+        .clka(clk_100mhz),
+        .wea(o3_l2_x_write_valid),
+        .dina(o3_l2_x_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o3_l2_x_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o3_l2_x_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o3_l2_x_write_addr;
+    logic o3_l2_x_write_valid;
+    logic [BIT_DEPTH-1:0] o3_l2_x_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o3_l2_x_read_addr;
+    logic [BIT_DEPTH-1:0] o3_l2_x_pixel_out;
+
+    // the start y gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o3_l2_y_grad (
+        .addra(o3_l2_y_write_addr),
+        .clka(clk_100mhz),
+        .wea(o3_l2_y_write_valid),
+        .dina(o3_l2_y_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o3_l2_y_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o3_l2_y_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o3_l2_y_write_addr;
+    logic o3_l2_y_write_valid;
+    logic [BIT_DEPTH-1:0] o3_l2_y_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o3_l2_y_read_addr;
+    logic [BIT_DEPTH-1:0] o3_l2_y_pixel_out;
+
+    logic O3L3_gradient_done;
+    gradient_image #(
+        .BIT_DEPTH(BIT_DEPTH),
+        .WIDTH(WIDTH),
+        .HEIGHT(HEIGHT))
+    o3_l3_gradient (.clk_in(clk_100mhz), .rst_in(sys_rst),
+                         .ext_read_addr(O3L3_grad_read_addr),
+                         .ext_read_addr_valid(),
+                         .ext_pixel_in(O3L3_grad_pixel_out),
+                         .x_write_addr(o3_l3_x_write_addr),
+                         .x_write_valid(o3_l3_x_write_valid),
+                         .x_pixel_out(o3_l3_x_pixel_in), 
+                         .y_write_addr(o3_l3_y_write_addr),
+                         .y_write_valid(o3_l3_y_write_valid),
+                         .y_pixel_out(o3_l3_y_pixel_in), 
+                         .start_in(pyramid_done),
+                         .gradient_done(O3L3_gradient_done),
+                         .state_num());
+    
+    // the start x gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o3_l3_x_grad (
+        .addra(o3_l3_x_write_addr),
+        .clka(clk_100mhz),
+        .wea(o3_l3_x_write_valid),
+        .dina(o3_l3_x_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o3_l3_x_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o3_l3_x_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o3_l3_x_write_addr;
+    logic o3_l3_x_write_valid;
+    logic [BIT_DEPTH-1:0] o3_l3_x_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o3_l3_x_read_addr;
+    logic [BIT_DEPTH-1:0] o3_l3_x_pixel_out;
+
+    // the start y gradient BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(8), // we expect 8 bit signed
+    .RAM_DEPTH(WIDTH*HEIGHT)) //we expect a 64*64 image with 4096 pixels total
+    o3_l3_y_grad (
+        .addra(o3_l3_y_write_addr),
+        .clka(clk_100mhz),
+        .wea(o3_l3_y_write_valid),
+        .dina(o3_l3_y_pixel_in),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(o3_l3_y_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(o3_l3_y_pixel_out)
+    );
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o3_l3_y_write_addr;
+    logic o3_l3_y_write_valid;
+    logic [BIT_DEPTH-1:0] o3_l3_y_pixel_in;
+    logic [$clog2(WIDTH * HEIGHT)-1:0] o3_l3_y_read_addr;
+    logic [BIT_DEPTH-1:0] o3_l3_y_pixel_out;
+
 
     // when btn[1] pressed if pyramid is done, send what's stored in the pyramid BRAMs to the laptop
     // button press detected by 
@@ -498,7 +1384,7 @@ module top_level(
       end
     end
 
-    typedef enum {IDLE=0, O1L1=1, O1L2=2, O1L3=3, O2L1=4, O2L2=5, O2L3=6, O3L1=7, O3L2=8, O3L3=9, O1KEY=10} tx_state;
+    typedef enum {IDLE=0, O1L1=1, O1L2=2, O1L3=3, O2L1=4, O2L2=5, O2L3=6, O3L1=7, O3L2=8, O3L3=9, KEY=10} tx_state;
     tx_state state;
     tx_state state_prev;
 
@@ -514,78 +1400,15 @@ module top_level(
                 IDLE:
                     begin
                         if (btn_edge && keypoints_done_latched) begin
-                            state <= O1KEY;
+                            state <= KEY;
                         end
                     end
-                O1KEY:
+                KEY:
                     begin
                         if (!tx_img_busy_O1k && btn_edge) begin
-                            state <= O1L1;
-                        end
-                        uart_txd <= O1k_txd;
-                    end
-                O1L1:
-                    begin
-                        if (!tx_img_busy_O1L1 && btn_edge) begin
-                            state <= O1L2;
-                        end
-                        uart_txd <= O1L1_txd;
-                    end
-                O1L2:
-                    begin
-                        if (!tx_img_busy_O1L2 && btn_edge) begin
-                            state <= O1L3;
-                        end
-                        uart_txd <= O1L2_txd;
-                    end
-                O1L3:
-                    begin
-                        if (!tx_img_busy_O1L3 && btn_edge) begin
-                            state <= O2L1;
-                        end
-                        uart_txd <= O1L3_txd;
-                    end
-                O2L1:
-                    begin
-                        if (!tx_img_busy_O2L1 && btn_edge) begin
-                            state <= O2L2;
-                        end
-                        uart_txd <= O2L1_txd;
-                    end
-                O2L2:
-                    begin
-                        if (!tx_img_busy_O2L2 && btn_edge) begin
-                            state <= O2L3;
-                        end
-                        uart_txd <= O2L2_txd;
-                    end
-                O2L3:
-                    begin
-                        if (!tx_img_busy_O2L3 && btn_edge) begin
-                            state <= O3L1;
-                        end
-                        uart_txd <= O2L3_txd;
-                    end
-                O3L1:
-                    begin
-                        if (!tx_img_busy_O3L1 && btn_edge) begin
-                            state <= O3L2;
-                        end
-                        uart_txd <= O3L1_txd;
-                    end
-                O3L2:
-                    begin
-                        if (!tx_img_busy_O3L2 && btn_edge) begin
-                            state <= O3L3;
-                        end
-                        uart_txd <= O3L2_txd;
-                    end
-                O3L3:
-                    begin
-                        if (!tx_img_busy_O3L3 && btn_edge) begin
                             state <= IDLE;
                         end
-                        uart_txd <= O3L3_txd;
+                        uart_txd <= key_txd;
                     end
                 default:
                     begin
@@ -605,180 +1428,22 @@ module top_level(
     assign led[9] = (state == O3L1);
     assign led[10] = (state == O3L2);
     assign led[11] = (state == O3L3);
-    assign led[12] = (state == O1KEY);
+    assign led[12] = (state == KEY);
 
 
-    send_keypoints #(.BRAM_LENGTH(2000)) tx_keypt_O1 (
+    send_keypoints #(.BRAM_LENGTH(2000)) tx_keypoint_O1 (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
-      .img_ready((state == O1KEY) && (state_prev != O1KEY)),//full_image_received
-      .tx(O1k_txd),//uart_txd
+      .img_ready((state == KEY) && (state_prev != KEY)),//full_image_received
+      .tx(key_txd),//uart_txd
       .data(O1_keypoint_read),
-      .address(O1key_read_addr), // gets wired to the BRAM
+      .address(key_read_addr), // gets wired to the BRAM
       .tx_free(),
       .busy(tx_img_busy_O1k) //or we could do img_sent whichever makes more sense
     );
     logic tx_img_busy_O1k;
-    logic O1k_txd;
+    logic key_txd;
 
-    // send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O1L1 (
-    //   .clk(clk_100mhz),
-    //   .rst_in(sys_rst),//sys_rst
-    //   .img_ready((state == O1L1) && (state_prev != O1L1)),//full_image_received
-    //   .tx(O1L1_txd),//uart_txd
-    //   .data(O1L1_pixel_out),
-    //   .address(O1L1_read_addr), // gets wired to the BRAM
-    //   .tx_free(),
-    //   .busy(tx_img_busy_O1L1) //or we could do img_sent whichever makes more sense
-    // );
-    logic tx_img_busy_O1L1;
-    logic O1L1_txd;
-
-    // send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O1L2 (
-    //   .clk(clk_100mhz),
-    //   .rst_in(sys_rst),//sys_rst
-    //   .img_ready((state == O1L2) && (state_prev != O1L2)),//full_image_received
-    //   .tx(O1L2_txd),//uart_txd
-    //   .data(O1L2_pixel_out),
-    //   .address(O1L2_read_addr), // gets wired to the BRAM
-    //   .tx_free(),
-    //   .busy(tx_img_busy_O1L2) //or we could do img_sent whichever makes more sense
-    // );
-    logic tx_img_busy_O1L2;
-    logic O1L2_txd;
-
-    // send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O1L3 (
-    //   .clk(clk_100mhz),
-    //   .rst_in(sys_rst),//sys_rst
-    //   .img_ready((state == O1L3) && (state_prev != O1L3)),//full_image_received
-    //   .tx(O1L3_txd),//uart_txd
-    //   .data(O1L3_pixel_out),
-    //   .address(O1L3_read_addr), // gets wired to the BRAM
-    //   .tx_free(),
-    //   .busy(tx_img_busy_O1L3) //or we could do img_sent whichever makes more sense
-    // );
-    logic tx_img_busy_O1L3;
-    logic O1L3_txd;
-
-    // send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L1 (
-    //   .clk(clk_100mhz),
-    //   .rst_in(sys_rst),//sys_rst
-    //   .img_ready((state == O2L1) && (state_prev != O2L1)),//full_image_received
-    //   .tx(O2L1_txd),//uart_txd
-    //   .data(O2L1_pixel_out),
-    //   .address(O2L1_read_addr), // gets wired to the BRAM
-    //   .tx_free(),
-    //   .busy(tx_img_busy_O2L1) //or we could do img_sent whichever makes more sense
-    // );
-    logic tx_img_busy_O2L1;
-    logic O2L1_txd;
-
-    // send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L2 (
-    //   .clk(clk_100mhz),
-    //   .rst_in(sys_rst),//sys_rst
-    //   .img_ready((state == O2L2) && (state_prev != O2L2)),//full_image_received
-    //   .tx(O2L2_txd),//uart_txd
-    //   .data(O2L2_pixel_out),
-    //   .address(O2L2_read_addr), // gets wired to the BRAM
-    //   .tx_free(),
-    //   .busy(tx_img_busy_O2L2) //or we could do img_sent whichever makes more sense
-    // );
-    logic tx_img_busy_O2L2;
-    logic O2L2_txd;
-
-    // send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L3 (
-    //   .clk(clk_100mhz),
-    //   .rst_in(sys_rst),//sys_rst
-    //   .img_ready((state == O2L3) && (state_prev != O2L3)),//full_image_received
-    //   .tx(O2L3_txd),//uart_txd
-    //   .data(O2L3_pixel_out),
-    //   .address(O2L3_read_addr), // gets wired to the BRAM
-    //   .tx_free(),
-    //   .busy(tx_img_busy_O2L3) //or we could do img_sent whichever makes more sense
-    // );
-    logic tx_img_busy_O2L3;
-    logic O2L3_txd;
-
-    send_img #(.BRAM_LENGTH(WIDTH/4 * HEIGHT/4)) tx_img_O3L1 (
-      .clk(clk_100mhz),
-      .rst_in(sys_rst),//sys_rst
-      .img_ready((state == O3L1) && (state_prev != O3L1)),//full_image_received
-      .tx(O3L1_txd),//uart_txd
-      .data(O3L1_pixel_out),
-      .address(O3L1_read_addr), // gets wired to the BRAM
-      .tx_free(),
-      .busy(tx_img_busy_O3L1) //or we could do img_sent whichever makes more sense
-    );
-    logic tx_img_busy_O3L1;
-    logic O3L1_txd;
-
-    send_img #(.BRAM_LENGTH(WIDTH/4 * HEIGHT/4)) tx_img_O3L2 (
-      .clk(clk_100mhz),
-      .rst_in(sys_rst),//sys_rst
-      .img_ready((state == O3L2) && (state_prev != O3L2)),//full_image_received
-      .tx(O3L2_txd),//uart_txd
-      .data(O3L2_pixel_out),
-      .address(O3L2_read_addr), // gets wired to the BRAM
-      .tx_free(),
-      .busy(tx_img_busy_O3L2) //or we could do img_sent whichever makes more sense
-    );
-    logic tx_img_busy_O3L2;
-    logic O3L2_txd;
-
-    send_img #(.BRAM_LENGTH(WIDTH/4 * HEIGHT/4)) tx_img_O3L3 (
-      .clk(clk_100mhz),
-      .rst_in(sys_rst),//sys_rst
-      .img_ready((state == O3L3) && (state_prev != O3L3)),//full_image_received
-      .tx(O3L3_txd),//uart_txd
-      .data(O3L3_pixel_out),
-      .address(O3L3_read_addr), // gets wired to the BRAM
-      .tx_free(),
-      .busy(tx_img_busy_O3L3) //or we could do img_sent whichever makes more sense
-    );
-    logic tx_img_busy_O3L3;
-    logic O3L3_txd;
-
-    // always_comb begin
-    //     case (state)
-    //         O1L1:
-    //             begin
-    //                 uart_txd = O1L1_txd;
-    //             end
-    //         O1L2:
-    //             begin
-    //                 uart_txd = O1L2_txd;
-    //             end
-    //         O1L3:
-    //             begin
-    //                 uart_txd = O1L3_txd;
-    //             end
-    //         O2L1:
-    //             begin
-    //                 uart_txd = O2L1_txd;
-    //             end
-    //         O2L2:
-    //             begin
-    //                 uart_txd = O2L2_txd;
-    //             end
-    //         O2L3:
-    //             begin
-    //                 uart_txd = O2L3_txd;
-    //             end
-    //         O3L1:
-    //             begin
-    //                 uart_txd = O3L1_txd;
-    //             end
-    //         O3L2:
-    //             begin
-    //                 uart_txd = O3L2_txd;
-    //             end
-    //         O3L3:
-    //             begin
-    //                 uart_txd = O3L3_txd;
-    //             end
-    //     endcase
-    // end
-  
     
 endmodule // top_level
 
