@@ -18,6 +18,7 @@ if {[llength $files] != 0} {
 
 # read in all system veriilog files:
 read_verilog -sv [ glob ./hdl/*.sv ]
+read_verilog -sv [ glob ./hdt/*.sv ]
 # uncomment line below if verilog (.v) files present:
 read_verilog  [ glob ./hdl/*.v ]
 read_xdc ./xdc/top_level.xdc
@@ -63,4 +64,3 @@ report_drc -file $outputDir/post_imp_drc.rpt
 #set_property SEVERITY {Warning} [get_drc_checks NSTD-1]
 #write_verilog -force $outputDir/cpu_impl_netlist.v -mode timesim -sdf_anno true
 write_bitstream -force $outputDir/final.bit
-
