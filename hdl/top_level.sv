@@ -50,8 +50,11 @@ module top_level(
         .valid_o(valid_o)
       );
     logic full_image_received;
+    logic keypoints_done_latched;
     assign led[0] = full_image_received;
     assign led[1] = pyramid_done_latched;
+    // assign led[13] = dog_one_done;
+    assign led[14] = keypoints_done_latched;
 
     // if we have a valid_o, update pixel location for BRAM 
     always_ff @(posedge clk_100mhz) begin
@@ -77,6 +80,10 @@ module top_level(
 
       if (pyramid_done) begin
         pyramid_done_latched <= 1;
+      end
+
+      if (keypoints_done) begin
+        keypoints_done_latched <= 1'b1;
       end
     end
 
@@ -389,9 +396,65 @@ module top_level(
                          .O3L3_pixel_out(O3L3_pixel_in), 
                          .start_in(start_pyramid),
                          .pyramid_done(pyramid_done));
+    
+    parameter DIMENSION = HEIGHT;
+    // FOR OCTAVE 1
+    logic [$clog2(HEIGHT * WIDTH)-1:0] O1key_write_addr, O1key_read_addr;
+    logic O1key_wea;
+    logic [(2*$clog2(DIMENSION)):0] O1_keypoint_write, O1_keypoint_read;
+
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(2*$clog2(DIMENSION)+1), // we expect 8 bit greyscale images
+    .RAM_DEPTH(1000))
+    o1_keypt (
+        .addra(O1key_write_addr),
+        .clka(clk_100mhz),
+        .wea(O1key_wea),
+        .dina(O1_keypoint_write),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(O1key_read_addr),// transformed lookup pixel
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(O1_keypoint_read)
+    );
+
+    logic found_zero;
+    assign led[13] = found_zero;
+    // instantiating the find keypoints module. Needs a BRAM for keypoints
+    find_keypoints #(.DIMENSION(DIMENSION)) finder (
+        .clk(clk_100mhz),
+        .rst_in(sys_rst),
+        .O1key_write_addr(O1key_write_addr),
+        .O1key_wea(O1key_wea),
+        .O1_keypoint_out(O1_keypoint_write),
+
+        .O1L1_read_addr(O1L1_read_addr),
+        .O1L1_data(O1L1_pixel_out),
+
+        .O1L2_read_addr(O1L2_read_addr),
+        .O1L2_data(O1L2_pixel_out),
+
+        .O1L3_read_addr(O1L2_read_addr),
+        .O1L3_data(O1L3_pixel_out),
+        .found_zero(found_zero),
+
+        // start and done signals
+        .start(pyramid_done),
+        .keypoints_done(keypoints_done),
+
+        .O1_DOG_L2L3_done(dog_one_done)
+    );
+
+    logic keypoints_done, dog_one_done;
 
     // when btn[1] pressed if pyramid is done, send what's stored in the pyramid BRAMs to the laptop
-    
     // button press detected by 
     logic btn_edge;
 
@@ -421,7 +484,7 @@ module top_level(
       end
     end
 
-    typedef enum {IDLE=0, O1L1=1, O1L2=2, O1L3=3, O2L1=4, O2L2=5, O2L3=6, O3L1=7, O3L2=8, O3L3=9} tx_state;
+    typedef enum {IDLE=0, O1L1=1, O1L2=2, O1L3=3, O2L1=4, O2L2=5, O2L3=6, O3L1=7, O3L2=8, O3L3=9, O1KEY=10} tx_state;
     tx_state state;
     tx_state state_prev;
 
@@ -436,9 +499,16 @@ module top_level(
             case (state)
                 IDLE:
                     begin
-                        if (btn_edge && pyramid_done_latched) begin
+                        if (btn_edge && keypoints_done_latched) begin
+                            state <= O1KEY;
+                        end
+                    end
+                O1KEY:
+                    begin
+                        if (!tx_img_busy_O1k && btn_edge) begin
                             state <= O1L1;
                         end
+                        uart_txd <= O1k_txd;
                     end
                 O1L1:
                     begin
@@ -521,43 +591,58 @@ module top_level(
     assign led[9] = (state == O3L1);
     assign led[10] = (state == O3L2);
     assign led[11] = (state == O3L3);
+    assign led[12] = (state == O1KEY);
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O1L1 (
+
+    send_keypoints #(.BRAM_LENGTH(1000)) tx_keypt_O1 (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
-      .img_ready((state == O1L1) && (state_prev != O1L1)),//full_image_received
-      .tx(O1L1_txd),//uart_txd
-      .data(O1L1_pixel_out),
-      .address(O1L1_read_addr), // gets wired to the BRAM
+      .img_ready((state == O1KEY) && (state_prev != O1KEY)),//full_image_received
+      .tx(O1k_txd),//uart_txd
+      .data(O1_keypoint_read),
+      .address(O1key_read_addr), // gets wired to the BRAM
       .tx_free(),
-      .busy(tx_img_busy_O1L1) //or we could do img_sent whichever makes more sense
+      .busy(tx_img_busy_O1k) //or we could do img_sent whichever makes more sense
     );
+    logic tx_img_busy_O1k;
+    logic O1k_txd;
+
+    // send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O1L1 (
+    //   .clk(clk_100mhz),
+    //   .rst_in(sys_rst),//sys_rst
+    //   .img_ready((state == O1L1) && (state_prev != O1L1)),//full_image_received
+    //   .tx(O1L1_txd),//uart_txd
+    //   .data(O1L1_pixel_out),
+    //   .address(O1L1_read_addr), // gets wired to the BRAM
+    //   .tx_free(),
+    //   .busy(tx_img_busy_O1L1) //or we could do img_sent whichever makes more sense
+    // );
     logic tx_img_busy_O1L1;
     logic O1L1_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O1L2 (
-      .clk(clk_100mhz),
-      .rst_in(sys_rst),//sys_rst
-      .img_ready((state == O1L2) && (state_prev != O1L2)),//full_image_received
-      .tx(O1L2_txd),//uart_txd
-      .data(O1L2_pixel_out),
-      .address(O1L2_read_addr), // gets wired to the BRAM
-      .tx_free(),
-      .busy(tx_img_busy_O1L2) //or we could do img_sent whichever makes more sense
-    );
+    // send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O1L2 (
+    //   .clk(clk_100mhz),
+    //   .rst_in(sys_rst),//sys_rst
+    //   .img_ready((state == O1L2) && (state_prev != O1L2)),//full_image_received
+    //   .tx(O1L2_txd),//uart_txd
+    //   .data(O1L2_pixel_out),
+    //   .address(O1L2_read_addr), // gets wired to the BRAM
+    //   .tx_free(),
+    //   .busy(tx_img_busy_O1L2) //or we could do img_sent whichever makes more sense
+    // );
     logic tx_img_busy_O1L2;
     logic O1L2_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O1L3 (
-      .clk(clk_100mhz),
-      .rst_in(sys_rst),//sys_rst
-      .img_ready((state == O1L3) && (state_prev != O1L3)),//full_image_received
-      .tx(O1L3_txd),//uart_txd
-      .data(O1L3_pixel_out),
-      .address(O1L3_read_addr), // gets wired to the BRAM
-      .tx_free(),
-      .busy(tx_img_busy_O1L3) //or we could do img_sent whichever makes more sense
-    );
+    // send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O1L3 (
+    //   .clk(clk_100mhz),
+    //   .rst_in(sys_rst),//sys_rst
+    //   .img_ready((state == O1L3) && (state_prev != O1L3)),//full_image_received
+    //   .tx(O1L3_txd),//uart_txd
+    //   .data(O1L3_pixel_out),
+    //   .address(O1L3_read_addr), // gets wired to the BRAM
+    //   .tx_free(),
+    //   .busy(tx_img_busy_O1L3) //or we could do img_sent whichever makes more sense
+    // );
     logic tx_img_busy_O1L3;
     logic O1L3_txd;
 

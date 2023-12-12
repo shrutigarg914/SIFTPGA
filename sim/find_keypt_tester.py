@@ -36,22 +36,27 @@ def point_is_extrema(array_one, array_two, x, y):
 
 def find_extrema(array_one, array_two, dim =4):
     counter = 0
+    indices = set()
     for y in range(1, dim-1):
         for x in range(1, dim-1):
             is_one_max, is_one_min, is_two_min, is_two_max = point_is_extrema(array_one, array_two, x, y)
             if (is_one_max):
                 print("Found MAX in BRAM 1 at (", x, ", ", y, ")")
                 counter +=1
+                indices.add((x, y, 0))
             if (is_one_min):
                 print("Found min in BRAM 1 at (", x, ", ", y, ")")
                 counter +=1
+                indices.add((x, y, 0))
             if (is_two_max):
                 counter +=1
                 print("Found MAX in BRAM 2 at (", x, ", ", y, ")")
+                indices.add((x, y, 1))
             if (is_two_min):
                 counter +=1
+                indices.add((x, y, 1))
                 print("Found min in BRAM 2 at (", x, ", ", y, ")")
-    return counter
+    return counter, indices
 
 def dog(array_one, array_two):
     return array_one - array_two
@@ -66,4 +71,11 @@ if __name__ == "__main__":
     convert_to_mem(third_bram, 'third_test_bram.mem')
     dog_one = dog(first_bram, second_bram)
     dog_two = dog(second_bram, third_bram)
-    print("found ", find_extrema(dog_one, dog_two, dim=DIMENSION), " extrema")
+    print(dog_one, dog_two)
+    number, indices = find_extrema(dog_one, dog_two, dim=DIMENSION)
+    for ind in indices:
+        if ind[2] == 0:
+            print(dog_one[ind[1], ind[0]])
+        if ind[2] == 1:
+            print(dog_two[ind[1], ind[0]])
+    print("found ", number, " extrema")

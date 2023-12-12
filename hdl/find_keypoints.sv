@@ -39,6 +39,8 @@ module find_keypoints #(
   input wire [IMG_BIT_DEPTH-1:0] O1L3_data,
 
   output logic O1_DOG_L2L3_done,
+
+  output logic found_zero,
   
   // // Octave 2
   // output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L1_read_addr,
@@ -175,6 +177,7 @@ module find_keypoints #(
 // the actual logic of populating the BRAM is in the always_ff smwhere below
   logic O1_key_done;
   assign keypoints_done = O1_key_done;
+  logic gave_zero;
 check_extrema #(
   .DIMENSION(DIMENSION)
 ) finder (
@@ -191,7 +194,8 @@ check_extrema #(
   // .second_is_extremum(O1_L2L3_extremum),
   .done_checking(O1_key_done),
   .key_wea(O1key_wea),
-  .key_out(O1_keypoint_out)
+  .key_out(O1_keypoint_out),
+  .gave_zero_latched(gave_zero)
   // .state_number(module_state),
   // .first_is_max(first_is_max),
   // .first_is_min(first_is_min),
@@ -202,15 +206,23 @@ check_extrema #(
   // .read(read)
   );
   logic old_O1key_wea;
+  // logic found_zero;
+  // assign found_zero = gave_zero;
   // logic [(2*$clog2(DIMENSION)):0] key_out;
 
   always_ff @(posedge clk) begin
     if (rst_in) begin
       O1key_write_addr <= 0;
+      // O1key_wea <= 1'b0;
+      old_O1key_wea <= 1'b0;
+      found_zero <= 0;
     end else begin
       old_O1key_wea <= O1key_wea;
       if (old_O1key_wea && ~O1key_wea) begin// falling edge
         O1key_write_addr <= O1key_write_addr + 1'b1;
+        if (O1_keypoint_out[12:7]==6'd0) begin
+          found_zero <=1'b1;
+        end
       end
     end
   end
