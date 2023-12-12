@@ -60,6 +60,7 @@ if __name__ == "__main__":
                 print(len(image_rx), 1000, image_rx[-1])
             else:
                 zero_count = zero_count + 1
+                print("NEXT OCTAVE")
             # ind = input("Index investigating:  ")
             # print(pixels[ind])
         print("IMAGES RECEIVED")

@@ -77,12 +77,24 @@ if __name__ == "__main__":
     O2L3_bram = np.random.randint(0,high = 255, size=(int(DIMENSION/2), int(DIMENSION/2)))
     convert_to_mem(O2L3_bram, 'O2L3_test_bram.mem')
 
+
+    O3L1_bram = np.random.randint(0,high = 255, size=(int(DIMENSION/4), int(DIMENSION/4)))
+    convert_to_mem(O3L1_bram, 'O3L1_test_bram.mem')
+    O3L2_bram = np.random.randint(0,high = 255, size=(int(DIMENSION/4), int(DIMENSION/4)))
+    convert_to_mem(O3L2_bram, 'O3L2_test_bram.mem')
+    O3L3_bram = np.random.randint(0,high = 255, size=(int(DIMENSION/4), int(DIMENSION/4)))
+    convert_to_mem(O3L3_bram, 'O3L3_test_bram.mem')
+
+
     dog_one = dog(first_bram, second_bram)
     dog_two = dog(second_bram, third_bram)
 
     O2_dog_one = dog(O2L1_bram, O2L2_bram)
     O2_dog_two = dog(O2L2_bram, O2L3_bram)
 
+
+    O3_dog_one = dog(O3L1_bram, O3L2_bram)
+    O3_dog_two = dog(O3L2_bram, O3L3_bram)
 
     # print(dog_one, dog_two)
     number, indices = find_extrema(dog_one, dog_two, dim=DIMENSION)
@@ -99,3 +111,5 @@ if __name__ == "__main__":
     #     if ind[2] == 1:
     #         print(dog_two[ind[1], ind[0]])
     print("found ", number+number2, " extrema")
+    number3, indices = find_extrema(O3_dog_one, O3_dog_two, dim=int(DIMENSION/4))
+    print("found ", number+number2 + number3, " extrema")

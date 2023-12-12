@@ -451,6 +451,14 @@ module top_level(
         .O2L3_read_addr(O2L3_read_addr),
         .O2L3_data(O2L3_pixel_out),
 
+        .O3L1_read_addr(O3L1_read_addr),
+        .O3L1_data(O3L1_pixel_out),
+
+        .O3L2_read_addr(O3L2_read_addr),
+        .O3L2_data(O3L2_pixel_out),
+      
+        .O3L3_read_addr(O3L3_read_addr),
+        .O3L3_data(O3L3_pixel_out),
         // start and done signals
         .start(pyramid_done),
         .keypoints_done(keypoints_done),

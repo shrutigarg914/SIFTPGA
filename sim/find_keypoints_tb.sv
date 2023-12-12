@@ -12,15 +12,16 @@ module find_keypts_tb;
     parameter DIMENSION = 64;
     parameter TOP_HEIGHT = DIMENSION;
     parameter TOP_WIDTH = DIMENSION;
-    logic signed [BIT_DEPTH-1:0] first_data, second_data, third_data, O2L1_data, O2L2_data, O2L3_data;
+    logic signed [BIT_DEPTH-1:0] first_data, second_data, third_data, O2L1_data, O2L2_data, O2L3_data, O3L1_data, O3L2_data, O3L3_data;
     logic [$clog2(DIMENSION*DIMENSION)-1:0] first_address, second_address, third_address;
     logic [$clog2(DIMENSION / 2* DIMENSION / 2)-1:0] O2L1_read_addr, O2L2_read_addr, O2L3_read_addr;
+    logic [$clog2(DIMENSION / 4* DIMENSION / 4)-1:0] O3L1_read_addr, O3L2_read_addr, O3L3_read_addr;
     logic rst_in, clk_in;
     logic [10:0] number_keypt;
     logic dog_one_done;
     
     logic [$clog2(TOP_HEIGHT * TOP_WIDTH)-1:0] key_write_addr;
-    logic key_wea;
+    logic key_wea, in_ocatve_3_latched;
     logic [(2*$clog2(DIMENSION)):0] keypoint_out;
 
     // logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1L1_read_addr, O1L2_read_addr, O1L3_read_addr, O1L1L2_address;
@@ -55,11 +56,20 @@ module find_keypts_tb;
     .O2L3_read_addr(O2L3_read_addr),
     .O2L3_data(O2L3_data),
   
+    .O3L1_read_addr(O3L1_read_addr),
+    .O3L1_data(O3L1_data),
 
+    .O3L2_read_addr(O3L2_read_addr),
+    .O3L2_data(O3L2_data),
+  
+    .O3L3_read_addr(O3L3_read_addr),
+    .O3L3_data(O3L3_data),
     
     // start and done signals
     .start(start_keypt),
     .keypoints_done(keypoints_done),
+
+    .in_ocatve_3_latched(in_ocatve_3_latched),
 
     .O1_DOG_L2L3_done(dog_one_done)
 
@@ -161,6 +171,53 @@ module find_keypts_tb;
         .douta(O2L3_data)      // RAM output data, width determined from RAM_WIDTH
     );
 
+    xilinx_single_port_ram_read_first #(
+        .RAM_WIDTH(8),                       // Specify RAM data width
+        .RAM_DEPTH(DIMENSION /4 *DIMENSION / 4),                     // Specify RAM depth (number of entries)
+        .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
+        .INIT_FILE(`FPATH(O3L1_test_bram.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    ) O3L1_bram (
+        .addra(O3L1_read_addr),     // Address bus, width determined from RAM_DEPTH
+        .dina(8'b0),       // RAM input data, width determined from RAM_WIDTH
+        .clka(clk_in),       // Clock
+        .wea(1'b0),         // Write enable
+        .ena(1'b1),         // RAM Enable, for additional power savings, disable port when not in use
+        .rsta(rst_in),       // Output reset (does not affect memory contents)
+        .regcea(1'b1),   // Output register enable
+        .douta(O3L1_data)      // RAM output data, width determined from RAM_WIDTH
+    );
+
+    xilinx_single_port_ram_read_first #(
+        .RAM_WIDTH(8),                       // Specify RAM data width
+        .RAM_DEPTH(DIMENSION /4 *DIMENSION / 4),                     // Specify RAM depth (number of entries)
+        .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
+        .INIT_FILE(`FPATH(O3L2_test_bram.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    ) O3L2_bram (
+        .addra(O3L2_read_addr),     // Address bus, width determined from RAM_DEPTH
+        .dina(8'b0),       // RAM input data, width determined from RAM_WIDTH
+        .clka(clk_in),       // Clock
+        .wea(1'b0),         // Write enable
+        .ena(1'b1),         // RAM Enable, for additional power savings, disable port when not in use
+        .rsta(rst_in),       // Output reset (does not affect memory contents)
+        .regcea(1'b1),   // Output register enable
+        .douta(O3L2_data)      // RAM output data, width determined from RAM_WIDTH
+    );
+
+    xilinx_single_port_ram_read_first #(
+        .RAM_WIDTH(8),                       // Specify RAM data width
+        .RAM_DEPTH(DIMENSION / 4*DIMENSION / 4),                     // Specify RAM depth (number of entries)
+        .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
+        .INIT_FILE(`FPATH(O3L3_test_bram.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    ) O3L3_bram (
+        .addra(O3L3_read_addr),     // Address bus, width determined from RAM_DEPTH
+        .dina(8'b0),       // RAM input data, width determined from RAM_WIDTH
+        .clka(clk_in),       // Clock
+        .wea(1'b0),         // Write enable
+        .ena(1'b1),         // RAM Enable, for additional power savings, disable port when not in use
+        .rsta(rst_in),       // Output reset (does not affect memory contents)
+        .regcea(1'b1),   // Output register enable
+        .douta(O3L3_data)      // RAM output data, width determined from RAM_WIDTH
+    );
     // assign first_address = O1L1L2_address;
     // assign second_address = O1L1L2_address;
     logic O1L1L2_wea;

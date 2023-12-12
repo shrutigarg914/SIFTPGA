@@ -83,7 +83,9 @@ module send_keypoints #(
                 if (data==13'b0) begin
                     case(scale)
                         ONE : scale <= TWO;
+                        TWO : scale <= THREE;
                     endcase
+                    counter <= counter + 1;
                 end
                 case(scale)
                     ONE : begin
