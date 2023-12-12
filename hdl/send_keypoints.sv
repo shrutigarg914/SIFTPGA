@@ -20,6 +20,9 @@ module send_keypoints #(
     typedef enum {INACTIVE=0, WAITING=1, UPPER_BYTE=2, LOWER_BYTE=3} module_state;
     module_state state;
 
+    typedef enum {ONE=0, TWO=1, THREE=2} scale_state;
+    scale_state scale;
+
     always_comb begin
         case(state)
             INACTIVE : out_state = 0;
@@ -56,6 +59,7 @@ module send_keypoints #(
         send <= 0;
         address <= 0;
         busy <= 0;
+        scale <= ONE;
       end else begin
         case(state)
             // before coming into INACTIVE set busy to 0
@@ -65,6 +69,7 @@ module send_keypoints #(
                 busy <= 1'b1;
                 send <= 1'b0;
                 address <= 0;
+                scale <= ONE;
             end else begin
                 state <= INACTIVE;
                 busy <= 1'b0;
@@ -75,10 +80,31 @@ module send_keypoints #(
                 state <= UPPER_BYTE;// sending the more significant byte first for convenience on python side
                 send <= 0;
             end else if(counter==2'b10) begin
-                pixel <= data[12:7];
-                upper_byte <= data[12:7];
-                lower_byte <= data[6:1];
-                send <= 1'b1;
+                if (data==13'b0) begin
+                    case(scale)
+                        ONE : scale <= TWO;
+                    endcase
+                end
+                case(scale)
+                    ONE : begin
+                        pixel <= data[12:7];
+                        upper_byte <= data[12:7];
+                        lower_byte <= data[6:1];
+                        send <= 1'b1;
+                    end
+                    TWO : begin
+                        pixel <= data[10:6];
+                        upper_byte <= data[10:6];
+                        lower_byte <= data[5:1];
+                        send <= 1'b1;
+                    end
+                    THREE : begin
+                        pixel <= data[8:5];
+                        upper_byte <= data[8:5];
+                        lower_byte <= data[4:1];
+                        send <= 1'b1;
+                    end
+                endcase
             end else begin
                 counter <= counter + 1;
                 state <= WAITING;

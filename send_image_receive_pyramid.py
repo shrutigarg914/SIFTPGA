@@ -30,7 +30,7 @@ if __name__ == "__main__":
         print(h, w, len(pixels))
         print(pixels)
 
-        s = serial.Serial(port='COM6', baudrate=2000000, bytesize=8)
+        s = serial.Serial(port='COM5', baudrate=2000000, bytesize=8)
         print("setup ready")
         # time.sleep(10)
         packets_sent = 0
@@ -44,59 +44,40 @@ if __name__ == "__main__":
         print("DONE SENDING!")
 
         image_rx = []
-        rxed = 0
-        while rxed < 500:
+        while len(image_rx) < len(pixels)*3 + len(pixels)/4*3 + len(pixels)/16*3:
             # print(".", end='', flush=True)
             res = s.read()
-            res_lower = s.read()
-            # print("BRAM  ", "(x:", struct.unpack('B', res)[0], ", y:", struct.unpack('B', res_lower)[0], ")")
-            coord = [struct.unpack('B', res)[0], struct.unpack('B', res_lower)[0]]
-            # print(type(coord), type(struct.unpack('B', res)[0]))
-            if coord[0] != 0:
-                image_rx.append(coord)
-            # image_rx.append(res)
-            # print(len(image_rx), 1000, list(res))
-                print(len(image_rx), 1000, image_rx[-1])
+            image_rx.append(struct.unpack('B', res)[0])
+            print(len(image_rx), len(pixels)*3 + len(pixels)/4*3 + len(pixels)/16*3, struct.unpack('B', res)[0])
             # ind = input("Index investigating:  ")
             # print(pixels[ind])
-            rxed = rxed + 1
         print("IMAGES RECEIVED")
 
-        im_res = np.asarray(image_rx[:1000])
-        print("KEYPOINTS FOUND ", im_res)
-        for coord in im_res:
-            plt.plot(coord[0], coord[1], marker='o', color="red") 
-        plt.imshow(np.asarray(pixels).reshape((64, 64)), cmap='gray', vmin=0, vmax=255)
-
-        # # plt.imshow(np.asarray(pixels).reshape(128, 128), cmap='gray', vmin=0, vmax=255)
-        plt.show()
-
-
-        # for i in range(3):
-        #     im_res = np.asarray(image_rx[len(pixels)*i:len(pixels)*(i+1)]).reshape((64, 64))
-        #     # print(im_res)
-        #     plt.imshow(im_res, cmap='gray', vmin=0, vmax=255)
-        #     # plt.imshow(np.asarray(pixels).reshape(128, 128), cmap='gray', vmin=0, vmax=255)
-        #     plt.show()
-        #     # # use matplotlib to visualise the greyscale image we get back
-        #     # # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.imshow.html
+        for i in range(3):
+            im_res = np.asarray(image_rx[len(pixels)*i:len(pixels)*(i+1)]).reshape((64, 64))
+            print(im_res)
+            plt.imshow(im_res, cmap='gray', vmin=0, vmax=255)
+            # plt.imshow(np.asarray(pixels).reshape(128, 128), cmap='gray', vmin=0, vmax=255)
+            plt.show()
+            # # use matplotlib to visualise the greyscale image we get back
+            # # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.imshow.html
             
-        # for i in range(3):
-        #     len_img = len(pixels) / 4
-        #     im_res = np.asarray(image_rx[int(len(pixels)*3 + len_img*i):int(len(pixels)*3 + len_img*(i+1))]).reshape((32, 32))
-        #     # print(im_res)
-        #     plt.imshow(im_res, cmap='gray', vmin=0, vmax=255)
-        #     # plt.imshow(np.asarray(pixels).reshape(128, 128), cmap='gray', vmin=0, vmax=255)
-        #     plt.show()
-        #     # # use matplotlib to visualise the greyscale image we get back
-        #     # # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.imshow.html
+        for i in range(3):
+            len_img = len(pixels) / 4
+            im_res = np.asarray(image_rx[int(len(pixels)*3 + len_img*i):int(len(pixels)*3 + len_img*(i+1))]).reshape((32, 32))
+            print(im_res)
+            plt.imshow(im_res, cmap='gray', vmin=0, vmax=255)
+            # plt.imshow(np.asarray(pixels).reshape(128, 128), cmap='gray', vmin=0, vmax=255)
+            plt.show()
+            # # use matplotlib to visualise the greyscale image we get back
+            # # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.imshow.html
             
-        # for i in range(3):
-        #     len_img = len(pixels) / 16
-        #     im_res = np.asarray(image_rx[int(len(pixels)*3 + len(pixels)/4*3 + len_img*i):int(len(pixels)*3 + len(pixels)/4*3 + len_img*(i+1))]).reshape((16, 16))
-        #     # print(im_res)
-        #     plt.imshow(im_res, cmap='gray', vmin=0, vmax=255)
-        #     # plt.imshow(np.asarray(pixels).reshape(128, 128), cmap='gray', vmin=0, vmax=255)
-        #     plt.show()
-        #     # # use matplotlib to visualise the greyscale image we get back
-        #     # # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.imshow.html
+        for i in range(3):
+            len_img = len(pixels) / 16
+            im_res = np.asarray(image_rx[int(len(pixels)*3 + len(pixels)/4*3 + len_img*i):int(len(pixels)*3 + len(pixels)/4*3 + len_img*(i+1))]).reshape((16, 16))
+            print(im_res)
+            plt.imshow(im_res, cmap='gray', vmin=0, vmax=255)
+            # plt.imshow(np.asarray(pixels).reshape(128, 128), cmap='gray', vmin=0, vmax=255)
+            plt.show()
+            # # use matplotlib to visualise the greyscale image we get back
+            # # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.imshow.html

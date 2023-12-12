@@ -20,7 +20,7 @@
 module check_extrema #(
   parameter BIT_DEPTH = 9,// 8 bit greyscale --> signed differences gives us 9 bits
   parameter ABS_CONTRAST_THRESHOLD = 4, // in the ref cpp code the threshold is set for 0.015
-  parameter DIMENSION = 4
+  parameter DIMENSION
   ) (
   input wire clk,
   input wire rst_in,
@@ -59,8 +59,7 @@ module check_extrema #(
   output logic second_is_max,  
   output logic [$clog2(DIMENSION)-1:0] read_x,
   output logic [$clog2(DIMENSION)-1:0] read_y,
-  output logic read,
-  output logic gave_zero_latched
+  output logic read
   );
     
   typedef enum {TOP=0, TOPR=1, TOPL=2, BOT=3, BOTR=4, BOTL=5, RIGHT=6, LEFT=7, MIDDLE=8, NULL=9} sub_module_state;
@@ -202,7 +201,6 @@ module check_extrema #(
 
   typedef enum {IDLE=0, START_ROW=1, CHECK=2, INCREMENT=3, SHIFT_RIGHT=4, WRITE_ANOTHER=5, FINISH_WRITE=6, WRAP_UP=7} module_state;
   module_state state;
-  logic gave_zero;
 
   always_ff @(posedge clk) begin
     if (rst_in) begin
@@ -216,11 +214,7 @@ module check_extrema #(
       done_checking <= 1'b0;
       key_wea <= 1'b0;
       key_out <= 0;
-      gave_zero <= 0;
     end else begin
-      if (gave_zero) begin
-        gave_zero_latched <= 1'b1;
-      end
       case(state)
         IDLE : if (enable) begin
           x <= 1'b1;
@@ -316,7 +310,6 @@ module check_extrema #(
             if ((first_is_min || first_is_max) && (first_middle >'sd10 || first_middle < -'sd10)) begin
               key_out <= {x, y, 1'b0};
               key_wea <= 1'b1;
-              gave_zero <= (x==6'd0) ? 1'b1 : 1'b0;
               if ((second_is_min || second_is_max) && (second_middle >'sd10 || second_middle < -'sd10)) begin
                 state <= WRITE_ANOTHER;
               end else begin
@@ -324,7 +317,6 @@ module check_extrema #(
               end
           end else if ((second_is_min || second_is_max) && (second_middle >'sd10 || second_middle < -'sd10)) begin
             key_out <= {x, y, 1'b1};
-            gave_zero <= (x==6'd0) ? 1'b1 : 1'b0;
             key_wea <= 1'b1;
             state <= FINISH_WRITE;
           end else begin

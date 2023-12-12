@@ -399,18 +399,18 @@ module top_level(
     
     parameter DIMENSION = HEIGHT;
     // FOR OCTAVE 1
-    logic [$clog2(HEIGHT * WIDTH)-1:0] O1key_write_addr, O1key_read_addr;
-    logic O1key_wea;
-    logic [(2*$clog2(DIMENSION)):0] O1_keypoint_write, O1_keypoint_read;
+    logic [$clog2(HEIGHT * WIDTH)-1:0] key_write_addr, O1key_read_addr;
+    logic key_wea;
+    logic [(2*$clog2(DIMENSION)):0] keypoint_write, O1_keypoint_read;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(2*$clog2(DIMENSION)+1), // we expect 8 bit greyscale images
     .RAM_DEPTH(1000))
     o1_keypt (
-        .addra(O1key_write_addr),
+        .addra(key_write_addr),
         .clka(clk_100mhz),
-        .wea(O1key_wea),
-        .dina(O1_keypoint_write),
+        .wea(key_wea),
+        .dina(keypoint_write),
         .ena(1'b1),
         .regcea(1'b1),
         .rsta(sys_rst),
@@ -431,9 +431,9 @@ module top_level(
     find_keypoints #(.DIMENSION(DIMENSION)) finder (
         .clk(clk_100mhz),
         .rst_in(sys_rst),
-        .O1key_write_addr(O1key_write_addr),
-        .O1key_wea(O1key_wea),
-        .O1_keypoint_out(O1_keypoint_write),
+        .key_write_addr(key_write_addr),
+        .key_wea(key_wea),
+        .keypoint_out(keypoint_write),
 
         .O1L1_read_addr(O1L1_read_addr),
         .O1L1_data(O1L1_pixel_out),
@@ -444,6 +444,15 @@ module top_level(
         .O1L3_read_addr(O1L2_read_addr),
         .O1L3_data(O1L3_pixel_out),
         .found_zero(found_zero),
+
+        .O2L1_read_addr(O2L1_read_addr),
+        .O2L1_data(O2L1_data),
+
+        .O2L2_read_addr(O2L2_read_addr),
+        .O2L2_data(O2L2_data),
+      
+        .O2L3_read_addr(O2L3_read_addr),
+        .O2L3_data(O2L3_data),
 
         // start and done signals
         .start(pyramid_done),

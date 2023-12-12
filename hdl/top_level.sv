@@ -399,18 +399,18 @@ module top_level(
     
     parameter DIMENSION = HEIGHT;
     // FOR OCTAVE 1
-    logic [$clog2(HEIGHT * WIDTH)-1:0] O1key_write_addr, O1key_read_addr;
-    logic O1key_wea;
-    logic [(2*$clog2(DIMENSION)):0] O1_keypoint_write, O1_keypoint_read;
+    logic [$clog2(HEIGHT * WIDTH)-1:0] key_write_addr, O1key_read_addr;
+    logic key_wea;
+    logic [(2*$clog2(DIMENSION)):0] keypoint_write, O1_keypoint_read;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(2*$clog2(DIMENSION)+1), // we expect 8 bit greyscale images
-    .RAM_DEPTH(1000))
+    .RAM_DEPTH(2000))
     o1_keypt (
-        .addra(O1key_write_addr),
+        .addra(key_write_addr),
         .clka(clk_100mhz),
-        .wea(O1key_wea),
-        .dina(O1_keypoint_write),
+        .wea(key_wea),
+        .dina(keypoint_write),
         .ena(1'b1),
         .regcea(1'b1),
         .rsta(sys_rst),
@@ -425,15 +425,13 @@ module top_level(
         .doutb(O1_keypoint_read)
     );
 
-    logic found_zero;
-    assign led[13] = found_zero;
     // instantiating the find keypoints module. Needs a BRAM for keypoints
     find_keypoints #(.DIMENSION(DIMENSION)) finder (
         .clk(clk_100mhz),
         .rst_in(sys_rst),
-        .O1key_write_addr(O1key_write_addr),
-        .O1key_wea(O1key_wea),
-        .O1_keypoint_out(O1_keypoint_write),
+        .key_write_addr(key_write_addr),
+        .key_wea(key_wea),
+        .keypoint_out(keypoint_write),
 
         .O1L1_read_addr(O1L1_read_addr),
         .O1L1_data(O1L1_pixel_out),
@@ -443,7 +441,15 @@ module top_level(
 
         .O1L3_read_addr(O1L2_read_addr),
         .O1L3_data(O1L3_pixel_out),
-        .found_zero(found_zero),
+
+        .O2L1_read_addr(O2L1_read_addr),
+        .O2L1_data(O2L1_pixel_out),
+
+        .O2L2_read_addr(O2L2_read_addr),
+        .O2L2_data(O2L2_pixel_out),
+      
+        .O2L3_read_addr(O2L3_read_addr),
+        .O2L3_data(O2L3_pixel_out),
 
         // start and done signals
         .start(pyramid_done),
@@ -594,7 +600,7 @@ module top_level(
     assign led[12] = (state == O1KEY);
 
 
-    send_keypoints #(.BRAM_LENGTH(1000)) tx_keypt_O1 (
+    send_keypoints #(.BRAM_LENGTH(2000)) tx_keypt_O1 (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O1KEY) && (state_prev != O1KEY)),//full_image_received
@@ -646,42 +652,42 @@ module top_level(
     logic tx_img_busy_O1L3;
     logic O1L3_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L1 (
-      .clk(clk_100mhz),
-      .rst_in(sys_rst),//sys_rst
-      .img_ready((state == O2L1) && (state_prev != O2L1)),//full_image_received
-      .tx(O2L1_txd),//uart_txd
-      .data(O2L1_pixel_out),
-      .address(O2L1_read_addr), // gets wired to the BRAM
-      .tx_free(),
-      .busy(tx_img_busy_O2L1) //or we could do img_sent whichever makes more sense
-    );
+    // send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L1 (
+    //   .clk(clk_100mhz),
+    //   .rst_in(sys_rst),//sys_rst
+    //   .img_ready((state == O2L1) && (state_prev != O2L1)),//full_image_received
+    //   .tx(O2L1_txd),//uart_txd
+    //   .data(O2L1_pixel_out),
+    //   .address(O2L1_read_addr), // gets wired to the BRAM
+    //   .tx_free(),
+    //   .busy(tx_img_busy_O2L1) //or we could do img_sent whichever makes more sense
+    // );
     logic tx_img_busy_O2L1;
     logic O2L1_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L2 (
-      .clk(clk_100mhz),
-      .rst_in(sys_rst),//sys_rst
-      .img_ready((state == O2L2) && (state_prev != O2L2)),//full_image_received
-      .tx(O2L2_txd),//uart_txd
-      .data(O2L2_pixel_out),
-      .address(O2L2_read_addr), // gets wired to the BRAM
-      .tx_free(),
-      .busy(tx_img_busy_O2L2) //or we could do img_sent whichever makes more sense
-    );
+    // send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L2 (
+    //   .clk(clk_100mhz),
+    //   .rst_in(sys_rst),//sys_rst
+    //   .img_ready((state == O2L2) && (state_prev != O2L2)),//full_image_received
+    //   .tx(O2L2_txd),//uart_txd
+    //   .data(O2L2_pixel_out),
+    //   .address(O2L2_read_addr), // gets wired to the BRAM
+    //   .tx_free(),
+    //   .busy(tx_img_busy_O2L2) //or we could do img_sent whichever makes more sense
+    // );
     logic tx_img_busy_O2L2;
     logic O2L2_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L3 (
-      .clk(clk_100mhz),
-      .rst_in(sys_rst),//sys_rst
-      .img_ready((state == O2L3) && (state_prev != O2L3)),//full_image_received
-      .tx(O2L3_txd),//uart_txd
-      .data(O2L3_pixel_out),
-      .address(O2L3_read_addr), // gets wired to the BRAM
-      .tx_free(),
-      .busy(tx_img_busy_O2L3) //or we could do img_sent whichever makes more sense
-    );
+    // send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L3 (
+    //   .clk(clk_100mhz),
+    //   .rst_in(sys_rst),//sys_rst
+    //   .img_ready((state == O2L3) && (state_prev != O2L3)),//full_image_received
+    //   .tx(O2L3_txd),//uart_txd
+    //   .data(O2L3_pixel_out),
+    //   .address(O2L3_read_addr), // gets wired to the BRAM
+    //   .tx_free(),
+    //   .busy(tx_img_busy_O2L3) //or we could do img_sent whichever makes more sense
+    // );
     logic tx_img_busy_O2L3;
     logic O2L3_txd;
 

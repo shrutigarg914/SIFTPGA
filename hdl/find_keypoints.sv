@@ -39,7 +39,6 @@ module find_keypoints #(
 
   output logic O1_DOG_L2L3_done,
 
-  output logic found_zero,
   
   // // Octave 2
   output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L1_read_addr,
@@ -294,16 +293,12 @@ check_extrema #(
   end
 
   logic old_key_wea;
-  // logic found_zero;
-  // assign found_zero = gave_zero;
   // logic [(2*$clog2(DIMENSION)):0] key_out;
 
   always_ff @(posedge clk) begin
     if (rst_in) begin
       key_write_addr <= 0;
       old_key_wea <= 1'b0;
-      key_write_addr <= 0;
-      found_zero <= 0;
       O1_key_done_latched <= 1'b0;
     end else begin
       if (O1_key_done) begin
