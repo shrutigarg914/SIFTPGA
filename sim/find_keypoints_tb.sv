@@ -12,28 +12,30 @@ module find_keypts_tb;
     parameter DIMENSION = 64;
     parameter TOP_HEIGHT = DIMENSION;
     parameter TOP_WIDTH = DIMENSION;
-    logic signed [BIT_DEPTH-1:0] first_data, second_data, third_data;
+    logic signed [BIT_DEPTH-1:0] first_data, second_data, third_data, O2L1_data, O2L2_data, O2L3_data;
     logic [$clog2(DIMENSION*DIMENSION)-1:0] first_address, second_address, third_address;
+    logic [$clog2(DIMENSION / 2* DIMENSION / 2)-1:0] O2L1_read_addr, O2L2_read_addr, O2L3_read_addr;
     logic rst_in, clk_in;
     logic [10:0] number_keypt;
     logic dog_one_done;
     
-    logic [$clog2(TOP_HEIGHT * TOP_WIDTH)-1:0] O1key_write_addr;
-    logic O1key_wea;
-    logic [(2*$clog2(DIMENSION)):0] O1_keypoint_out;
+    logic [$clog2(TOP_HEIGHT * TOP_WIDTH)-1:0] key_write_addr;
+    logic key_wea;
+    logic [(2*$clog2(DIMENSION)):0] keypoint_out;
 
-    logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1L1_read_addr, O1L2_read_addr, O1L3_read_addr, O1L1L2_address;
-    logic [BIT_DEPTH-1:0] O1L1_data, O1L2_data, O1L3_data;
+    // logic [$clog2(TOP_WIDTH * TOP_HEIGHT)-1:0] O1L1_read_addr, O1L2_read_addr, O1L3_read_addr, O1L1L2_address;
+    // logic [BIT_DEPTH-1:0] O1L1_data, O1L2_data, O1L3_data;
     logic keypoints_done, start_keypt;
-    logic signed [BIT_DEPTH:0] O1L1L2_data_write;
+    // logic signed [BIT_DEPTH:0] O1L1L2_data_write;
+    // logic signed [BIT_DEPTH:0] O1L1L2_data_write, ;
 
     find_keypoints #(.DIMENSION(DIMENSION)
     ) finder (
     .clk(clk_in),
     .rst_in(rst_in),
-    .O1key_write_addr(O1key_write_addr),
-    .O1key_wea(O1key_wea),
-    .O1_keypoint_out(O1_keypoint_out),
+    .key_write_addr(key_write_addr),
+    .key_wea(key_wea),
+    .keypoint_out(keypoint_out),
 
     .O1L1_read_addr(first_address),
     .O1L1_data(first_data),
@@ -43,6 +45,17 @@ module find_keypts_tb;
     
     .O1L3_read_addr(third_address),
     .O1L3_data(third_data),
+
+    .O2L1_read_addr(O2L1_read_addr),
+    .O2L1_data(O2L1_data),
+
+    .O2L2_read_addr(O2L2_read_addr),
+    .O2L2_data(O2L2_data),
+  
+    .O2L3_read_addr(O2L3_read_addr),
+    .O2L3_data(O2L3_data),
+  
+
     
     // start and done signals
     .start(start_keypt),
@@ -100,6 +113,54 @@ module find_keypts_tb;
         .douta(third_data)      // RAM output data, width determined from RAM_WIDTH
     );
 
+    xilinx_single_port_ram_read_first #(
+        .RAM_WIDTH(8),                       // Specify RAM data width
+        .RAM_DEPTH(DIMENSION /2 *DIMENSION / 2),                     // Specify RAM depth (number of entries)
+        .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
+        .INIT_FILE(`FPATH(O2L1_test_bram.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    ) O2L1_bram (
+        .addra(O2L1_read_addr),     // Address bus, width determined from RAM_DEPTH
+        .dina(8'b0),       // RAM input data, width determined from RAM_WIDTH
+        .clka(clk_in),       // Clock
+        .wea(1'b0),         // Write enable
+        .ena(1'b1),         // RAM Enable, for additional power savings, disable port when not in use
+        .rsta(rst_in),       // Output reset (does not affect memory contents)
+        .regcea(1'b1),   // Output register enable
+        .douta(O2L1_data)      // RAM output data, width determined from RAM_WIDTH
+    );
+
+    xilinx_single_port_ram_read_first #(
+        .RAM_WIDTH(8),                       // Specify RAM data width
+        .RAM_DEPTH(DIMENSION /2 *DIMENSION / 2),                     // Specify RAM depth (number of entries)
+        .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
+        .INIT_FILE(`FPATH(O2L2_test_bram.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    ) O2L2_bram (
+        .addra(O2L2_read_addr),     // Address bus, width determined from RAM_DEPTH
+        .dina(8'b0),       // RAM input data, width determined from RAM_WIDTH
+        .clka(clk_in),       // Clock
+        .wea(1'b0),         // Write enable
+        .ena(1'b1),         // RAM Enable, for additional power savings, disable port when not in use
+        .rsta(rst_in),       // Output reset (does not affect memory contents)
+        .regcea(1'b1),   // Output register enable
+        .douta(O2L2_data)      // RAM output data, width determined from RAM_WIDTH
+    );
+
+    xilinx_single_port_ram_read_first #(
+        .RAM_WIDTH(8),                       // Specify RAM data width
+        .RAM_DEPTH(DIMENSION / 2*DIMENSION / 2),                     // Specify RAM depth (number of entries)
+        .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
+        .INIT_FILE(`FPATH(O2L3_test_bram.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    ) O2L3_bram (
+        .addra(O2L3_read_addr),     // Address bus, width determined from RAM_DEPTH
+        .dina(8'b0),       // RAM input data, width determined from RAM_WIDTH
+        .clka(clk_in),       // Clock
+        .wea(1'b0),         // Write enable
+        .ena(1'b1),         // RAM Enable, for additional power savings, disable port when not in use
+        .rsta(rst_in),       // Output reset (does not affect memory contents)
+        .regcea(1'b1),   // Output register enable
+        .douta(O2L3_data)      // RAM output data, width determined from RAM_WIDTH
+    );
+
     // assign first_address = O1L1L2_address;
     // assign second_address = O1L1L2_address;
     logic O1L1L2_wea;
@@ -146,9 +207,9 @@ module find_keypts_tb;
             if (dog_one_done) begin
                 $display("DOG ONE DONE");
             end
-            if (O1key_wea) begin
-                // $display("Writing  (", O1_keypoint_out[7:4], ", ", O1_keypoint_out[3:1], ") in BRAM ", O1_keypoint_out[0], ", at address ", O1key_write_addr);
-                $display("Writing  (", O1_keypoint_out, ", ", O1_keypoint_out, ") in BRAM ", O1_keypoint_out[0], ", at address ", O1key_write_addr);
+            if (key_wea) begin
+                // $display("Writing  (", keypoint_out[7:4], ", ", keypoint_out[3:1], ") in BRAM ", keypoint_out[0], ", at address ", key_write_addr);
+                $display("Writing  (", keypoint_out, ", ", keypoint_out, ") in BRAM ", keypoint_out[0], ", at address ", key_write_addr);
                 number_keypt = number_keypt + 1'b1;
             end
             #10;

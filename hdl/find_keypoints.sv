@@ -19,11 +19,10 @@ module find_keypoints #(
 
   // handles to the keypoint BRAMs
 
-  // FOR OCTAVE 1
-  output logic [$clog2(TOP_HEIGHT * TOP_WIDTH)-1:0] O1key_write_addr,
-  output logic O1key_wea,
-  output logic [(2*$clog2(DIMENSION)):0] O1_keypoint_out,
-
+  // FOR all keypoints
+  output logic [$clog2(TOP_HEIGHT * TOP_WIDTH)-1:0] key_write_addr,
+  output logic key_wea,
+  output logic [(2*$clog2(DIMENSION)):0] keypoint_out,
 
   // stealing the inputs/outputs from gaussian pyramid for consistency in naming
   // we want to read from the pyramid BRAMs, so we need to output addresses and read data
@@ -43,14 +42,14 @@ module find_keypoints #(
   output logic found_zero,
   
   // // Octave 2
-  // output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L1_read_addr,
-  // input wire [IMG_BIT_DEPTH-1:0] O2L1_data,
+  output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L1_read_addr,
+  input wire [IMG_BIT_DEPTH-1:0] O2L1_data,
 
-  // output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L2_read_addr,
-  // input wire [IMG_BIT_DEPTH-1:0] O2L2_data,
+  output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L2_read_addr,
+  input wire [IMG_BIT_DEPTH-1:0] O2L2_data,
   
-  // output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L3_read_addr,
-  // input wire [IMG_BIT_DEPTH-1:0] O2L3_data,
+  output logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L3_read_addr,
+  input wire [IMG_BIT_DEPTH-1:0] O2L3_data,
   
   // // Octave 3
   // output logic [$clog2(TOP_WIDTH / 4 * TOP_HEIGHT / 4)-1:0] O3L1_read_addr,
@@ -65,12 +64,6 @@ module find_keypoints #(
   // start and done signals
   input wire start,
   output logic keypoints_done
-
-  // // this writes the {x,y, octave, dog_image} values for each keypoint
-  // // currently the width for keypoint data should be 15 (6+6+2+1)
-  // output logic [($clog2(NUMBER_KEYPOINTS)) - 1:0] keypoint_address,
-  // output logic [((2*$clog2(DIMENSION)) + $clog2(NUMBER_OCTAVES) + $clog2(DOG_IMAGES_PER_OCTAVE))- 1:0] keypoint_data,
-  // output logic write_keypoint_enable,
 
 
   );
@@ -129,16 +122,68 @@ module find_keypoints #(
   // Diff of Gaussian module for Octave 1 between L1, L2
   logic O1_DOG_L1L2_done;
   // logic O1_DOG_L2L3_done;
+  logic O2_DOG_L1L2_done;
+  logic O2_DOG_L2L3_done;
+
+  logic [$clog2(TOP_WIDTH / 2 * TOP_HEIGHT / 2)-1:0] O2L1L2_address, O2L2L3_address, O2L1L2_read_address, O2L2L3_read_address;
+  logic signed [IMG_BIT_DEPTH:0] O2L1L2_data_write, O2L2L3_data_write, O2L1L2_read_data, O2L2L3_read_data;
+  logic O2L1L2_wea, O2L2L3_wea;
+  // DOG O2L1L2 BRAM
+  xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(IMG_BIT_DEPTH+1), // we expect 8 bit greyscale images
+    .RAM_DEPTH(TOP_HEIGHT / 2 *TOP_WIDTH / 2)) //we expect a 64*64 image with 4096 pixels total
+    O2L1L2 (
+    .addra(O2L1L2_address),
+    .clka(clk),
+    .wea(O2L1L2_wea),
+    .dina(O2L1L2_data_write),
+    .ena(1'b1),
+    .regcea(1'b1),
+    .rsta(rst_in),
+    .douta(), //never read from this side
+    .addrb(O2L1L2_read_address),// transformed lookup pixel
+    .dinb(),
+    .clkb(clk),
+    .web(1'b0),
+    .enb(1'b1),
+    .rstb(rst_in),
+    .regceb(1'b1),
+    .doutb(O2L1L2_read_data)
+  );
+  
+  // DOG O2L2L3 BRAM
+  xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(IMG_BIT_DEPTH+1), // we expect 8 bit greyscale images
+    .RAM_DEPTH(TOP_HEIGHT / 2*TOP_WIDTH / 2)) //we expect a 64*64 image with 4096 pixels total
+    O2L2L3 (
+    .addra(O2L2L3_address),
+    .clka(clk),
+    .wea(O2L2L3_wea),
+    .dina(O2L2L3_data_write),
+    .ena(1'b1),
+    .regcea(1'b1),
+    .rsta(rst_in),
+    .douta(), //never read from this side
+    .addrb(O2L2L3_read_address),// transformed lookup pixel
+    .dinb(),
+    .clkb(clk),
+    .web(1'b0),
+    .enb(1'b1),
+    .rstb(rst_in),
+    .regceb(1'b1),
+    .doutb(O2L2L3_read_data)
+  );
+
 
   always_comb begin
     O1L1_read_addr = (O1L2L3_busy) ? O1L2L3_address : O1L1L2_address;
     O1L2_read_addr = (O1L2L3_busy) ? O1L2L3_address : O1L1L2_address;
     O1L3_read_addr = (O1L2L3_busy) ? O1L2L3_address : O1L1L2_address;  
-  end
 
-  // TODO: transition addresses!!!
-  // assign O1L1_read_addr = O1L1L2_address;
-  // assign O1L2_read_addr = O1L1L2_address;
+    O2L1_read_addr = (O2L2L3_busy) ? O2L2L3_address : O2L1L2_address;
+    O2L2_read_addr = (O2L2L3_busy) ? O2L2L3_address : O2L1L2_address;
+    O2L3_read_addr = (O2L2L3_busy) ? O2L2L3_address : O2L1L2_address;  
+  end
 
 
   logic [1:0] O1L1L2_state;
@@ -171,16 +216,48 @@ module find_keypoints #(
   .busy(O1L2L3_busy)
   );
 
+  logic [1:0] O2L1L2_state;
+  logic [1:0] O2L2L3_state;
+  dog #(.DIMENSION(DIMENSION / 2)) O2_DOG_L1L2 (
+  .clk(clk),
+  .rst_in(rst_in),//sys_rst
+  .bram_ready(start),//we can start populating this BRAM first
+  .sharper_pix(O2L1_data),
+  .fuzzier_pix(O2L2_data),
+  .done(O2_DOG_L1L2_done),
+  .address(O2L1L2_address),
+  .data_out(O2L1L2_data_write),
+  .wea(O2L1L2_wea),
+  .state_num(O2L1L2_state)
+  );
+
+  logic O2L2L3_busy;
+  dog #(.DIMENSION(TOP_HEIGHT / 2)) O2_DOG_L2L3 (
+  .clk(clk),
+  .rst_in(rst_in),//sys_rst
+  .bram_ready(O2_DOG_L1L2_done),// start populating this BRAM when the previous DOG BRAM is done
+  .sharper_pix(O2L2_data),
+  .fuzzier_pix(O2L3_data),
+  .done(O2_DOG_L2L3_done),
+  .address(O2L2L3_address),
+  .data_out(O2L2L3_data_write),
+  .wea(O2L2L3_wea),
+  .state_num(O2L2L3_state),
+  .busy(O2L2L3_busy)
+  );
+
+  logic O1key_wea, O2key_wea;
+  logic [(2*$clog2(DIMENSION / 2)):0] O2_keypoint_out;
+  logic [(2*$clog2(DIMENSION)):0] O1_keypoint_out;
 
 // Once Diff of G is done, find the extrema from that BRAM
 // this sets up the module
 // the actual logic of populating the BRAM is in the always_ff smwhere below
   logic O1_key_done;
-  assign keypoints_done = O1_key_done;
-  logic gave_zero;
+  assign keypoints_done = O2_key_done;
 check_extrema #(
   .DIMENSION(DIMENSION)
-) finder (
+) O1_finder (
   .clk(clk),
   .rst_in(rst_in),
   .first_data(O1L1L2_read_data),
@@ -188,41 +265,53 @@ check_extrema #(
   .second_data(O1L2L3_read_data),
   .second_address(O1L2L3_read_address),
   .enable(O1_DOG_L2L3_done),
-  // .x(O1_keypt_x),
-  // .y(O1_keypt_y),
-  // .first_is_extremum(O1_L1L2_extremum),
-  // .second_is_extremum(O1_L2L3_extremum),
   .done_checking(O1_key_done),
   .key_wea(O1key_wea),
-  .key_out(O1_keypoint_out),
-  .gave_zero_latched(gave_zero)
-  // .state_number(module_state),
-  // .first_is_max(first_is_max),
-  // .first_is_min(first_is_min),
-  // .second_is_max(second_is_max),
-  // .second_is_min(second_is_min),
-  // .read_x(read_x),
-  // .read_y(read_y),
-  // .read(read)
+  .key_out(O1_keypoint_out)
   );
-  logic old_O1key_wea;
+
+logic O2_key_done;
+check_extrema #(
+  .DIMENSION(DIMENSION / 2)
+) O2_finder (
+  .clk(clk),
+  .rst_in(rst_in),
+  .first_data(O2L1L2_read_data),
+  .first_address(O2L1L2_read_address),
+  .second_data(O2L2L3_read_data),
+  .second_address(O2L2L3_read_address),
+  .enable(O1_key_done),
+  .done_checking(O2_key_done),
+  .key_wea(O2key_wea),
+  .key_out(O2_keypoint_out)
+  );
+
+  logic O1_key_done_latched;
+
+  always_comb begin
+    keypoint_out = (O1_key_done_latched) ? O2_keypoint_out : O1_keypoint_out;
+    key_wea = (O1_key_done_latched) ? O2key_wea : O1key_wea;
+  end
+
+  logic old_key_wea;
   // logic found_zero;
   // assign found_zero = gave_zero;
   // logic [(2*$clog2(DIMENSION)):0] key_out;
 
   always_ff @(posedge clk) begin
     if (rst_in) begin
-      O1key_write_addr <= 0;
-      // O1key_wea <= 1'b0;
-      old_O1key_wea <= 1'b0;
+      key_write_addr <= 0;
+      old_key_wea <= 1'b0;
+      key_write_addr <= 0;
       found_zero <= 0;
+      O1_key_done_latched <= 1'b0;
     end else begin
-      old_O1key_wea <= O1key_wea;
-      if (old_O1key_wea && ~O1key_wea) begin// falling edge
-        O1key_write_addr <= O1key_write_addr + 1'b1;
-        if (O1_keypoint_out[12:7]==6'd0) begin
-          found_zero <=1'b1;
-        end
+      if (O1_key_done) begin
+        O1_key_done_latched <= 1'b1;
+      end
+      old_key_wea <= key_wea;
+      if (old_key_wea && ~key_wea) begin// falling edge
+        key_write_addr <= key_write_addr + 1'b1;
       end
     end
   end

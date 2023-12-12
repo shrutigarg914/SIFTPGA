@@ -313,16 +313,16 @@ module check_extrema #(
           end
         endcase
         CHECK : begin 
-            if ((first_is_min || first_is_max) && (first_middle >'sd20 || first_middle < -'sd20)) begin
+            if ((first_is_min || first_is_max) && (first_middle >'sd10 || first_middle < -'sd10)) begin
               key_out <= {x, y, 1'b0};
               key_wea <= 1'b1;
               gave_zero <= (x==6'd0) ? 1'b1 : 1'b0;
-              if ((second_is_min || second_is_max) && (second_middle >'sd20 || second_middle < -'sd20)) begin
+              if ((second_is_min || second_is_max) && (second_middle >'sd10 || second_middle < -'sd10)) begin
                 state <= WRITE_ANOTHER;
               end else begin
                 state <= FINISH_WRITE;
               end
-          end else if ((second_is_min || second_is_max) && (second_middle >'sd20 || second_middle < -'sd20)) begin
+          end else if ((second_is_min || second_is_max) && (second_middle >'sd10 || second_middle < -'sd10)) begin
             key_out <= {x, y, 1'b1};
             gave_zero <= (x==6'd0) ? 1'b1 : 1'b0;
             key_wea <= 1'b1;
