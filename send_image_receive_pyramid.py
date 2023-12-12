@@ -44,24 +44,32 @@ if __name__ == "__main__":
         print("DONE SENDING!")
 
         image_rx = []
-        while len(image_rx) < 500:
+        rxed = 0
+        while rxed < 500:
             # print(".", end='', flush=True)
             res = s.read()
             res_lower = s.read()
-            print("BRAM  ", "(x:", struct.unpack('B', res)[0], ", y:", struct.unpack('B', res_lower)[0], ")")
-            image_rx.append((struct.unpack('B', res)[0], struct.unpack('B', res_lower)[0]))
+            # print("BRAM  ", "(x:", struct.unpack('B', res)[0], ", y:", struct.unpack('B', res_lower)[0], ")")
+            coord = [struct.unpack('B', res)[0], struct.unpack('B', res_lower)[0]]
+            # print(type(coord), type(struct.unpack('B', res)[0]))
+            if coord[0] != 0:
+                image_rx.append(coord)
             # image_rx.append(res)
             # print(len(image_rx), 1000, list(res))
-            print(len(image_rx), 1000, image_rx[-1])
+                print(len(image_rx), 1000, image_rx[-1])
             # ind = input("Index investigating:  ")
             # print(pixels[ind])
+            rxed = rxed + 1
         print("IMAGES RECEIVED")
 
         im_res = np.asarray(image_rx[:1000])
         print("KEYPOINTS FOUND ", im_res)
-        # plt.imshow(im_res, cmap='gray', vmin=0, vmax=255)
+        for coord in im_res:
+            plt.plot(coord[0], coord[1], marker='o', color="red") 
+        plt.imshow(np.asarray(pixels).reshape((64, 64)), cmap='gray', vmin=0, vmax=255)
+
         # # plt.imshow(np.asarray(pixels).reshape(128, 128), cmap='gray', vmin=0, vmax=255)
-        # plt.show()
+        plt.show()
 
 
         # for i in range(3):
