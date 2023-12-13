@@ -109,7 +109,6 @@ module generate_descriptors #(
             O2_x_grad = (level) ? O2L2_x_grad : O2L1_x_grad;
             O2_y_grad = (level) ? O2L2_y_grad : O2L1_y_grad;
 
-            desc_wea = O2_histogram_done;
         end
         O3 : begin
             O3_x_address = (level) ? O3L2_x_address : O3L1_x_address;
@@ -117,7 +116,6 @@ module generate_descriptors #(
             O3_x_grad = (level) ? O3L2_x_grad : O3L1_x_grad;
             O3_y_grad = (level) ? O3L2_y_grad : O3L1_y_grad;
 
-            desc_wea = O3_histogram_done;
         end
     endcase
   end
@@ -240,6 +238,7 @@ histogram #(
                   read_counter <= 0;
                   octave <= O1;
                   histogram_ea <= 1'b0;
+                  descriptors_done <= 0;
                   // set keypt address to zero, go read the keypt at the address
               end else begin
                 descriptors_done <= 0;
