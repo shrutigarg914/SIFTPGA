@@ -90,7 +90,6 @@ module generate_descriptors #(
     endcase
   end
 
-
   logic [1:0] read_counter;
   logic [$clog2(DIMENSION)-1:0] x;
   logic [$clog2(DIMENSION)-1:0] y;
@@ -148,7 +147,51 @@ module generate_descriptors #(
               end else begin
                   counter <= counter + 1'b1;
               end
-              START_HISTOGRAM : 
+              START_HISTOGRAM : begin
+                if (x>(PATCH_SIZE/2-1)) begin
+                    read_x <= x - PATCH_SIZE/2;
+                end else begin
+                    read_x <= 0;
+                end
+                if (y>(PATCH_SIZE/2-1)) begin
+                    read_y <= y - PATCH_SIZE/2;
+                end else begin
+                    read_y <= 0;
+                end
+                histogram_enable <= 1'b1;
+                state <= PATCH_ONE;
+              end
+              PATCH_ONE : if (desc_wea) begin
+                read_x <= read_x + PATCH_SIZE /2;
+                desc_write_addr <= desc_write_addr + 1'b1;
+                histogram_enable <= 1'b1;
+                state <= PATCH_TWO;
+              end else begin
+                histogram_enable <= 1'b0;
+              end
+              PATCH_TWO : if (desc_wea) begin
+                read_y <= read_y + PATCH_SIZE / 2;
+                desc_write_addr <= desc_write_addr + 1'b1;
+                histogram_enable <= 1'b1;
+                state <= PATCH_THREE;
+              end else begin
+                histogram_enable <= 1'b0;
+              end
+              PATCH_THREE : if (desc_wea) begin
+                read_x <= read_x - PATCH_SIZE / 2;
+                desc_write_addr <= desc_write_addr + 1'b1;
+                histogram_enable <= 1'b1;
+                state <= PATCH_FOUR;
+              end else begin
+                histogram_enable <= 1'b0;
+              end
+              PATCH_FOUR : if (desc_wea) begin
+                desc_write_addr <= desc_write_addr + 1'b1;
+                state <= INCREMENT;
+              end else begin
+                histogram_enable <= 1'b0;
+              end
+
               // check if x is on the boundary
               // accordingly set patch_x and patch_y
               // wait for signal then change state to set patch_x patch_y to new patch 
