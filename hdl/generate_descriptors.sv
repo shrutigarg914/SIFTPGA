@@ -31,25 +31,35 @@ module generate_descriptors #(
 
 
   // gradient pyramid read handles
-    input wire signed [BIT_DEPTH-1:0] O1L1_x,
-    input wire signed [BIT_DEPTH-1:0] O1L1_y,
+    input wire signed [BIT_DEPTH-1:0] O1L1_x_grad,
+    input wire signed [BIT_DEPTH-1:0] O1L1_y_grad,
     output logic [$clog2(DIMENSION*DIMENSION)-1:0] O1L1_x_address,
     output logic [$clog2(DIMENSION*DIMENSION)-1:0] O1L1_y_address,
 
-    input wire signed [BIT_DEPTH-1:0] O1L2_x,
-    input wire signed [BIT_DEPTH-1:0] O1L2_y,
+    input wire signed [BIT_DEPTH-1:0] O1L2_x_grad,
+    input wire signed [BIT_DEPTH-1:0] O1L2_y_grad,
     output logic [$clog2(DIMENSION*DIMENSION)-1:0] O1L2_x_address,
     output logic [$clog2(DIMENSION*DIMENSION)-1:0] O1L2_y_address,
 
-    input wire signed [BIT_DEPTH-1:0] O2L1_x,
-    input wire signed [BIT_DEPTH-1:0] O2L1_y,
+    input wire signed [BIT_DEPTH-1:0] O2L1_x_grad,
+    input wire signed [BIT_DEPTH-1:0] O2L1_y_grad,
     output logic [$clog2(DIMENSION / 2*DIMENSION / 2)-1:0] O2L1_x_address,
     output logic [$clog2(DIMENSION /2*DIMENSION / 2)-1:0] O2L1_y_address,
 
-    input wire signed [BIT_DEPTH-1:0] O2L2_x,
-    input wire signed [BIT_DEPTH-1:0] O2L2_y,
+    input wire signed [BIT_DEPTH-1:0] O2L2_x_grad,
+    input wire signed [BIT_DEPTH-1:0] O2L2_y_grad,
     output logic [$clog2(DIMENSION / 2*DIMENSION/2)-1:0] O2L2_x_address,
     output logic [$clog2(DIMENSION/2*DIMENSION/2)-1:0] O2L2_y_address,
+
+    input wire signed [BIT_DEPTH-1:0] O3L1_x_grad,
+    input wire signed [BIT_DEPTH-1:0] O3L1_y_grad,
+    output logic [$clog2(DIMENSION / 2*DIMENSION / 2)-1:0] O3L1_x_address,
+    output logic [$clog2(DIMENSION /2*DIMENSION / 2)-1:0] O3L1_y_address,
+
+    input wire signed [BIT_DEPTH-1:0] O3L2_x_grad,
+    input wire signed [BIT_DEPTH-1:0] O3L2_y_grad,
+    output logic [$clog2(DIMENSION / 4*DIMENSION/4)-1:0] O3L2_x_address,
+    output logic [$clog2(DIMENSION/4*DIMENSION/4)-1:0] O3L2_y_address,
 
 
   // start and done signals
@@ -68,39 +78,160 @@ module generate_descriptors #(
   typedef enum {O1=0, O2=1, O3=2} octave_state;
   octave_state octave;
   logic level;
-  logic [$clog2(DIMENSION*DIMENSION)-1:0] hist_x_address;
-  logic [$clog2(DIMENSION*DIMENSION)-1:0] hist_y_address;
+  logic [$clog2(DIMENSION*DIMENSION)-1:0] O1_x_address;
+  logic [$clog2(DIMENSION*DIMENSION)-1:0] O1_y_address;
+  logic signed [BIT_DEPTH-1:0] O1_x_grad;
+  logic signed [BIT_DEPTH-1:0] O1_y_grad;
 
-  // O1=2, O2=3, O3=4
+  logic [$clog2(DIMENSION /2*DIMENSION /2)-1:0] O2_x_address;
+  logic [$clog2(DIMENSION /2*DIMENSION /2)-1:0] O2_y_address;
+  logic signed [BIT_DEPTH-1:0] O2_x_grad;
+  logic signed [BIT_DEPTH-1:0] O2_y_grad;
+
+  logic [$clog2(DIMENSION /4*DIMENSION /4)-1:0] O3_x_address;
+  logic [$clog2(DIMENSION /4*DIMENSION /4)-1:0] O3_y_address;
+  logic signed [BIT_DEPTH-1:0] O3_x_grad;
+  logic signed [BIT_DEPTH-1:0] O3_y_grad;
 
   always_comb begin
     case(octave)
         O1 : begin
-            hist_x_address = (level) ? O1L2_x_address : O1L1_x_address;
-            hist_y_address = (level) ? O1L2_y_address : O1L1_y_address;
+            O1_x_address = (level) ? O1L2_x_address : O1L1_x_address;
+            O1_y_address = (level) ? O1L2_y_address : O1L1_y_address;
+            O1_x_grad = (level) ? O1L2_x_grad : O1L1_x_grad;
+            O1_y_grad = (level) ? O1L2_y_grad : O1L1_y_grad;
+
+            
         end
         O2 : begin
-            hist_x_address = (level) ? O2L2_x_address : O2L1_x_address;
-            hist_y_address = (level) ? O2L2_y_address : O2L1_y_address;
+            O2_x_address = (level) ? O2L2_x_address : O2L1_x_address;
+            O2_y_address = (level) ? O2L2_y_address : O2L1_y_address;
+            O2_x_grad = (level) ? O2L2_x_grad : O2L1_x_grad;
+            O2_y_grad = (level) ? O2L2_y_grad : O2L1_y_grad;
+
+            desc_wea = O2_histogram_done;
         end
         O3 : begin
-            hist_x_address = (level) ? O3L2_x_address : O3L1_x_address;
-            hist_y_address = (level) ? O3L2_y_address : O3L1_y_address;
+            O3_x_address = (level) ? O3L2_x_address : O3L1_x_address;
+            O3_y_address = (level) ? O3L2_y_address : O3L1_y_address;
+            O3_x_grad = (level) ? O3L2_x_grad : O3L1_x_grad;
+            O3_y_grad = (level) ? O3L2_y_grad : O3L1_y_grad;
+
+            desc_wea = O3_histogram_done;
         end
+    endcase
+  end
+
+  logic [($clog2(PATCH_SIZE/2 * PATCH_SIZE/2) + 1)*8-1:0] O1_histogram_out;
+  logic [$clog2(WIDTH)-1:0] O1_x_coord;
+  logic [$clog2(HEIGHT)-1:0] O1_y_coord;
+  logic O1_histogram_ea, O1_histogram_done;
+
+histogram #(
+  .WIDTH(DIMENSION),
+  .HEIGHT(DIMENSION)
+) O1_hist (
+    .clk_in(clk),
+    .rst_in(rst_in),
+    .histogram_out(O1_histogram_out),
+    // coordinates of the top left pixel of the patch
+    .x(O1_x_coord),
+    .y(O1_y_coord),
+    // handles to read from the gradient pyramid
+    .x_grad_in(O1_x_grad),
+    .y_grad_in(O1_x_grad),
+    .x_read_addr(O1_x_address),
+    .y_read_addr(O1_y_address),
+    // start and done signals
+    .start(O1_histogram_ea),
+    .histogram_done(O1_histogram_done) // one cycle done signal
+  );
+  
+  logic [($clog2(PATCH_SIZE/2 * PATCH_SIZE/2) + 1)*8-1:0] O2_histogram_out;
+  logic [$clog2(WIDTH/2)-1:0] O2_x_coord;
+  logic [$clog2(HEIGHT/2)-1:0] O2_y_coord;
+  logic O2_histogram_ea, O2_histogram_done;
+
+histogram #(
+  .WIDTH(DIMENSION/2),
+  .HEIGHT(DIMENSION/2)
+) O2_hist (
+    .clk_in(clk),
+    .rst_in(rst_in),
+    .histogram_out(O2_histogram_out),
+    // coordinates of the top left pixel of the patch
+    .x(O2_x_coord),
+    .y(O2_y_coord),
+    // handles to read from the gradient pyramid
+    .x_grad_in(O2_x_grad),
+    .y_grad_in(O2_x_grad),
+    .x_read_addr(O2_x_address),
+    .y_read_addr(O2_y_address),
+    // start and done signals
+    .start(O2_histogram_ea),
+    .histogram_done(O2_histogram_done) // one cycle done signal
+  );
+
+  logic [($clog2(PATCH_SIZE/2 * PATCH_SIZE/2) + 1)*8-1:0] O3_histogram_out;
+  logic [$clog2(WIDTH/2)-1:0] O3_x_coord;
+  logic [$clog2(HEIGHT/2)-1:0] O3_y_coord;
+  logic O3_histogram_ea, O3_histogram_done;
+
+histogram #(
+  .WIDTH(DIMENSION/2),
+  .HEIGHT(DIMENSION/2)
+) O3_hist (
+    .clk_in(clk),
+    .rst_in(rst_in),
+    .histogram_out(O3_histogram_out),
+    // coordinates of the top left pixel of the patch
+    .x(O3_x_coord),
+    .y(O3_y_coord),
+    // handles to read from the gradient pyramid
+    .x_grad_in(O3_x_grad),
+    .y_grad_in(O3_x_grad),
+    .x_read_addr(O3_x_address),
+    .y_read_addr(O3_y_address),
+    // start and done signals
+    .start(O3_histogram_ea),
+    .histogram_done(O3_histogram_done) // one cycle done signal
+  );
+
+  logic histogram_ea;
+  always_comb begin
+    case(octave)
+      O1 : begin
+        O1_histogram_ea = histogram_ea;
+        desc_wea = O1_histogram_done;
+        O1_x_coord = x;
+        O1_y_coord = y;
+      end
+      O2 : begin
+        O2_histogram_ea = histogram_ea;
+        desc_wea = O2_histogram_done;
+        O2_x_coord = x;
+        O2_y_coord = y;
+      end
+      O3 : begin
+        O3_histogram_ea = histogram_ea;
+        desc_wea = O3_histogram_done;
+        O3_x_coord = x;
+        O3_y_coord = y;
+      end
     endcase
   end
 
   logic [1:0] read_counter;
   logic [$clog2(DIMENSION)-1:0] x;
   logic [$clog2(DIMENSION)-1:0] y;
-  logic histogram_enable;
   always_ff @(posedge clk) begin
       if (rst_in) begin
           state <= IDLE;
           octave <= O1;
           key_read_addr <= 0;
           read_counter <= 0;
-          histogram_enable <= 1'b0;
+          histogram_ea <= 1'b0;
+          desc_write_addr <= 0;
       end else begin
           case(state)
               IDLE : if (start) begin
@@ -108,26 +239,22 @@ module generate_descriptors #(
                   state <= READ;
                   read_counter <= 0;
                   octave <= O1;
-                  histogram_enable <= 1'b0;
+                  histogram_ea <= 1'b0;
                   // set keypt address to zero, go read the keypt at the address
+              end else begin
+                descriptors_done <= 0;
               end
-              READ : if (counter==2'b10) begin
-                  level <= keypoint_read[0];
+              READ : if (read_counter==2'b10) begin
                   if (keypoint_read==13'd0) begin
+                    key_read_addr <= key_read_addr + 1'b1;
+                    read_counter <= 0;
                     case(octave)
-                      O1 : begin
-                        octave <= O2;
-                        key_read_addr <= key_read_addr + 1'b1;
-                        read_counter <= 0;
-                      end
-                      O2 : begin
-                        octave <= O3;
-                        key_read_addr <= key_read_addr + 1'b1;
-                        read_counter <= 0;
-                      end
+                      O1 : octave <= O2;
+                      O2 : octave <= O3;
                       O3 : state <= FINISH;
                     endcase
                   end else begin
+                    level <= keypoint_read[0];
                     case(octave)
                         O1 : begin
                             x <= keypoint_read[12:7];
@@ -145,56 +272,62 @@ module generate_descriptors #(
                     state <= START_HISTOGRAM;
                   end
               end else begin
-                  counter <= counter + 1'b1;
+                  read_counter <= read_counter + 1'b1;
               end
               START_HISTOGRAM : begin
                 if (x>(PATCH_SIZE/2-1)) begin
-                    read_x <= x - PATCH_SIZE/2;
+                    x <= x - PATCH_SIZE/2;
                 end else begin
-                    read_x <= 0;
+                    x <= 0;
                 end
                 if (y>(PATCH_SIZE/2-1)) begin
-                    read_y <= y - PATCH_SIZE/2;
+                    y <= y - PATCH_SIZE/2;
                 end else begin
-                    read_y <= 0;
+                    y <= 0;
                 end
-                histogram_enable <= 1'b1;
+                histogram_ea <= 1'b1;
                 state <= PATCH_ONE;
               end
               PATCH_ONE : if (desc_wea) begin
-                read_x <= read_x + PATCH_SIZE /2;
+                x <= x + PATCH_SIZE /2;
                 desc_write_addr <= desc_write_addr + 1'b1;
-                histogram_enable <= 1'b1;
+                histogram_ea <= 1'b1;
                 state <= PATCH_TWO;
               end else begin
-                histogram_enable <= 1'b0;
+                histogram_ea <= 1'b0;
               end
               PATCH_TWO : if (desc_wea) begin
-                read_y <= read_y + PATCH_SIZE / 2;
+                y <= y + PATCH_SIZE / 2;
                 desc_write_addr <= desc_write_addr + 1'b1;
-                histogram_enable <= 1'b1;
+                histogram_ea <= 1'b1;
                 state <= PATCH_THREE;
               end else begin
-                histogram_enable <= 1'b0;
+                histogram_ea <= 1'b0;
               end
               PATCH_THREE : if (desc_wea) begin
                 read_x <= read_x - PATCH_SIZE / 2;
                 desc_write_addr <= desc_write_addr + 1'b1;
-                histogram_enable <= 1'b1;
+                histogram_ea <= 1'b1;
                 state <= PATCH_FOUR;
               end else begin
-                histogram_enable <= 1'b0;
+                histogram_ea <= 1'b0;
               end
               PATCH_FOUR : if (desc_wea) begin
                 desc_write_addr <= desc_write_addr + 1'b1;
-                state <= INCREMENT;
+                if (key_read_addr < DIMENSION * DIMENSION - 1'b1 ) begin
+                  key_read_addr <= key_read_addr + 1'b1;
+                  state <= READ;
+                  read_counter <= 0;
+                end else begin
+                  state <= FINISH;
+                end
               end else begin
-                histogram_enable <= 1'b0;
+                histogram_ea <= 1'b0;
               end
-
-              // check if x is on the boundary
-              // accordingly set patch_x and patch_y
-              // wait for signal then change state to set patch_x patch_y to new patch 
+              FINISH : begin
+                descriptors_done <= 1'b1;
+                state <= IDLE;
+              end
           endcase
       end
   end
