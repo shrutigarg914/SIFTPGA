@@ -111,7 +111,7 @@ if __name__ == "__main__":
     O2L1_desc = [descriptor_gen(keypt, O2L1_x, O2L1_y) for keypt in second_keypts if keypt[2] == 0]
     O2L2_desc = [descriptor_gen(keypt, O2L2_x, O2L2_y) for keypt in second_keypts if keypt[2] == 1]
 
-    print(O1L1_desc)
-    print(O1L2_desc)
-    print(O2L1_desc)
-    print(O2L2_desc)
+    print("Descriptors for ", len(O1L1_desc), " keypoints in O1L1:\n", O1L1_desc, "\n")
+    print("Descriptors for ", len(O1L2_desc), " keypoints in O1L2:\n", O1L2_desc, "\n")
+    print("Descriptors for ", len(O2L1_desc), " keypoints in O2L1:\n", O2L1_desc, "\n")
+    print("Descriptors for ", len(O2L2_desc), " keypoints in O2L2:\n", O2L2_desc, "\n")
