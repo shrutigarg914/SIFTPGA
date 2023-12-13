@@ -63,7 +63,7 @@ module generate_descriptors #(
 
   // https://lerner98.medium.com/implementing-sift-in-python-36c619df7945
   // imitating this when finding the coordinates for patches
-  typedef enum {IDLE=0, READ=1,} module_state;
+  typedef enum {IDLE=0, READ=1, START_HISTOGRAM=2, PATCH_ONE=3, PATCH_TWO=4, PATCH_THREE=5, PATCH_FOUR=6} module_state;
   module_state state;
   typedef enum {O1=0, O2=1, O3=2} octave_state;
   octave_state octave;
@@ -94,12 +94,14 @@ module generate_descriptors #(
   logic [1:0] read_counter;
   logic [$clog2(DIMENSION)-1:0] x;
   logic [$clog2(DIMENSION)-1:0] y;
+  logic histogram_enable;
   always_ff @(posedge clk) begin
       if (rst_in) begin
           state <= IDLE;
           octave <= O1;
           key_read_addr <= 0;
           read_counter <= 0;
+          histogram_enable <= 1'b0;
       end else begin
           case(state)
               IDLE : if (start) begin
@@ -107,28 +109,49 @@ module generate_descriptors #(
                   state <= READ;
                   read_counter <= 0;
                   octave <= O1;
+                  histogram_enable <= 1'b0;
                   // set keypt address to zero, go read the keypt at the address
               end
               READ : if (counter==2'b10) begin
                   level <= keypoint_read[0];
-                  case(octave)
+                  if (keypoint_read==13'd0) begin
+                    case(octave)
                       O1 : begin
-                          x <= keypoint_read[12:7];
-                          y <= keypoint_read[6:1];
+                        octave <= O2;
+                        key_read_addr <= key_read_addr + 1'b1;
+                        read_counter <= 0;
                       end
                       O2 : begin
-                          x <= keypoint_read[10:6];
-                          y <= keypoint_read[5:1];
+                        octave <= O3;
+                        key_read_addr <= key_read_addr + 1'b1;
+                        read_counter <= 0;
                       end
-                      O3 : begin
-                          x <= keypoint_read[8:5];
-                          y <= keypoint_read[4:1];
-                      end
-                  endcase
-                  state <= PATCH_ONE;
+                      O3 : state <= FINISH;
+                    endcase
+                  end else begin
+                    case(octave)
+                        O1 : begin
+                            x <= keypoint_read[12:7];
+                            y <= keypoint_read[6:1];
+                        end
+                        O2 : begin
+                            x <= keypoint_read[10:6];
+                            y <= keypoint_read[5:1];
+                        end
+                        O3 : begin
+                            x <= keypoint_read[8:5];
+                            y <= keypoint_read[4:1];
+                        end
+                    endcase
+                    state <= START_HISTOGRAM;
+                  end
               end else begin
                   counter <= counter + 1'b1;
               end
+              START_HISTOGRAM : 
+              // check if x is on the boundary
+              // accordingly set patch_x and patch_y
+              // wait for signal then change state to set patch_x patch_y to new patch 
           endcase
       end
   end
