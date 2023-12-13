@@ -16,11 +16,11 @@ module generate_descriptors #(
   // For all descriptors
   output logic [$clog2(HEIGHT * WIDTH)-1:0] desc_write_addr,
   output logic desc_wea,
-  output logic [$clog2(PATCH_SIZE/2 * PATCH_SIZE/2)*8-1:0] desc_out,  // 4 by 4 --> 2 by 2 subpatches 
+  output logic [($clog2(PATCH_SIZE/2 * PATCH_SIZE/2)+ 1)*8-1:0] desc_out,  // 4 by 4 --> 2 by 2 subpatches 
                         // --> 4 total orientations --> max 2 bits each for each of 8 possible values
   
   // keypoint BRAM handles
-    output logic [$clog2(HEIGHT * WIDTH)-1:0] key_read_addr,
+    output logic [$clog2(1000)-1:0] key_read_addr,
     input logic [(2*$clog2(DIMENSION)):0] keypoint_read,
 
 
@@ -54,6 +54,8 @@ module generate_descriptors #(
     input wire signed [BIT_DEPTH-1:0] O3L2_y_grad,
     output logic [$clog2(DIMENSION / 4*DIMENSION/4)-1:0] O3L2_x_address,
     output logic [$clog2(DIMENSION/4*DIMENSION/4)-1:0] O3L2_y_address,
+    output logic [1:0] octave_state_num,
+    output logic [3:0] generic_state_num,
 
 
   // start and done signals
@@ -71,6 +73,24 @@ module generate_descriptors #(
   module_state state;
   typedef enum {O1=0, O2=1, O3=2} octave_state;
   octave_state octave;
+  // logic [1:0] octave_state_num;
+  always_comb begin
+    case(octave)
+      O1 : octave_state_num = 0;
+      O2 : octave_state_num = 1'b1;
+      O3 : octave_state_num = 2'b10;
+    endcase
+    case(state)
+      IDLE : generic_state_num = 0;
+      READ : generic_state_num = 1'b1;
+      START_HISTOGRAM : generic_state_num = 2'b10;
+      PATCH_ONE : generic_state_num = 2'b11;
+      PATCH_TWO : generic_state_num = 3'b100;
+      PATCH_THREE : generic_state_num = 3'b101;
+      PATCH_FOUR : generic_state_num = 3'b110;
+      FINISH : generic_state_num = 3'b111;
+    endcase
+  end
   logic level;
   logic [$clog2(DIMENSION*DIMENSION)-1:0] O1_x_address;
   logic [$clog2(DIMENSION*DIMENSION)-1:0] O1_y_address;
@@ -211,7 +231,6 @@ histogram #(
         O2_x_coord = x;
         O2_y_coord = y;
         desc_out = O2_histogram_out;
-
       end
       O3 : begin
         O3_histogram_ea = histogram_ea;
@@ -252,8 +271,8 @@ histogram #(
                     key_read_addr <= key_read_addr + 1'b1;
                     read_counter <= 0;
                     case(octave)
-                      O1 : octave <= FINISH;
-                      O2 : octave <= O3;
+                      O1 : octave <= O2;// why do we never hit FINISH?
+                      O2 : state <= FINISH;
                       O3 : state <= FINISH;
                     endcase
                   end else begin
