@@ -65,6 +65,7 @@ module top_level(
     assign led[0] = full_image_received;
     assign led[1] = pyramid_done_latched;
     assign led[14] = keypoints_done_latched;
+    logic gradient_done;
 
     // if we have a valid_o, update pixel location for BRAM 
     always_ff @(posedge clk_100mhz) begin
@@ -108,8 +109,13 @@ module top_level(
 
       if (O1L1_gradient_done_latched && O1L2_gradient_done_latched && O1L3_gradient_done_latched
         && O2L1_gradient_done_latched && O2L2_gradient_done_latched && O2L3_gradient_done_latched
-        && O3L1_gradient_done_latched && O3L2_gradient_done_latched && O3L3_gradient_done_latched) begin
+        && O3L1_gradient_done_latched && O3L2_gradient_done_latched && O3L3_gradient_done_latched && ~gradient_done_latched) begin
         gradient_done_latched <= 1;
+        gradient_done <= 1'b1;
+      end
+
+      if (gradient_done_latched) begin
+        gradient_done <= 0;
       end
 
       if (O1L1_gradient_done) begin
@@ -1406,7 +1412,7 @@ module top_level(
 
     // the descriptor BRAM
     xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(($clog2(PATCH_SIZE/2 * PATCH_SIZE/2)+ 1)*8-1:0), // 3 bits for 8 bins
+    .RAM_WIDTH(($clog2(PATCH_SIZE/2 * PATCH_SIZE/2)+ 1)*8), // 3 bits for 8 bins
     .RAM_DEPTH(2000))
     descriptors (
         .addra(desc_write_addr),
@@ -1436,8 +1442,8 @@ module top_level(
 
 
     generate_descriptors generator (
-    .clk(clk_in),
-    .rst_in(rst_in),
+    .clk(clk_100mhz),
+    .rst_in(sys_rst),
     // For  descriptors
     .desc_write_addr(desc_write_addr),
     .desc_wea(desc_write_valid),
@@ -1476,23 +1482,27 @@ module top_level(
     .O3L2_x_address(o3_l2_x_read_addr),
     .O3L2_y_address(o3_l2_y_read_addr),
 
-    .start(keypoints_done_latched && gradient_done_latched),
+    .start((keypoints_done_latched && gradient_done) || (gradient_done_latched && keypoints_done)),
     .descriptors_done(descriptors_done),
-    .octave_state_num(octave),
-    .generic_state_num(state)
+    .octave_state_num(desc_octave),
+    .generic_state_num(desc_state)
   );
+    logic [3:0] desc_state;
+    assign led[8:5] = desc_state; 
+    logic [1:0] desc_octave;
+    assign led[4:3] = desc_octave;
     logic descriptors_done, descriptors_done_latched;
     
     always_comb begin
         if (descriptors_done_latched) begin
             key_read_addr = desc_key_read_addr;
         end else begin
-            key_read_addr = tx_key_read_addr
+            key_read_addr = tx_key_read_addr;
         end
     end
 
     always_ff @(posedge clk_100mhz) begin
-        if (rst_in) begin
+        if (sys_rst) begin
             descriptors_done_latched <= 0;
         end else begin
             if (descriptors_done) begin
@@ -1535,7 +1545,7 @@ module top_level(
     tx_state state;
     tx_state state_prev;
 
-    assign led[15] = 1;
+    assign led[15] = 0;
     
     // to send each image in the pyramid down tx
     always_ff @(posedge clk_100mhz) begin
@@ -1552,7 +1562,7 @@ module top_level(
                     end
                 KEY:
                     begin
-                        if (!tx_img_busy_key && btn_edge) begin
+                        if (!tx_busy_key && btn_edge) begin
                             state <= DESC;
                         end
                         uart_txd <= key_txd;
@@ -1579,10 +1589,10 @@ module top_level(
     // assign led[6] = (state == O2L1);
     // assign led[7] = (state == O2L2);
     // assign led[8] = (state == O2L3);
-    // assign led[9] = (state == O3L1);
-    // assign led[10] = (state == O3L2);
-    assign led[11] = (state == DESC);
-    assign led[12] = (state == KEY);
+    assign led[9] = gradient_done_latched;
+    assign led[10] = descriptors_done_latched;
+    // assign led[3] = (state == DESC);
+    // assign led[4] = (state == KEY);
 
 
     send_keypoints #(.BRAM_LENGTH(2000)) tx_keypoint (
@@ -1593,21 +1603,21 @@ module top_level(
       .data(keypoint_read),
       .address(tx_key_read_addr), // gets wired to the BRAM
       .tx_free(),
-      .busy(tx_img_busy_key) //or we could do img_sent whichever makes more sense
+      .busy(tx_busy_key) //or we could do img_sent whichever makes more sense
     );
-    logic tx_img_busy_key;
+    logic tx_busy_key;
     logic key_txd;
 
-    // send_descriptors #(.BRAM_LENGTH(1000)) tx_descriptors (
-    //   .clk(clk_100mhz),
-    //   .rst_in(sys_rst),//sys_rst
-    //   .img_ready((state == DESC) && (state_prev != DESC)),//full_image_received
-    //   .tx(desc_txd),//uart_txd
-    //   .data(keypoint_read),
-    //   .address(key_read_addr), // gets wired to the BRAM
-    //   .tx_free(),
-    //   .busy(tx_busy_desc) //or we could do img_sent whichever makes more sense
-    // );
+    send_descriptors #(.BRAM_LENGTH(1000)) tx_descriptors (
+      .clk(clk_100mhz),
+      .rst_in(sys_rst),//sys_rst
+      .img_ready((state == DESC) && (state_prev != DESC)),//full_image_received
+      .tx(desc_txd),//uart_txd
+      .data(descriptor_read),
+      .address(desc_read_addr), // gets wired to the BRAM
+      .tx_free(),
+      .busy(tx_busy_desc) //or we could do img_sent whichever makes more sense
+    );
     logic tx_busy_desc;
     logic desc_txd;
 

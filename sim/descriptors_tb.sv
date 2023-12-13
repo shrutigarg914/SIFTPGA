@@ -311,7 +311,7 @@ module descriptors_tb;
         while (~descriptors_done) begin
             if (desc_wea) begin
                 // $display("Writing  (", keypoint_out[7:4], ", ", keypoint_out[3:1], ") in BRAM ", keypoint_out[0], ", at address ", key_write_addr);
-                $display("Writing  (", desc_out, " at ", desc_write_addr);
+                $display("Writing  (  %24b )", desc_out);
                 // number_keypt = number_keypt + 1'b1;
             end
             #10;

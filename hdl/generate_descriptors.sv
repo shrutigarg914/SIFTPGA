@@ -21,7 +21,7 @@ module generate_descriptors #(
   
   // keypoint BRAM handles
     output logic [$clog2(1000)-1:0] key_read_addr,
-    input logic [(2*$clog2(DIMENSION)):0] keypoint_read,
+    input wire [(2*$clog2(DIMENSION)):0] keypoint_read,
 
 
   // gradient pyramid read handles
