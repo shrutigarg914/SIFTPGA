@@ -168,7 +168,7 @@ if __name__ == "__main__":
             if i % 2 == 0:
                 plt.title(f"O2L{i//2+1}_x Result")
 
-            im_res = np.asarray(image_rx[int(len(pixels)*3 + len_img*i):int(len(pixels)*3 + len_img*(i+1))]).reshape((32, 32))
+            im_res = np.asarray(image_rx[int(len(pixels)*6 + len_img*i):int(len(pixels)*6 + len_img*(i+1))]).reshape((32, 32))
             print(im_res)
             plt.imshow(im_res, cmap='gray', vmin=-128, vmax=127)
             # plt.imshow(np.asarray(pixels).reshape(128, 128), cmap='gray', vmin=-128, vmax=127)
@@ -196,7 +196,7 @@ if __name__ == "__main__":
             if i % 2 == 0:
                 plt.title(f"O3L{i//2+1}_x Result")
 
-            im_res = np.asarray(image_rx[int(len(pixels)*3 + len(pixels)/4*3 + len_img*i):int(len(pixels)*3 + len(pixels)/4*3 + len_img*(i+1))]).reshape((16, 16))
+            im_res = np.asarray(image_rx[int(len(pixels)*6 + len(pixels)/4*6 + len_img*i):int(len(pixels)*6 + len(pixels)/4*6 + len_img*(i+1))]).reshape((16, 16))
             print(im_res)
             plt.imshow(im_res, cmap='gray', vmin=-128, vmax=127)
             # plt.imshow(np.asarray(pixels).reshape(128, 128), cmap='gray', vmin=-128, vmax=127)

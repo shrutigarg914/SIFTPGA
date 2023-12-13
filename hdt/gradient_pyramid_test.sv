@@ -1411,7 +1411,7 @@ module top_level(
     logic tx_img_busy_O1L3_y;
     logic O1L3_y_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O2L1_x (
+    send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L1_x (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O2L1_x) && (state_prev != O2L1_x)),//full_image_received
@@ -1424,7 +1424,7 @@ module top_level(
     logic tx_img_busy_O2L1_x;
     logic O2L1_x_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O2L1_y (
+    send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L1_y (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O2L1_y) && (state_prev != O2L1_y)),//full_image_received
@@ -1437,7 +1437,7 @@ module top_level(
     logic tx_img_busy_O2L1_y;
     logic O2L1_y_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O2L2_x (
+    send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L2_x (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O2L2_x) && (state_prev != O2L2_x)),//full_image_received
@@ -1450,7 +1450,7 @@ module top_level(
     logic tx_img_busy_O2L2_x;
     logic O2L2_x_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O2L2_y (
+    send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L2_y (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O2L2_y) && (state_prev != O2L2_y)),//full_image_received
@@ -1463,7 +1463,7 @@ module top_level(
     logic tx_img_busy_O2L2_y;
     logic O2L2_y_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O2L3_x (
+    send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L3_x (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O2L3_x) && (state_prev != O2L3_x)),//full_image_received
@@ -1476,7 +1476,7 @@ module top_level(
     logic tx_img_busy_O2L3_x;
     logic O2L3_x_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O2L3_y (
+    send_img #(.BRAM_LENGTH(WIDTH/2 * HEIGHT/2)) tx_img_O2L3_y (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O2L3_y) && (state_prev != O2L3_y)),//full_image_received
@@ -1489,7 +1489,7 @@ module top_level(
     logic tx_img_busy_O2L3_y;
     logic O2L3_y_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O3L1_x (
+    send_img #(.BRAM_LENGTH(WIDTH/4 * HEIGHT/4)) tx_img_O3L1_x (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O3L1_x) && (state_prev != O3L1_x)),//full_image_received
@@ -1502,7 +1502,7 @@ module top_level(
     logic tx_img_busy_O3L1_x;
     logic O3L1_x_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O3L1_y (
+    send_img #(.BRAM_LENGTH(WIDTH/4 * HEIGHT/4)) tx_img_O3L1_y (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O3L1_y) && (state_prev != O3L1_y)),//full_image_received
@@ -1515,7 +1515,7 @@ module top_level(
     logic tx_img_busy_O3L1_y;
     logic O3L1_y_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O3L2_x (
+    send_img #(.BRAM_LENGTH(WIDTH/4 * HEIGHT/4)) tx_img_O3L2_x (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O3L2_x) && (state_prev != O3L2_x)),//full_image_received
@@ -1528,7 +1528,7 @@ module top_level(
     logic tx_img_busy_O3L2_x;
     logic O3L2_x_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O3L2_y (
+    send_img #(.BRAM_LENGTH(WIDTH/4 * HEIGHT/4)) tx_img_O3L2_y (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O3L2_y) && (state_prev != O3L2_y)),//full_image_received
@@ -1541,7 +1541,7 @@ module top_level(
     logic tx_img_busy_O3L2_y;
     logic O3L2_y_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O3L3_x (
+    send_img #(.BRAM_LENGTH(WIDTH/4 * HEIGHT/4)) tx_img_O3L3_x (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O3L3_x) && (state_prev != O3L3_x)),//full_image_received
@@ -1554,7 +1554,7 @@ module top_level(
     logic tx_img_busy_O3L3_x;
     logic O3L3_x_txd;
 
-    send_img #(.BRAM_LENGTH(WIDTH * HEIGHT)) tx_img_O3L3_y (
+    send_img #(.BRAM_LENGTH(WIDTH/4 * HEIGHT/4)) tx_img_O3L3_y (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == O3L3_y) && (state_prev != O3L3_y)),//full_image_received
