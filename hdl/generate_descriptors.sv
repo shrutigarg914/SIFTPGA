@@ -1,17 +1,11 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-// keypoint BRAM is assumed to be x,y in each row
-// so 2 * $clog2(DIMENSION) WIDTH
-
-// lets first find keypoints from only one scale!
-// GOAL: given the gaussian pyramid, write the keypoint BRAM
-
 module generate_descriptors #(
   parameter DIMENSION = 64,
   parameter NUMBER_KEYPOINTS = 1000, 
   parameter NUMBER_OCTAVES = 3,
-  parameter IMG_BIT_DEPTH = 8,
+  parameter BIT_DEPTH = 8,
   parameter PATCH_SIZE = 4
   ) (
     
@@ -20,13 +14,13 @@ module generate_descriptors #(
 
 
   // For all descriptors
-  output logic [$clog2(TOP_HEIGHT * TOP_WIDTH)-1:0] desc_write_addr,
+  output logic [$clog2(HEIGHT * WIDTH)-1:0] desc_write_addr,
   output logic desc_wea,
   output logic [$clog2(PATCH_SIZE/2 * PATCH_SIZE/2)*8-1:0] desc_out,  // 4 by 4 --> 2 by 2 subpatches 
                         // --> 4 total orientations --> max 2 bits each for each of 8 possible values
   
   // keypoint BRAM handles
-    output logic [$clog2(TOP_HEIGHT * TOP_WIDTH)-1:0] key_read_addr,
+    output logic [$clog2(HEIGHT * WIDTH)-1:0] key_read_addr,
     input logic [(2*$clog2(DIMENSION)):0] keypoint_read,
 
 
@@ -68,12 +62,12 @@ module generate_descriptors #(
 
 
   );
-  parameter TOP_HEIGHT = DIMENSION; 
-  parameter TOP_WIDTH = DIMENSION;
+  parameter HEIGHT = DIMENSION; 
+  parameter WIDTH = DIMENSION;
 
   // https://lerner98.medium.com/implementing-sift-in-python-36c619df7945
   // imitating this when finding the coordinates for patches
-  typedef enum {IDLE=0, READ=1, START_HISTOGRAM=2, PATCH_ONE=3, PATCH_TWO=4, PATCH_THREE=5, PATCH_FOUR=6} module_state;
+  typedef enum {IDLE=0, READ=1, START_HISTOGRAM=2, PATCH_ONE=3, PATCH_TWO=4, PATCH_THREE=5, PATCH_FOUR=6, FINISH=7} module_state;
   module_state state;
   typedef enum {O1=0, O2=1, O3=2} octave_state;
   octave_state octave;
@@ -93,26 +87,32 @@ module generate_descriptors #(
   logic signed [BIT_DEPTH-1:0] O3_x_grad;
   logic signed [BIT_DEPTH-1:0] O3_y_grad;
 
+  // logic to switch between levels in the same Octave
   always_comb begin
     case(octave)
         O1 : begin
-            O1_x_address = (level) ? O1L2_x_address : O1L1_x_address;
-            O1_y_address = (level) ? O1L2_y_address : O1L1_y_address;
+            O1L2_x_address = O1_x_address;
+            O1L1_x_address = O1_x_address;
+            O1L2_y_address = O1_y_address;
+            O1L1_y_address = O1_y_address;
             O1_x_grad = (level) ? O1L2_x_grad : O1L1_x_grad;
             O1_y_grad = (level) ? O1L2_y_grad : O1L1_y_grad;
 
-            
         end
         O2 : begin
-            O2_x_address = (level) ? O2L2_x_address : O2L1_x_address;
-            O2_y_address = (level) ? O2L2_y_address : O2L1_y_address;
+            O2L2_x_address = O2_x_address;
+            O2L1_x_address = O2_x_address;
+            O2L2_y_address = O2_y_address;
+            O2L1_y_address = O2_y_address;
             O2_x_grad = (level) ? O2L2_x_grad : O2L1_x_grad;
             O2_y_grad = (level) ? O2L2_y_grad : O2L1_y_grad;
 
         end
         O3 : begin
-            O3_x_address = (level) ? O3L2_x_address : O3L1_x_address;
-            O3_y_address = (level) ? O3L2_y_address : O3L1_y_address;
+            O3L2_x_address = O3_x_address;
+            O3L1_x_address = O3_x_address;
+            O3L2_y_address = O3_y_address;
+            O3L1_y_address = O3_y_address;
             O3_x_grad = (level) ? O3L2_x_grad : O3L1_x_grad;
             O3_y_grad = (level) ? O3L2_y_grad : O3L1_y_grad;
 
@@ -171,13 +171,13 @@ histogram #(
   );
 
   logic [($clog2(PATCH_SIZE/2 * PATCH_SIZE/2) + 1)*8-1:0] O3_histogram_out;
-  logic [$clog2(WIDTH/2)-1:0] O3_x_coord;
-  logic [$clog2(HEIGHT/2)-1:0] O3_y_coord;
+  logic [$clog2(WIDTH/4)-1:0] O3_x_coord;
+  logic [$clog2(HEIGHT/4)-1:0] O3_y_coord;
   logic O3_histogram_ea, O3_histogram_done;
 
 histogram #(
-  .WIDTH(DIMENSION/2),
-  .HEIGHT(DIMENSION/2)
+  .WIDTH(DIMENSION/4),
+  .HEIGHT(DIMENSION/4)
 ) O3_hist (
     .clk_in(clk),
     .rst_in(rst_in),
@@ -194,7 +194,7 @@ histogram #(
     .start(O3_histogram_ea),
     .histogram_done(O3_histogram_done) // one cycle done signal
   );
-
+  // logic to switch handles used in the always_ff block depending on what octave we are in 
   logic histogram_ea;
   always_comb begin
     case(octave)
@@ -203,18 +203,22 @@ histogram #(
         desc_wea = O1_histogram_done;
         O1_x_coord = x;
         O1_y_coord = y;
+        desc_out = O1_histogram_out;
       end
       O2 : begin
         O2_histogram_ea = histogram_ea;
         desc_wea = O2_histogram_done;
         O2_x_coord = x;
         O2_y_coord = y;
+        desc_out = O2_histogram_out;
+
       end
       O3 : begin
         O3_histogram_ea = histogram_ea;
         desc_wea = O3_histogram_done;
         O3_x_coord = x;
         O3_y_coord = y;
+        desc_out = O3_histogram_out;
       end
     endcase
   end
@@ -248,7 +252,7 @@ histogram #(
                     key_read_addr <= key_read_addr + 1'b1;
                     read_counter <= 0;
                     case(octave)
-                      O1 : octave <= O2;
+                      O1 : octave <= FINISH;
                       O2 : octave <= O3;
                       O3 : state <= FINISH;
                     endcase
@@ -304,7 +308,7 @@ histogram #(
                 histogram_ea <= 1'b0;
               end
               PATCH_THREE : if (desc_wea) begin
-                read_x <= read_x - PATCH_SIZE / 2;
+                x <= x - PATCH_SIZE / 2;
                 desc_write_addr <= desc_write_addr + 1'b1;
                 histogram_ea <= 1'b1;
                 state <= PATCH_FOUR;
