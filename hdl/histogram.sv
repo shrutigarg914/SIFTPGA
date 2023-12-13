@@ -1,7 +1,6 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-
 // dummy histogram header
 module histogram #(
   parameter WIDTH = 64,
@@ -10,11 +9,11 @@ module histogram #(
   parameter PATCH_SIZE = 4
   ) (
     input wire clk_in,
-    input wire rst_in
+    input wire rst_in,
 
     // the handle to output the histogram to
-    output logic wea,
-    output logic [$clog2(PATCH_SIZE/2 * PATCH_SIZE/2)*8-1:0] histogram_out,  // 4 by 4 --> 2 by 2 subpatches 
+    // output logic wea,
+    output logic [($clog2(PATCH_SIZE/2 * PATCH_SIZE/2) + 1)*8-1:0] histogram_out,  // 4 by 4 --> 2 by 2 subpatches 
                             // --> 4 total orientations --> max 2 bits each for each of 8 possible values
     
     // coordinates of the top left pixel of the patch
@@ -37,7 +36,7 @@ module histogram #(
     .HEIGHT(HEIGHT),
     .BIT_DEPTH(BIT_DEPTH)) 
   orientation (
-    .clk_in(clk), .rst_in(rst_in),
+    .clk_in(clk_in), .rst_in(rst_in),
     .x_read_addr(x_read_addr),
     .x_read_addr_valid(),
     .x_pixel_in(x_grad_in),
@@ -51,8 +50,8 @@ module histogram #(
     .bin_out(bin_out),
     .state_num()
   );
-  logic [$clog2(WIDTH*HEIGHT)-1:0] center_addr_x;
-  logic [$clog2(WIDTH*HEIGHT)-1:0] center_addr_y;
+  logic [$clog2(WIDTH)-1:0] center_addr_x;
+  logic [$clog2(HEIGHT)-1:0] center_addr_y;
   logic orientation_valid_in;
   logic orientation_valid_out;
   logic [2:0] bin_out;
@@ -69,10 +68,7 @@ module histogram #(
       center_addr_y <= 0;
       orientation_valid_in <= 0;
       histogram_done <= 0;
-      wea <= 0;
-      histogram_out <= 0;
-      x_grad_address <= 0;
-      y_grad_address <= 0;
+      // wea <= 0;
       histogram_out <= 0;
       save_to_hist <= 0;
       last_save <= 0;
@@ -87,28 +83,28 @@ module histogram #(
         save_to_hist <= 0;
         case (bin_out)
           3'b000: begin
-            histogram_out[1:0] <= histogram_out[1:0] + 1;
+            histogram_out[2:0] <= histogram_out[2:0] + 1;
           end
           3'b001: begin
-            histogram_out[3:2] <= histogram_out[3:2] + 1;
+            histogram_out[5:3] <= histogram_out[5:3] + 1;
           end
           3'b010: begin
-            histogram_out[5:4] <= histogram_out[5:4] + 1;
+            histogram_out[8:6] <= histogram_out[8:6] + 1;
           end
           3'b011: begin
-            histogram_out[7:6] <= histogram_out[7:6] + 1;
+            histogram_out[11:9] <= histogram_out[11:9] + 1;
           end
           3'b100: begin
-            histogram_out[9:8] <= histogram_out[9:8] + 1;
+            histogram_out[14:12] <= histogram_out[14:12] + 1;
           end
           3'b101: begin
-            histogram_out[11:10] <= histogram_out[11:10] + 1;
+            histogram_out[17:15] <= histogram_out[17:15] + 1;
           end
           3'b110: begin
-            histogram_out[13:12] <= histogram_out[13:12] + 1;
+            histogram_out[20:18] <= histogram_out[20:18] + 1;
           end
           3'b111: begin
-            histogram_out[15:14] <= histogram_out[15:14] + 1;
+            histogram_out[23:21] <= histogram_out[23:21] + 1;
           end
           default: begin
           end
@@ -122,6 +118,7 @@ module histogram #(
       case (state)
         IDLE: begin
           if (start) begin
+            histogram_out <= 0;
             center_addr_x <= x;
             center_addr_y <= y;
             orientation_valid_in <= 1;
@@ -141,6 +138,7 @@ module histogram #(
           end
         end
         TOPRIGHT: begin
+          if (orientation_valid_out) begin
             // add to histogram
             save_to_hist <= 1;
 
@@ -149,8 +147,10 @@ module histogram #(
             center_addr_y <= y+1;
             orientation_valid_in <= 1;
             state <= BOTLEFT;
+          end
         end
         BOTLEFT: begin
+          if (orientation_valid_out) begin
             // add to histogram
             save_to_hist <= 1;
 
@@ -159,13 +159,16 @@ module histogram #(
             center_addr_y <= y+1;
             orientation_valid_in <= 1;
             state <= BOTRIGHT;
+          end
         end
         BOTRIGHT: begin
+          if (orientation_valid_out) begin
             // add to histogram
             save_to_hist <= 1;
 
             last_save <= 1;
             state <= IDLE;
+          end
         end
         default: begin
           state <= IDLE;
