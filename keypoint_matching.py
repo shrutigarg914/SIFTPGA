@@ -85,7 +85,6 @@ def match(keypoints1, descriptors1, keypoints2, descriptors2):
 def draw_matches(img1, img2, keypoints1, descriptors1, keypoints2, descriptors2):
     keypoints1, keypoints2, matches = match(keypoints1, descriptors1, keypoints2, descriptors2)
 
-    print(matches)
     matched_img = cv2.drawMatches(img1, keypoints1, img2, keypoints2, matches, None)
 
     # Window name in which image is displayed 
