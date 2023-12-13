@@ -660,9 +660,9 @@ module top_level(
     
     parameter DIMENSION = HEIGHT;
     // FOR OCTAVE 1
-    logic [$clog2(HEIGHT * WIDTH)-1:0] key_write_addr, key_read_addr;
+    logic [$clog2(HEIGHT * WIDTH)-1:0] key_write_addr, key_read_addr, desc_key_read_addr, tx_key_read_addr;
     logic key_wea;
-    logic [(2*$clog2(DIMENSION)):0] keypoint_write, O1_keypoint_read;
+    logic [(2*$clog2(DIMENSION)):0] keypoint_write, keypoint_read;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(2*$clog2(DIMENSION)+1), // we expect 8 bit greyscale images
@@ -683,7 +683,7 @@ module top_level(
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(O1_keypoint_read)
+        .doutb(keypoint_read)
     );
 
     // instantiating the find keypoints module. Needs a BRAM for keypoints
@@ -1404,6 +1404,103 @@ module top_level(
     logic [BIT_DEPTH-1:0] o3_l3_y_pixel_out;
 
 
+    // the descriptor BRAM
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(($clog2(PATCH_SIZE/2 * PATCH_SIZE/2)+ 1)*8-1:0), // 3 bits for 8 bins
+    .RAM_DEPTH(2000))
+    descriptors (
+        .addra(desc_write_addr),
+        .clka(clk_100mhz),
+        .wea(desc_write_valid),
+        .dina(descriptor_write),
+        .ena(1'b1),
+        .regcea(1'b1),
+        .rsta(sys_rst),
+        .douta(), //never read from this side
+        .addrb(desc_read_addr),
+        .dinb(),
+        .clkb(clk_100mhz),
+        .web(1'b0),
+        .enb(1'b1),
+        .rstb(sys_rst),
+        .regceb(1'b1),
+        .doutb(descriptor_read)
+    );
+
+    parameter PATCH_SIZE = 4;
+    logic [$clog2(HEIGHT * WIDTH)-1:0] desc_write_addr;
+    logic desc_write_valid;
+    logic [($clog2(PATCH_SIZE/2 * PATCH_SIZE/2)+ 1)*8-1:0] descriptor_write;
+    logic [$clog2(HEIGHT * WIDTH)-1:0] desc_read_addr;
+    logic [($clog2(PATCH_SIZE/2 * PATCH_SIZE/2)+ 1)*8-1:0] descriptor_read;
+
+
+    generate_descriptors generator (
+    .clk(clk_in),
+    .rst_in(rst_in),
+    // For  descriptors
+    .desc_write_addr(desc_write_addr),
+    .desc_wea(desc_write_valid),
+    .desc_out(descriptor_write),
+
+    .key_read_addr(desc_key_read_addr),
+    .keypoint_read(keypoint_read),
+
+    .O1L1_x_grad(o1_l1_x_pixel_out),
+    .O1L1_y_grad(o1_l1_y_pixel_out),
+    .O1L1_x_address(o1_l1_x_read_addr),
+    .O1L1_y_address(o1_l1_y_read_addr),
+    
+    .O1L2_x_grad(o1_l2_x_pixel_out),
+    .O1L2_y_grad(o1_l2_y_pixel_out),
+    .O1L2_x_address(o1_l2_x_read_addr),
+    .O1L2_y_address(o1_l2_y_read_addr),
+
+    .O2L1_x_grad(o2_l1_x_pixel_out),
+    .O2L1_y_grad(o2_l1_y_pixel_out),
+    .O2L1_x_address(o2_l1_x_read_addr),
+    .O2L1_y_address(o2_l1_y_read_addr),
+
+    .O2L2_x_grad(o2_l2_x_pixel_out),
+    .O2L2_y_grad(o2_l2_y_pixel_out),
+    .O2L2_x_address(o2_l2_x_read_addr),
+    .O2L2_y_address(o2_l2_y_read_addr),
+
+    .O3L1_x_grad(o3_l1_x_pixel_out),
+    .O3L1_y_grad(o3_l1_y_pixel_out),
+    .O3L1_x_address(o3_l1_x_read_addr),
+    .O3L1_y_address(o3_l1_y_read_addr),
+
+    .O3L2_x_grad(o3_l2_x_pixel_out),
+    .O3L2_y_grad(o3_l2_y_pixel_out),
+    .O3L2_x_address(o3_l2_x_read_addr),
+    .O3L2_y_address(o3_l2_y_read_addr),
+
+    .start(keypoints_done_latched && gradient_done_latched),
+    .descriptors_done(descriptors_done),
+    .octave_state_num(octave),
+    .generic_state_num(state)
+  );
+    logic descriptors_done, descriptors_done_latched;
+    
+    always_comb begin
+        if (descriptors_done_latched) begin
+            key_read_addr = desc_key_read_addr;
+        end else begin
+            key_read_addr = tx_key_read_addr
+        end
+    end
+
+    always_ff @(posedge clk_100mhz) begin
+        if (rst_in) begin
+            descriptors_done_latched <= 0;
+        end else begin
+            if (descriptors_done) begin
+                descriptors_done_latched <= 1'b1;
+            end
+        end
+    end
+
     // when btn[1] pressed if pyramid is done, send what's stored in the pyramid BRAMs to the laptop
     // button press detected by 
     logic btn_edge;
@@ -1434,7 +1531,7 @@ module top_level(
       end
     end
 
-    typedef enum {IDLE=0, O1L1=1, O1L2=2, O1L3=3, O2L1=4, O2L2=5, O2L3=6, O3L1=7, O3L2=8, O3L3=9, KEY=10} tx_state;
+    typedef enum {IDLE=0, KEY=1, DESC=2} tx_state;
     tx_state state;
     tx_state state_prev;
 
@@ -1449,16 +1546,23 @@ module top_level(
             case (state)
                 IDLE:
                     begin
-                        if (btn_edge && keypoints_done_latched) begin
+                        if (btn_edge && descriptors_done_latched) begin
                             state <= KEY;
                         end
                     end
                 KEY:
                     begin
-                        if (!tx_img_busy_O1k && btn_edge) begin
-                            state <= IDLE;
+                        if (!tx_img_busy_key && btn_edge) begin
+                            state <= DESC;
                         end
                         uart_txd <= key_txd;
+                    end
+                DESC:
+                    begin
+                        if (!tx_busy_desc && btn_edge) begin
+                            state <= DESC;
+                        end
+                        uart_txd <= desc_txd;
                     end
                 default:
                     begin
@@ -1469,30 +1573,43 @@ module top_level(
     end
 
     assign led[2] = (state == IDLE);
-    assign led[3] = (state == O1L1);
-    assign led[4] = (state == O1L2);
-    assign led[5] = (state == O1L3);
-    assign led[6] = (state == O2L1);
-    assign led[7] = (state == O2L2);
-    assign led[8] = (state == O2L3);
-    assign led[9] = (state == O3L1);
-    assign led[10] = (state == O3L2);
-    assign led[11] = (state == O3L3);
+    // assign led[3] = (state == O1L1);
+    // assign led[4] = (state == O1L2);
+    // assign led[5] = (state == O1L3);
+    // assign led[6] = (state == O2L1);
+    // assign led[7] = (state == O2L2);
+    // assign led[8] = (state == O2L3);
+    // assign led[9] = (state == O3L1);
+    // assign led[10] = (state == O3L2);
+    assign led[11] = (state == DESC);
     assign led[12] = (state == KEY);
 
 
-    send_keypoints #(.BRAM_LENGTH(2000)) tx_keypoint_O1 (
+    send_keypoints #(.BRAM_LENGTH(2000)) tx_keypoint (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == KEY) && (state_prev != KEY)),//full_image_received
       .tx(key_txd),//uart_txd
-      .data(O1_keypoint_read),
-      .address(key_read_addr), // gets wired to the BRAM
+      .data(keypoint_read),
+      .address(tx_key_read_addr), // gets wired to the BRAM
       .tx_free(),
-      .busy(tx_img_busy_O1k) //or we could do img_sent whichever makes more sense
+      .busy(tx_img_busy_key) //or we could do img_sent whichever makes more sense
     );
-    logic tx_img_busy_O1k;
+    logic tx_img_busy_key;
     logic key_txd;
+
+    // send_descriptors #(.BRAM_LENGTH(1000)) tx_descriptors (
+    //   .clk(clk_100mhz),
+    //   .rst_in(sys_rst),//sys_rst
+    //   .img_ready((state == DESC) && (state_prev != DESC)),//full_image_received
+    //   .tx(desc_txd),//uart_txd
+    //   .data(keypoint_read),
+    //   .address(key_read_addr), // gets wired to the BRAM
+    //   .tx_free(),
+    //   .busy(tx_busy_desc) //or we could do img_sent whichever makes more sense
+    // );
+    logic tx_busy_desc;
+    logic desc_txd;
 
     
 endmodule // top_level

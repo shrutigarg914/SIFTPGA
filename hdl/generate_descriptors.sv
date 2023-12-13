@@ -47,8 +47,8 @@ module generate_descriptors #(
 
     input wire signed [BIT_DEPTH-1:0] O3L1_x_grad,
     input wire signed [BIT_DEPTH-1:0] O3L1_y_grad,
-    output logic [$clog2(DIMENSION / 2*DIMENSION / 2)-1:0] O3L1_x_address,
-    output logic [$clog2(DIMENSION /2*DIMENSION / 2)-1:0] O3L1_y_address,
+    output logic [$clog2(DIMENSION / 4*DIMENSION / 4)-1:0] O3L1_x_address,
+    output logic [$clog2(DIMENSION /4*DIMENSION / 4)-1:0] O3L1_y_address,
 
     input wire signed [BIT_DEPTH-1:0] O3L2_x_grad,
     input wire signed [BIT_DEPTH-1:0] O3L2_y_grad,
@@ -272,7 +272,7 @@ histogram #(
                     read_counter <= 0;
                     case(octave)
                       O1 : octave <= O2;// why do we never hit FINISH?
-                      O2 : state <= FINISH;
+                      O2 : octave <= O3;
                       O3 : state <= FINISH;
                     endcase
                   end else begin

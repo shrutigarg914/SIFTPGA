@@ -29,7 +29,7 @@ module descriptors_tb;
   logic signed [BIT_DEPTH-1:0] O2L2_x_grad, O2L2_y_grad;
   logic [$clog2(DIMENSION / 2*DIMENSION/2)-1:0] O2L2_x_address, O2L2_y_address;
   logic signed [BIT_DEPTH-1:0] O3L1_x_grad, O3L1_y_grad;
-  logic [$clog2(DIMENSION /2*DIMENSION / 2)-1:0] O3L1_x_address, O3L1_y_address;
+  logic [$clog2(DIMENSION /4*DIMENSION / 4)-1:0] O3L1_x_address, O3L1_y_address;
   logic signed [BIT_DEPTH-1:0] O3L2_x_grad, O3L2_y_grad;
   logic [$clog2(DIMENSION / 4*DIMENSION/4)-1:0] O3L2_x_address, O3L2_y_address;
   logic descriptors_done, start_desc;
@@ -218,6 +218,71 @@ module descriptors_tb;
         .rsta(rst_in),       // Output reset (does not affect memory contents)
         .regcea(1'b1),   // Output register enable
         .douta(O2L2_x_grad)      // RAM output data, width determined from RAM_WIDTH
+    );
+
+    
+    xilinx_single_port_ram_read_first #(
+        .RAM_WIDTH(8),                       // Specify RAM data width
+        .RAM_DEPTH(DIMENSION/4*DIMENSION/4),                     // Specify RAM depth (number of entries)
+        .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
+        .INIT_FILE(`FPATH(O3L1_y.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    ) O3L1_y (
+        .addra(O3L1_y_address),     // Address bus, width determined from RAM_DEPTH
+        .dina(8'b0),       // RAM input data, width determined from RAM_WIDTH
+        .clka(clk_in),       // Clock
+        .wea(1'b0),         // Write enable
+        .ena(1'b1),         // RAM Enable, for additional power savings, disable port when not in use
+        .rsta(rst_in),       // Output reset (does not affect memory contents)
+        .regcea(1'b1),   // Output register enable
+        .douta(O3L1_y_grad)      // RAM output data, width determined from RAM_WIDTH
+    );
+
+    xilinx_single_port_ram_read_first #(
+        .RAM_WIDTH(8),                       // Specify RAM data width
+        .RAM_DEPTH(DIMENSION/4*DIMENSION/4),                     // Specify RAM depth (number of entries)
+        .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
+        .INIT_FILE(`FPATH(O3L1_x.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    ) O3L1_x (
+        .addra(O3L1_x_address),     // Address bus, width determined from RAM_DEPTH
+        .dina(8'b0),       // RAM input data, width determined from RAM_WIDTH
+        .clka(clk_in),       // Clock
+        .wea(1'b0),         // Write enable
+        .ena(1'b1),         // RAM Enable, for additional power savings, disable port when not in use
+        .rsta(rst_in),       // Output reset (does not affect memory contents)
+        .regcea(1'b1),   // Output register enable
+        .douta(O3L1_x_grad)      // RAM output data, width determined from RAM_WIDTH
+    );
+
+    xilinx_single_port_ram_read_first #(
+        .RAM_WIDTH(8),                       // Specify RAM data width
+        .RAM_DEPTH(DIMENSION/4*DIMENSION/4),                     // Specify RAM depth (number of entries)
+        .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
+        .INIT_FILE(`FPATH(O3L2_y.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    ) O3L2_y (
+        .addra(O3L2_y_address),     // Address bus, width determined from RAM_DEPTH
+        .dina(8'b0),       // RAM input data, width determined from RAM_WIDTH
+        .clka(clk_in),       // Clock
+        .wea(1'b0),         // Write enable
+        .ena(1'b1),         // RAM Enable, for additional power savings, disable port when not in use
+        .rsta(rst_in),       // Output reset (does not affect memory contents)
+        .regcea(1'b1),   // Output register enable
+        .douta(O3L2_y_grad)      // RAM output data, width determined from RAM_WIDTH
+    );
+
+    xilinx_single_port_ram_read_first #(
+        .RAM_WIDTH(8),                       // Specify RAM data width
+        .RAM_DEPTH(DIMENSION/4*DIMENSION/4),                     // Specify RAM depth (number of entries)
+        .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
+        .INIT_FILE(`FPATH(O3L2_x.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    ) O3L2_x (
+        .addra(O3L2_x_address),     // Address bus, width determined from RAM_DEPTH
+        .dina(8'b0),       // RAM input data, width determined from RAM_WIDTH
+        .clka(clk_in),       // Clock
+        .wea(1'b0),         // Write enable
+        .ena(1'b1),         // RAM Enable, for additional power savings, disable port when not in use
+        .rsta(rst_in),       // Output reset (does not affect memory contents)
+        .regcea(1'b1),   // Output register enable
+        .douta(O3L2_x_grad)      // RAM output data, width determined from RAM_WIDTH
     );
 
 
