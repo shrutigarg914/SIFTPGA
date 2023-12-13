@@ -7,7 +7,7 @@ import serial
 import time
 import struct
 
-def calc_gradient_pyramids(pixels, h, w):
+def calc_gradient_images(pixels, h, w):
     x_grad = []
     y_grad = []
 
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
         print(h, w, len(pixels))
 
-        x_grad, y_grad = calc_gradient_pyramids(pixels, h, w)
+        x_grad, y_grad = calc_gradient_images(pixels, h, w)
         print("x_grad", x_grad)
         print("y_grad", y_grad)
 
