@@ -324,7 +324,7 @@ if __name__ == "__main__":
         plt.imshow(np.asarray(pixels).reshape((64, 64)), cmap='gray', vmin=0, vmax=255)
         plt.show()
 
-        print("PYTHON found ", num_O1_keypts + num_O2_keypts + num_O3_keypts, " extrema v ", len(im_res), "by fpga")
+        print("PYTHON found ", num_O1_keypts + num_O2_keypts + num_O3_keypts, " : ", num_O1_keypts, num_O2_keypts, num_O3_keypts, " extrema v ", len(im_res), "by fpga")
         input("sending the next set of things ope")
 
         descriptors = []
