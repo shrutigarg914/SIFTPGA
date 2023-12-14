@@ -1608,7 +1608,7 @@ module top_level(
     assign led[13] = descriptors_done_latched;
 
 
-    send_keypoints #(.BRAM_LENGTH(2000)) tx_keypoint (
+    send_keypoints #(.BRAM_LENGTH(NUMBER_KEYPOINTS)) tx_keypoint (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == KEY) && (state_prev != KEY)),//full_image_received
@@ -1621,7 +1621,7 @@ module top_level(
     logic tx_busy_key;
     logic key_txd;
 
-    send_descriptors #(.BRAM_LENGTH(1000)) tx_descriptors (
+    send_descriptors #(.BRAM_LENGTH(NUMBER_KEYPOINTS*4)) tx_descriptors (
       .clk(clk_100mhz),
       .rst_in(sys_rst),//sys_rst
       .img_ready((state == DESC) && (state_prev != DESC)),//full_image_received

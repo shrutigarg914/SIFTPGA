@@ -255,6 +255,7 @@ histogram #(
                   histogram_ea <= 1'b0;
                   descriptors_done <= 0;
                   desc_write_addr <= 0;
+                  zero_writer <= 0;
                   // set keypt address to zero, go read the keypt at the address
               end else begin
                 descriptors_done <= 0;
@@ -342,14 +343,28 @@ histogram #(
                 histogram_ea <= 1'b0;
               end
               FINISH : begin
+              // if (zero_writer==2'b11) begin
                 descriptors_done <= 1'b1;
-                state <= IDLE;
+                state <= ERROR;
+              // end else begin
+              //   if (final_wea) begin
+              //     zero_writer <= zero_writer + 1'b1;
+              //     final_wea <= 0;
+              //   end else begin
+              //     final_wea <= 1'b1;
+              //   end
+              // end
               end
-              ERROR : error <= 1'b1;
+              ERROR : begin
+                error <= 1'b1;
+                descriptors_done <= 0;
+              end
               default : state <= IDLE;
           endcase
       end
   end
+  logic [2:0] zero_writer;
+  logic final_wea;
 
 
 endmodule // find_keypoints

@@ -329,6 +329,7 @@ if __name__ == "__main__":
 
         descriptors = []
         all_zeros_found = 0
+        entries_read = 0
         started = 0
         while True:
             res_upper = s.read()
@@ -336,16 +337,18 @@ if __name__ == "__main__":
             res_lower = s.read()
 
             descriptor = [struct.unpack('B', res_upper)[0], struct.unpack('B', res_middle)[0], struct.unpack('B', res_lower)[0]]
-            print((len(descriptors)+1)/4, all_zeros_found, ''.join([np.binary_repr(desc, width=8) for desc in descriptor]))
+            print((len(descriptors)), all_zeros_found, ''.join([np.binary_repr(desc, width=8) for desc in descriptor]))
             if descriptor[0]==0 and descriptor[1]==0 and descriptor[2]==0:
                 if started:
                     all_zeros_found+=1
+                    entries_read +=1
                 print("ZERO FOUND")
             else:
                 started = 1
                 descriptors.append(''.join([np.binary_repr(desc, width=8) for desc in descriptor]))
                 # print(all_zeros_found, ''.join([np.binary_repr(desc, width=8) for desc in descriptor]))
-            if all_zeros_found >8 : 
+                entries_read += 1
+            if all_zeros_found > 100 : 
                 break
         final_descriptors = []
         counter = 0
