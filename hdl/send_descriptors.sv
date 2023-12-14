@@ -13,12 +13,14 @@ module send_descriptors #(
   output logic [$clog2(BRAM_LENGTH)-1:0] address, // gets wired to the BRAM
   output logic busy, //or we could do img_sent whichever makes more sense
   output logic send,
-  output logic [1:0] out_state,
+//   output logic [1:0] out_state,
   output logic tx_free
   );
     // states
     typedef enum {INACTIVE=0, WAITING=1, UPPER_BYTE=2, LOWER_BYTE=3, MIDDLE_BYTE=4} module_state;
     module_state state;
+
+    logic [1:0] out_state;
 
     always_comb begin
         case(state)

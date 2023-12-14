@@ -77,7 +77,7 @@ if __name__ == "__main__":
         input("sending the next set of things ope")
 
         descriptors = []
-        while len(descriptors<500):
+        while len(descriptors)<500:
             res_upper = s.read()
             res_middle = s.read()
             res_lower = s.read()

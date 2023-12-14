@@ -22,8 +22,8 @@ module top_level(
     parameter HEIGHT = 64;
     parameter BIT_DEPTH = 8;
 
-    logic [13:0] pixel_addr;
-    logic [7:0] rx_data;
+    logic [$clog2(WIDTH*HEIGHT)-1:0] pixel_addr;
+    logic [BIT_DEPTH-1:0] rx_data;
 
     logic valid_o;
     logic valid_o_edge;
@@ -666,13 +666,15 @@ module top_level(
     
     parameter DIMENSION = HEIGHT;
     // FOR OCTAVE 1
-    logic [$clog2(HEIGHT * WIDTH)-1:0] key_write_addr, key_read_addr, desc_key_read_addr, tx_key_read_addr;
+    parameter NUMBER_KEYPOINTS = 2000;
+
+    logic [$clog2(NUMBER_KEYPOINTS)-1:0] key_write_addr, key_read_addr, desc_key_read_addr, tx_key_read_addr;
     logic key_wea;
     logic [(2*$clog2(DIMENSION)):0] keypoint_write, keypoint_read;
 
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(2*$clog2(DIMENSION)+1), // we expect 8 bit greyscale images
-    .RAM_DEPTH(2000))
+    .RAM_DEPTH(NUMBER_KEYPOINTS))
     keypoint (
         .addra(key_write_addr),
         .clka(clk_100mhz),
@@ -693,7 +695,7 @@ module top_level(
     );
 
     // instantiating the find keypoints module. Needs a BRAM for keypoints
-    find_keypoints #(.DIMENSION(DIMENSION)) finder (
+    find_keypoints #(.DIMENSION(DIMENSION), .NUMBER_KEYPOINTS(NUMBER_KEYPOINTS)) finder (
         .clk(clk_100mhz),
         .rst_in(sys_rst),
         .key_write_addr(key_write_addr),
@@ -706,7 +708,7 @@ module top_level(
         .O1L2_read_addr(O1L2_DOG_read_addr),
         .O1L2_data(O1L2_DOG_pixel_out),
 
-        .O1L3_read_addr(O1L2_DOG_read_addr),
+        .O1L3_read_addr(O1L3_DOG_read_addr),
         .O1L3_data(O1L3_DOG_pixel_out),
 
         .O2L1_read_addr(O2L1_DOG_read_addr),
@@ -1413,7 +1415,7 @@ module top_level(
     // the descriptor BRAM
     xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(($clog2(PATCH_SIZE/2 * PATCH_SIZE/2)+ 1)*8), // 3 bits for 8 bins
-    .RAM_DEPTH(2000))
+    .RAM_DEPTH(NUMBER_KEYPOINTS*4))
     descriptors (
         .addra(desc_write_addr),
         .clka(clk_100mhz),
@@ -1434,14 +1436,14 @@ module top_level(
     );
 
     parameter PATCH_SIZE = 4;
-    logic [$clog2(HEIGHT * WIDTH)-1:0] desc_write_addr;
+    logic [$clog2(NUMBER_KEYPOINTS*4)-1:0] desc_write_addr;
     logic desc_write_valid;
     logic [($clog2(PATCH_SIZE/2 * PATCH_SIZE/2)+ 1)*8-1:0] descriptor_write;
-    logic [$clog2(HEIGHT * WIDTH)-1:0] desc_read_addr;
+    logic [$clog2(NUMBER_KEYPOINTS*4)-1:0] desc_read_addr;
     logic [($clog2(PATCH_SIZE/2 * PATCH_SIZE/2)+ 1)*8-1:0] descriptor_read;
 
 
-    generate_descriptors generator (
+    generate_descriptors #(.NUMBER_DESCRIPTORS(NUMBER_KEYPOINTS*4)) generator (
     .clk(clk_100mhz),
     .rst_in(sys_rst),
     // For  descriptors
@@ -1495,19 +1497,27 @@ module top_level(
     
     always_comb begin
         if (descriptors_done_latched) begin
-            key_read_addr = desc_key_read_addr;
-        end else begin
             key_read_addr = tx_key_read_addr;
+        end else begin
+            key_read_addr = desc_key_read_addr;
         end
     end
+    logic descriptor_was_started;
 
     always_ff @(posedge clk_100mhz) begin
         if (sys_rst) begin
             descriptors_done_latched <= 0;
+            descriptor_was_started <= 0;
         end else begin
             if (descriptors_done) begin
                 descriptors_done_latched <= 1'b1;
             end
+            if ((keypoints_done_latched && gradient_done) || (gradient_done_latched && keypoints_done)) begin
+                descriptor_was_started <= 1'b1;
+            end else begin
+                descriptor_was_started <= 1'b0;
+            end
+            // if (desc_oct)
         end
     end
 
@@ -1545,7 +1555,7 @@ module top_level(
     tx_state state;
     tx_state state_prev;
 
-    assign led[15] = 0;
+    assign led[15] = descriptor_was_started;
     
     // to send each image in the pyramid down tx
     always_ff @(posedge clk_100mhz) begin

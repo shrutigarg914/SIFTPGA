@@ -13,7 +13,7 @@ module send_keypoints #(
   output logic [$clog2(BRAM_LENGTH)-1:0] address, // gets wired to the BRAM
   output logic busy, //or we could do img_sent whichever makes more sense
   output logic send,
-  output logic [1:0] out_state,
+//   output logic [1:0] out_state,
   output logic tx_free
   );
     // states
@@ -22,6 +22,8 @@ module send_keypoints #(
 
     typedef enum {ONE=0, TWO=1, THREE=2} scale_state;
     scale_state scale;
+
+    logic [1:0] out_state;
 
     always_comb begin
         case(state)

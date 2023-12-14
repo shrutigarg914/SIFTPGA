@@ -20,7 +20,7 @@ module find_keypoints #(
   // handles to the keypoint BRAMs
 
   // FOR all keypoints
-  output logic [$clog2(TOP_HEIGHT * TOP_WIDTH)-1:0] key_write_addr,
+  output logic [$clog2(NUMBER_KEYPOINTS)-1:0] key_write_addr,
   output logic key_wea,
   output logic [(2*$clog2(DIMENSION)):0] keypoint_out,
 
@@ -247,6 +247,7 @@ module find_keypoints #(
 
   logic [1:0] O1L1L2_state;
   logic [1:0] O1L2L3_state;
+  logic O1L1L2_busy;
   dog #(.DIMENSION(DIMENSION)) O1_DOG_L1L2 (
   .clk(clk),
   .rst_in(rst_in),//sys_rst
@@ -257,7 +258,8 @@ module find_keypoints #(
   .address(O1L1L2_address),
   .data_out(O1L1L2_data_write),
   .wea(O1L1L2_wea),
-  .state_num(O1L1L2_state)
+  .state_num(O1L1L2_state),
+  .busy(O1L1L2_busy)
   );
 
   logic O1L2L3_busy;
@@ -409,23 +411,9 @@ check_extrema #(
   logic in_ocatve_3;
 
   always_comb begin
-    case(octave)
-      O1 : begin
-        keypoint_out = O1_keypoint_out;
-        key_wea = O1key_wea;
-        in_ocatve_3 = 1'b0;
-      end
-      O2 : begin
-        keypoint_out = O2_keypoint_out;
-        key_wea = O2key_wea;
-        in_ocatve_3 = 1'b0;
-      end
-      O3 : begin
-        keypoint_out = O3_keypoint_out;
-        key_wea = O3key_wea;
-        in_ocatve_3 = 1'b1;
-      end
-    endcase
+    key_wea = (octave==O1) ? O1key_wea : (octave==O2) ? O2key_wea : O3key_wea;
+    keypoint_out = (octave==O1) ? O1_keypoint_out : (octave==O2) ? O2_keypoint_out : O3_keypoint_out;
+    in_ocatve_3 = (octave==O3) ? 1'b1 : 0;
   end
 
   logic old_key_wea;

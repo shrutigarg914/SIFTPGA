@@ -3,6 +3,7 @@
 
 module generate_descriptors #(
   parameter DIMENSION = 64,
+  parameter NUMBER_DESCRIPTORS = 4000, 
   parameter NUMBER_KEYPOINTS = 1000, 
   parameter NUMBER_OCTAVES = 3,
   parameter BIT_DEPTH = 8,
@@ -14,14 +15,14 @@ module generate_descriptors #(
 
 
   // For all descriptors
-  output logic [$clog2(HEIGHT * WIDTH)-1:0] desc_write_addr,
+  output logic [$clog2(NUMBER_DESCRIPTORS)-1:0] desc_write_addr,
   output logic desc_wea,
   output logic [($clog2(PATCH_SIZE/2 * PATCH_SIZE/2)+ 1)*8-1:0] desc_out,  // 4 by 4 --> 2 by 2 subpatches 
                         // --> 4 total orientations --> max 2 bits each for each of 8 possible values
   
   // keypoint BRAM handles
     output logic [$clog2(1000)-1:0] key_read_addr,
-    input wire [(2*$clog2(DIMENSION)):0] keypoint_read,
+    input wire [(2*$clog2(NUMBER_KEYPOINTS)):0] keypoint_read,
 
 
   // gradient pyramid read handles
@@ -75,21 +76,26 @@ module generate_descriptors #(
   octave_state octave;
   // logic [1:0] octave_state_num;
   always_comb begin
-    case(octave)
-      O1 : octave_state_num = 0;
-      O2 : octave_state_num = 1'b1;
-      O3 : octave_state_num = 2'b10;
-    endcase
-    case(state)
-      IDLE : generic_state_num = 0;
-      READ : generic_state_num = 1'b1;
-      START_HISTOGRAM : generic_state_num = 2'b10;
-      PATCH_ONE : generic_state_num = 2'b11;
-      PATCH_TWO : generic_state_num = 3'b100;
-      PATCH_THREE : generic_state_num = 3'b101;
-      PATCH_FOUR : generic_state_num = 3'b110;
-      FINISH : generic_state_num = 3'b111;
-    endcase
+    octave_state_num = (octave==O1) ? 0 : (octave==O2) ? 1'b1 : 2'b10;
+    if (state==IDLE) begin
+      generic_state_num = 0;
+    end else if (state==READ) begin
+      generic_state_num = 1'b1;
+    end else if (state==START_HISTOGRAM) begin
+      generic_state_num = 2'b10;
+    end else if (state==PATCH_ONE) begin
+      generic_state_num = 2'b11;
+    end else if (state==PATCH_TWO) begin
+      generic_state_num = 3'b100;
+    end else if (state==PATCH_THREE) begin
+      generic_state_num = 3'b101;
+    end else if (state==PATCH_FOUR) begin
+      generic_state_num = 3'b110;
+    end else if (state==FINISH) begin
+      generic_state_num = 3'b111;
+    end else begin
+      generic_state_num = 4'b1000;
+    end
   end
   logic level;
   logic [$clog2(DIMENSION*DIMENSION)-1:0] O1_x_address;
@@ -109,35 +115,27 @@ module generate_descriptors #(
 
   // logic to switch between levels in the same Octave
   always_comb begin
-    case(octave)
-        O1 : begin
-            O1L2_x_address = O1_x_address;
-            O1L1_x_address = O1_x_address;
-            O1L2_y_address = O1_y_address;
-            O1L1_y_address = O1_y_address;
-            O1_x_grad = (level) ? O1L2_x_grad : O1L1_x_grad;
-            O1_y_grad = (level) ? O1L2_y_grad : O1L1_y_grad;
+      O1L2_x_address = O1_x_address;
+      O1L1_x_address = O1_x_address;
+      O1L2_y_address = O1_y_address;
+      O1L1_y_address = O1_y_address;
 
-        end
-        O2 : begin
-            O2L2_x_address = O2_x_address;
-            O2L1_x_address = O2_x_address;
-            O2L2_y_address = O2_y_address;
-            O2L1_y_address = O2_y_address;
-            O2_x_grad = (level) ? O2L2_x_grad : O2L1_x_grad;
-            O2_y_grad = (level) ? O2L2_y_grad : O2L1_y_grad;
+      O2L2_x_address = O2_x_address;
+      O2L1_x_address = O2_x_address;
+      O2L2_y_address = O2_y_address;
+      O2L1_y_address = O2_y_address;
 
-        end
-        O3 : begin
-            O3L2_x_address = O3_x_address;
-            O3L1_x_address = O3_x_address;
-            O3L2_y_address = O3_y_address;
-            O3L1_y_address = O3_y_address;
-            O3_x_grad = (level) ? O3L2_x_grad : O3L1_x_grad;
-            O3_y_grad = (level) ? O3L2_y_grad : O3L1_y_grad;
+      O3L2_x_address = O3_x_address;
+      O3L1_x_address = O3_x_address;
+      O3L2_y_address = O3_y_address;
+      O3L1_y_address = O3_y_address;
 
-        end
-    endcase
+      O1_x_grad = (level) ? O1L2_x_grad : O1L1_x_grad;
+      O1_y_grad = (level) ? O1L2_y_grad : O1L1_y_grad;
+      O2_x_grad = (level) ? O2L2_x_grad : O2L1_x_grad;
+      O2_y_grad = (level) ? O2L2_y_grad : O2L1_y_grad;
+      O3_x_grad = (level) ? O3L2_x_grad : O3L1_x_grad;
+      O3_y_grad = (level) ? O3L2_y_grad : O3L1_y_grad;
   end
 
   logic [($clog2(PATCH_SIZE/2 * PATCH_SIZE/2) + 1)*8-1:0] O1_histogram_out;
@@ -157,7 +155,7 @@ histogram #(
     .y(O1_y_coord),
     // handles to read from the gradient pyramid
     .x_grad_in(O1_x_grad),
-    .y_grad_in(O1_x_grad),
+    .y_grad_in(O1_y_grad),
     .x_read_addr(O1_x_address),
     .y_read_addr(O1_y_address),
     // start and done signals
@@ -182,7 +180,7 @@ histogram #(
     .y(O2_y_coord),
     // handles to read from the gradient pyramid
     .x_grad_in(O2_x_grad),
-    .y_grad_in(O2_x_grad),
+    .y_grad_in(O2_y_grad),
     .x_read_addr(O2_x_address),
     .y_read_addr(O2_y_address),
     // start and done signals
@@ -207,7 +205,7 @@ histogram #(
     .y(O3_y_coord),
     // handles to read from the gradient pyramid
     .x_grad_in(O3_x_grad),
-    .y_grad_in(O3_x_grad),
+    .y_grad_in(O3_y_grad),
     .x_read_addr(O3_x_address),
     .y_read_addr(O3_y_address),
     // start and done signals
@@ -216,30 +214,23 @@ histogram #(
   );
   // logic to switch handles used in the always_ff block depending on what octave we are in 
   logic histogram_ea;
+
+
   always_comb begin
-    case(octave)
-      O1 : begin
-        O1_histogram_ea = histogram_ea;
-        desc_wea = O1_histogram_done;
-        O1_x_coord = x;
-        O1_y_coord = y;
-        desc_out = O1_histogram_out;
-      end
-      O2 : begin
-        O2_histogram_ea = histogram_ea;
-        desc_wea = O2_histogram_done;
-        O2_x_coord = x;
-        O2_y_coord = y;
-        desc_out = O2_histogram_out;
-      end
-      O3 : begin
-        O3_histogram_ea = histogram_ea;
-        desc_wea = O3_histogram_done;
-        O3_x_coord = x;
-        O3_y_coord = y;
-        desc_out = O3_histogram_out;
-      end
-    endcase
+
+    O1_histogram_ea = (octave==O1) ? histogram_ea : 0;
+    O2_histogram_ea = (octave==O2) ? histogram_ea : 0;
+    O3_histogram_ea = (octave==O3) ? histogram_ea : 0;
+
+    desc_wea = (octave==O1) ? O1_histogram_done : (octave==O2) ? O2_histogram_done : (octave==O3) ? O3_histogram_done : 0;
+    desc_out = (octave==O1) ? O1_histogram_out : (octave==O2) ? O2_histogram_out : (octave==O3) ? O3_histogram_out : 0;
+    
+    O1_x_coord = x;
+    O1_y_coord = y;
+    O2_x_coord = x;
+    O2_y_coord = y;
+    O3_x_coord = x;
+    O3_y_coord = y;
   end
 
   logic [1:0] read_counter;
