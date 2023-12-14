@@ -46,8 +46,10 @@ if __name__ == "__main__":
         image_rx = []
         rxed = 0
         zero_count = 0
-        while zero_count < 3:
+        keypts_received = 0
+        while keypts_received < 1999:
             # print(".", end='', flush=True)
+            keypts_received +=1
             res = s.read()
             res_lower = s.read()
             # print("BRAM  ", "(x:", struct.unpack('B', res)[0], ", y:", struct.unpack('B', res_lower)[0], ")")
@@ -85,6 +87,3 @@ if __name__ == "__main__":
             descriptors.append([struct.unpack('B', res_upper)[0], struct.unpack('B', res_middle)[0], struct.unpack('B', res_lower)[0]])
             print(descriptors[-1])
         print("DESCRIPTORS GOTTEN")
-
-
-

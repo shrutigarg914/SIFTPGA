@@ -1512,12 +1512,14 @@ module top_level(
             if (descriptors_done) begin
                 descriptors_done_latched <= 1'b1;
             end
-            if ((keypoints_done_latched && gradient_done) || (gradient_done_latched && keypoints_done)) begin
+            // if ((keypoints_done_latched && gradient_done) || (gradient_done_latched && keypoints_done)) begin
+            //     descriptor_was_started <= 1'b1;
+            // end else begin
+            //     descriptor_was_started <= 1'b0;
+            // end
+            if (desc_write_valid) begin
                 descriptor_was_started <= 1'b1;
-            end else begin
-                descriptor_was_started <= 1'b0;
             end
-            // if (desc_oct)
         end
     end
 
@@ -1580,7 +1582,7 @@ module top_level(
                 DESC:
                     begin
                         if (!tx_busy_desc && btn_edge) begin
-                            state <= DESC;
+                            state <= IDLE;
                         end
                         uart_txd <= desc_txd;
                     end
