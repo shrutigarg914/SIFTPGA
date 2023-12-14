@@ -1501,10 +1501,14 @@ module top_level(
     logic [1:0] desc_octave;
     // assign led[4:3] = desc_octave;
     logic [2:0] signal_times;
-    assign led[5:3] = signal_times;
+    // logic [2:0] done_signal_times;
+    // assign led[5:3] = done_signal_times;
     logic descriptors_done, descriptors_done_latched;
     
     always_comb begin
+        // tx_key_read_addr = 'd44;
+        // key_read_addr = desc_key_read_addr;
+        // not an issue with how we're doing the switcheroo
         if (descriptors_done_latched) begin
             key_read_addr = tx_key_read_addr;
         end else begin
@@ -1521,6 +1525,8 @@ module top_level(
         end else begin
             if (descriptors_done) begin
                 descriptors_done_latched <= 1'b1;
+                // done_signal_times <= done_signal_times + 1'b1;
+                led[10:3] = desc_key_read_addr;
             end
             if ((keypoints_done_latched && gradient_done_latched) && ~descriptor_was_started && signal_times==3'b000) begin
                 descriptor_was_started <= 1'b1;

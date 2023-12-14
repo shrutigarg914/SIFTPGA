@@ -21,8 +21,8 @@ module generate_descriptors #(
                         // --> 4 total orientations --> max 2 bits each for each of 8 possible values
   
   // keypoint BRAM handles
-    output logic [$clog2(1000)-1:0] key_read_addr,
-    input wire [(2*$clog2(NUMBER_KEYPOINTS)):0] keypoint_read,
+    output logic [$clog2(NUMBER_KEYPOINTS)-1:0] key_read_addr,
+    input wire [(2*$clog2(DIMENSION)):0] keypoint_read,
 
 
   // gradient pyramid read handles
@@ -258,18 +258,19 @@ histogram #(
                   descriptors_done <= 0;
                   desc_write_addr <= 0;
                   zero_writer <= 0;
+                  error <= 0;
                   // set keypt address to zero, go read the keypt at the address
               end else begin
                 descriptors_done <= 0;
               end
-              READ : if (read_counter==2'b10) begin
+              READ : if (read_counter==2'b11) begin
                   if (keypoint_read==13'd0) begin
                     key_read_addr <= key_read_addr + 1'b1;
                     read_counter <= 0;
                     case(octave)
-                      O1 : octave <= O2;// why do we never hit FINISH?
+                      O1 : state <= FINISH;// why do we never hit FINISH?
                       O2 : octave <= O3;
-                      O3 : state <= FINISH;
+                      O3 : state <= ERROR;
                       default : state <= ERROR;
                     endcase
                   end else begin
