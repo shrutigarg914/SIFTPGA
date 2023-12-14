@@ -329,16 +329,24 @@ if __name__ == "__main__":
 
         descriptors = []
         all_zeros_found = 0
-        while all_zeros_found<2:
+        started = 0
+        while True:
             res_upper = s.read()
             res_middle = s.read()
             res_lower = s.read()
 
             descriptor = [struct.unpack('B', res_upper)[0], struct.unpack('B', res_middle)[0], struct.unpack('B', res_lower)[0]]
+            print((len(descriptors)+1)/4, all_zeros_found, ''.join([np.binary_repr(desc, width=8) for desc in descriptor]))
             if descriptor[0]==0 and descriptor[1]==0 and descriptor[2]==0:
-                all_zeros_found+=1
-                # break
-            descriptors.append(''.join([np.binary_repr(desc, width=8) for desc in descriptor]))
+                if started:
+                    all_zeros_found+=1
+                print("ZERO FOUND")
+            else:
+                started = 1
+                descriptors.append(''.join([np.binary_repr(desc, width=8) for desc in descriptor]))
+                # print(all_zeros_found, ''.join([np.binary_repr(desc, width=8) for desc in descriptor]))
+            if all_zeros_found >8 : 
+                break
         final_descriptors = []
         counter = 0
         for descriptor in descriptors:
@@ -346,7 +354,7 @@ if __name__ == "__main__":
                 counter = 0
                 new_d += descriptor
                 final_descriptors.append(new_d)
-                print(final_descriptors[-1])
+                # print(final_descriptors[-1])
             elif counter==0:
                 counter += 1
                 new_d = descriptor
@@ -375,5 +383,5 @@ if __name__ == "__main__":
                 all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[7], gradient_pyramid_y[7])))
         # print(all_descriptors)
         all_descriptors_binary = [''.join([np.binary_repr(desc, width=3) for desc in descriptor]) for descriptor in all_descriptors]
-        print(all_descriptors_binary)
+        # print(all_descriptors_binary)
         print(len(final_descriptors), len(all_descriptors_binary))
