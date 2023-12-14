@@ -109,9 +109,8 @@ module top_level(
 
       if (O1L1_gradient_done_latched && O1L2_gradient_done_latched && O1L3_gradient_done_latched
         && O2L1_gradient_done_latched && O2L2_gradient_done_latched && O2L3_gradient_done_latched
-        && O3L1_gradient_done_latched && O3L2_gradient_done_latched && O3L3_gradient_done_latched && ~gradient_done_latched) begin
+        && O3L1_gradient_done_latched && O3L2_gradient_done_latched && O3L3_gradient_done_latched) begin
         gradient_done_latched <= 1;
-        gradient_done <= 1'b1;
       end
 
       if (gradient_done_latched) begin
@@ -1488,7 +1487,7 @@ module top_level(
     .O3L2_x_address(o3_l2_x_read_addr),
     .O3L2_y_address(o3_l2_y_read_addr),
 
-    .start((keypoints_done_latched && gradient_done) || (gradient_done_latched && keypoints_done)),
+    .start(descriptor_was_started),
     .descriptors_done(descriptors_done),
     .octave_state_num(desc_octave),
     .error(desc_error)
@@ -1501,6 +1500,8 @@ module top_level(
     
     logic [1:0] desc_octave;
     // assign led[4:3] = desc_octave;
+    logic [2:0] signal_times;
+    assign led[5:3] = signal_times;
     logic descriptors_done, descriptors_done_latched;
     
     always_comb begin
@@ -1516,18 +1517,20 @@ module top_level(
         if (sys_rst) begin
             descriptors_done_latched <= 0;
             descriptor_was_started <= 0;
+            signal_times<=0;
         end else begin
             if (descriptors_done) begin
                 descriptors_done_latched <= 1'b1;
             end
-            // if ((keypoints_done_latched && gradient_done) || (gradient_done_latched && keypoints_done)) begin
-            //     descriptor_was_started <= 1'b1;
-            // end else begin
-            //     descriptor_was_started <= 1'b0;
-            // end
-            if (desc_write_valid) begin
+            if ((keypoints_done_latched && gradient_done_latched) && ~descriptor_was_started && signal_times==3'b000) begin
                 descriptor_was_started <= 1'b1;
+                signal_times <= signal_times + 1'b1;
+            end else begin
+                descriptor_was_started <= 1'b0;
             end
+            // if (desc_write_valid) begin
+            //     descriptor_was_started <= 1'b1;
+            // end
         end
     end
 

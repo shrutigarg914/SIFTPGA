@@ -233,6 +233,7 @@ histogram #(
     O3_x_coord = x;
     O3_y_coord = y;
   end
+  logic started;
 
   logic [1:0] read_counter;
   logic [$clog2(DIMENSION)-1:0] x;
@@ -245,6 +246,7 @@ histogram #(
           read_counter <= 0;
           histogram_ea <= 1'b0;
           desc_write_addr <= 0;
+          started <= 0;
       end else begin
           case(state)
               IDLE : if (start) begin
@@ -345,7 +347,8 @@ histogram #(
               FINISH : begin
               // if (zero_writer==2'b11) begin
                 descriptors_done <= 1'b1;
-                state <= ERROR;
+                state <= IDLE;
+                started <= 1'b1;
               // end else begin
               //   if (final_wea) begin
               //     zero_writer <= zero_writer + 1'b1;
