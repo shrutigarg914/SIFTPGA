@@ -57,6 +57,7 @@ module generate_descriptors #(
     output logic [$clog2(DIMENSION/4*DIMENSION/4)-1:0] O3L2_y_address,
     output logic [1:0] octave_state_num,
     output logic [3:0] generic_state_num,
+    output logic error,
 
 
   // start and done signals
@@ -70,7 +71,7 @@ module generate_descriptors #(
 
   // https://lerner98.medium.com/implementing-sift-in-python-36c619df7945
   // imitating this when finding the coordinates for patches
-  typedef enum {IDLE=0, READ=1, START_HISTOGRAM=2, PATCH_ONE=3, PATCH_TWO=4, PATCH_THREE=5, PATCH_FOUR=6, FINISH=7} module_state;
+  typedef enum {IDLE=0, READ=1, START_HISTOGRAM=2, PATCH_ONE=3, PATCH_TWO=4, PATCH_THREE=5, PATCH_FOUR=6, FINISH=7, ERROR=8} module_state;
   module_state state;
   typedef enum {O1=0, O2=1, O3=2} octave_state;
   octave_state octave;
@@ -266,6 +267,7 @@ histogram #(
                       O1 : octave <= O2;// why do we never hit FINISH?
                       O2 : octave <= O3;
                       O3 : state <= FINISH;
+                      default : state <= ERROR;
                     endcase
                   end else begin
                     level <= keypoint_read[0];
@@ -282,6 +284,7 @@ histogram #(
                             x <= keypoint_read[8:5];
                             y <= keypoint_read[4:1];
                         end
+                        default : state <= ERROR;
                     endcase
                     state <= START_HISTOGRAM;
                   end
@@ -342,6 +345,8 @@ histogram #(
                 descriptors_done <= 1'b1;
                 state <= IDLE;
               end
+              ERROR : error <= 1'b1;
+              default : state <= IDLE;
           endcase
       end
   end

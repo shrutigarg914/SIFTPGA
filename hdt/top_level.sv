@@ -1435,6 +1435,10 @@ module top_level(
         .doutb(descriptor_read)
     );
 
+    // assign led[10:3] = descriptor_read[23:16];
+    // assign desc_read_addr = sw[11:0];
+
+
     parameter PATCH_SIZE = 4;
     logic [$clog2(NUMBER_KEYPOINTS*4)-1:0] desc_write_addr;
     logic desc_write_valid;
@@ -1487,12 +1491,16 @@ module top_level(
     .start((keypoints_done_latched && gradient_done) || (gradient_done_latched && keypoints_done)),
     .descriptors_done(descriptors_done),
     .octave_state_num(desc_octave),
-    .generic_state_num(desc_state)
+    .error(desc_error)
+    // .generic_state_num(desc_state)
   );
-    logic [3:0] desc_state;
-    assign led[8:5] = desc_state; 
+    // logic [3:0] desc_state;
+    // assign led[8:5] = desc_state; 
+    logic desc_error;
+
+    
     logic [1:0] desc_octave;
-    assign led[4:3] = desc_octave;
+    // assign led[4:3] = desc_octave;
     logic descriptors_done, descriptors_done_latched;
     
     always_comb begin
@@ -1595,16 +1603,9 @@ module top_level(
     end
 
     assign led[2] = (state == IDLE);
-    // assign led[3] = (state == O1L1);
-    // assign led[4] = (state == O1L2);
-    // assign led[5] = (state == O1L3);
-    // assign led[6] = (state == O2L1);
-    // assign led[7] = (state == O2L2);
-    // assign led[8] = (state == O2L3);
-    assign led[9] = gradient_done_latched;
-    assign led[10] = descriptors_done_latched;
-    // assign led[3] = (state == DESC);
-    // assign led[4] = (state == KEY);
+    assign led[11] = desc_error;
+    assign led[12] = gradient_done_latched;
+    assign led[13] = descriptors_done_latched;
 
 
     send_keypoints #(.BRAM_LENGTH(2000)) tx_keypoint (
@@ -1632,7 +1633,6 @@ module top_level(
     );
     logic tx_busy_desc;
     logic desc_txd;
-
     
 endmodule // top_level
 
