@@ -1,7 +1,12 @@
-import numpy as np
-import cv2
+import time
 import sys
-from PIL import Image
+import cv2
+from PIL import Image, ImageOps
+import numpy as np
+import matplotlib.pyplot as plt
+import serial
+import time
+import struct
 
 def calc_gradient_images(pixels, h, w):
     x_grad = []
@@ -82,16 +87,20 @@ def point_is_extrema(array_one, array_two, x, y, threshold=10):
                 if array_two[y + dy, x + dx] >= array_two[y, x]:
                     result[1][1] = False
 
-            if array_two[y + dy, x + dx] <= array_one[y, x] + threshold:
+            if array_two[y + dy, x + dx] <= array_one[y, x]:
                 result[0][0] = False
-            if array_two[y + dy, x + dx] >= array_one[y, x] - threshold:
+            if array_two[y + dy, x + dx] >= array_one[y, x]:
                 result[0][1] = False
             
-            if array_one[y + dy, x + dx] <= array_two[y, x] + threshold:
+            if array_one[y + dy, x + dx] <= array_two[y, x]:
                 result[1][0] = False
-            if array_one[y + dy, x + dx] >= array_two[y, x] - threshold:
+            if array_one[y + dy, x + dx] >= array_two[y, x]:
                 result[1][1] = False
-    
+    if (np.abs(array_one[y][x])<threshold):
+        result[0] = [False, False]
+    if (np.abs(array_two[y][x])<threshold):
+        result[1] = [False, False]
+
     return (result[0][1], result[0][0], result[1][0], result[1][1])
 
 def find_extrema(array_one, array_two, dim =4):
@@ -101,21 +110,21 @@ def find_extrema(array_one, array_two, dim =4):
         for x in range(1, dim-1):
             is_one_max, is_one_min, is_two_min, is_two_max = point_is_extrema(array_one, array_two, x, y)
             if (is_one_max):
-                print("Found MAX in BRAM 1 at (", x, ", ", y, ")")
+                # print("Found MAX in BRAM 1 at (", x, ", ", y, ")")
                 counter +=1
                 indices.add((x, y, 0))
             if (is_one_min):
-                print("Found min in BRAM 1 at (", x, ", ", y, ")")
+                # print("Found min in BRAM 1 at (", x, ", ", y, ")")
                 counter +=1
                 indices.add((x, y, 0))
             if (is_two_max):
                 counter +=1
-                print("Found MAX in BRAM 2 at (", x, ", ", y, ")")
+                # print("Found MAX in BRAM 2 at (", x, ", ", y, ")")
                 indices.add((x, y, 1))
             if (is_two_min):
                 counter +=1
                 indices.add((x, y, 1))
-                print("Found min in BRAM 2 at (", x, ", ", y, ")")
+                # print("Found min in BRAM 2 at (", x, ", ", y, ")")
     return counter, indices
 
 def dog(array_one, array_two):
@@ -227,81 +236,144 @@ if __name__ == "__main__":
 
         # Resize the image
         image_in = image_in.resize((64, 64))
-        image_in_rot = Image.fromarray(np.rot90(np.array(image_in)))
-        
-        images = [image_in, image_in_rot]
+        # image_out = image_in.copy()
+        pixels = []
+        w, h = image_in.size
 
-        keypoints1 = []
-        keypoints2 = []
-        desc1 = []
-        desc2 = []
-        for i in range(len(images)):
-            im = images[i]
-            pixels = []
-            w, h = im.size
+        # print(image_in.getpixel((0, 0)))
+        # # Take input image and divide each color channel's value by 16
+        for y in range(h):
+            for x in range(w):
+                r, g, b = image_in.getpixel((x, y))
+                pixels.append(int(0.2126*r+0.7152*g+0.0722*b))
+        print(h, w, len(pixels))
+        print(pixels)
 
-            # # Take input image and divide each color channel's value by 16
-            for y in range(h):
-                for x in range(w):
-                    r, g, b = im.getpixel((x, y))
-                    pixels.append(int(0.2126*r+0.7152*g+0.0722*b))
-            print(h, w, len(pixels))
+        s = serial.Serial(port='COM6', baudrate=2000000, bytesize=8)
+        print("setup ready")
+        # time.sleep(10)
+        packets_sent = 0
+        while packets_sent<len(pixels):
+            # char = bytes(input("send: "), 'ascii')
+            # print(struct.pack('B', 3))
+            # print(pixels[packets_sent])
+            s.write(struct.pack('B', int(pixels[packets_sent])))
+            # print(".", end='', flush=True)
+            packets_sent +=1
+        print("DONE SENDING!")
 
-            pixels_reshaped = np.asarray(pixels).reshape((64, 64))
-            pyramid = calc_pyramid(pixels_reshaped, h, w)
-
-            O1_dog1 = dog(pyramid[0], pyramid[1])
-            O1_dog2 = dog(pyramid[1], pyramid[2])
-            O2_dog1 = dog(pyramid[3], pyramid[4])
-            O2_dog2 = dog(pyramid[4], pyramid[5])
-            O3_dog1 = dog(pyramid[6], pyramid[7])
-            O3_dog2 = dog(pyramid[7], pyramid[8])
-
-            num_O1_keypts, O1_keypt_inds = find_extrema(O1_dog1, O1_dog2, dim=w)
-            num_O2_keypts, O2_keypt_inds = find_extrema(O2_dog1, O2_dog2, dim=w//2)
-            num_O3_keypts, O3_keypt_inds = find_extrema(O3_dog1, O3_dog2, dim=w//4)
-            print("found ", num_O1_keypts + num_O2_keypts + num_O3_keypts, " extrema")
-
-            all_keypoints = []
-            for kp in O1_keypt_inds:
-                x, y, scale = kp
-                all_keypoints.append((x, y, 1, scale+1))
-            for kp in O2_keypt_inds:
-                x, y, scale = kp
-                # would it be - 
-                # all_keypoints.append((x * 2, y * 2, 2, scale+1))
-                # ?
-                all_keypoints.append((x , y, 2, scale+1))
-            for kp in O3_keypt_inds:
-                x, y, scale = kp
-                all_keypoints.append((x, y, 3, scale+1))
-                # would it be - 
-                # all_keypoints.append((x * 4, y * 4, 3, scale+1))
-                # ?
-            
-            gradient_pyramid_x, gradient_pyramid_y = calc_gradient_pyramid(pixels_reshaped, h, w)
-            
-            all_descriptors = []
-            for keypt in all_keypoints:
-                _, _, octave, scale = keypt
-                if octave == 1 and scale == 1:
-                    all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[0], gradient_pyramid_y[0])))
-                if octave == 1 and scale == 2:
-                    all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[1], gradient_pyramid_y[1])))
-                if octave == 2 and scale == 1:
-                    all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[3], gradient_pyramid_y[3])))
-                if octave == 2 and scale == 2:
-                    all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[4], gradient_pyramid_y[4])))
-                if octave == 3 and scale == 1:
-                    all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[6], gradient_pyramid_y[6])))
-                if octave == 3 and scale == 2:
-                    all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[7], gradient_pyramid_y[7])))
-
-            if i == 0:
-                keypoints1 = all_keypoints
-                desc1 = all_descriptors
+        image_rx = []
+        rxed = 0
+        zero_count = 0
+        keypts_received = 0
+        while keypts_received < 1999:
+            # print(".", end='', flush=True)
+            keypts_received +=1
+            res = s.read()
+            res_lower = s.read()
+            # print("BRAM  ", "(x:", struct.unpack('B', res)[0], ", y:", struct.unpack('B', res_lower)[0], ")")
+            coord = [struct.unpack('B', res)[0], struct.unpack('B', res_lower)[0]]
+            # print(type(coord), type(struct.unpack('B', res)[0]))
+            if coord[0] != 0:
+                image_rx.append([coord[0]*(2**zero_count) + (zero_count), coord[1]*(2**zero_count) + zero_count, zero_count+1])
+            # image_rx.append(res)
+            # print(len(image_rx), 1000, list(res))
+                print(len(image_rx), 1000, image_rx[-1])
+            elif zero_count > 3:
+                zero_count += 1
             else:
-                keypoints2 = all_keypoints
-                desc2 = all_descriptors
+                zero_count = zero_count + 1
+                print("NEXT OCTAVE")
+            # ind = input("Index investigating:  ")
+            # print(pixels[ind])
+        print("IMAGES RECEIVED")
 
-        draw_matches(np.array(images[0]).astype(np.uint8), np.array(images[1]).astype(np.uint8), keypoints1, desc1, keypoints2, desc2)
+        im_res = np.asarray(image_rx[:1000])
+        print(len(im_res), " KEYPOINTS FOUND ", im_res)
+        for coord in im_res:
+            plt.plot(coord[0], coord[1], marker='o', color="red", markersize=2) 
+        plt.imshow(np.asarray(pixels).reshape((64, 64)), cmap='gray', vmin=0, vmax=255)
+        plt.show()
+
+        pixels_reshaped = np.asarray(pixels).reshape((64, 64))
+        pyramid = calc_pyramid(pixels_reshaped, h, w)
+
+        O1_dog1 = dog(pyramid[0], pyramid[1])
+        O1_dog2 = dog(pyramid[1], pyramid[2])
+        O2_dog1 = dog(pyramid[3], pyramid[4])
+        O2_dog2 = dog(pyramid[4], pyramid[5])
+        O3_dog1 = dog(pyramid[6], pyramid[7])
+        O3_dog2 = dog(pyramid[7], pyramid[8])
+
+        num_O1_keypts, O1_keypt_inds = find_extrema(O1_dog1, O1_dog2, dim=w)
+        num_O2_keypts, O2_keypt_inds = find_extrema(O2_dog1, O2_dog2, dim=w//2)
+        num_O3_keypts, O3_keypt_inds = find_extrema(O3_dog1, O3_dog2, dim=w//4)
+        all_keypoints = []
+        for kp in O1_keypt_inds:
+            x, y, scale = kp
+            all_keypoints.append((x, y, 1, scale+1))
+        for kp in O2_keypt_inds:
+            x, y, scale = kp
+            all_keypoints.append((x * 2, y * 2, 2, scale+1))
+        for kp in O3_keypt_inds:
+            x, y, scale = kp
+            all_keypoints.append((x * 4, y * 4, 3, scale+1))
+
+        for coord in all_keypoints:
+            plt.plot(coord[0], coord[1], marker='o', color="red", markersize=2) 
+        plt.imshow(np.asarray(pixels).reshape((64, 64)), cmap='gray', vmin=0, vmax=255)
+        plt.show()
+
+        print("PYTHON found ", num_O1_keypts + num_O2_keypts + num_O3_keypts, " extrema v ", len(im_res), "by fpga")
+        input("sending the next set of things ope")
+
+        descriptors = []
+        all_zeros_found = 0
+        while all_zeros_found<2:
+            res_upper = s.read()
+            res_middle = s.read()
+            res_lower = s.read()
+
+            descriptor = [struct.unpack('B', res_upper)[0], struct.unpack('B', res_middle)[0], struct.unpack('B', res_lower)[0]]
+            if descriptor[0]==0 and descriptor[1]==0 and descriptor[2]==0:
+                all_zeros_found+=1
+                # break
+            descriptors.append(''.join([np.binary_repr(desc, width=8) for desc in descriptor]))
+        final_descriptors = []
+        counter = 0
+        for descriptor in descriptors:
+            if counter==3:
+                counter = 0
+                new_d += descriptor
+                final_descriptors.append(new_d)
+                print(final_descriptors[-1])
+            elif counter==0:
+                counter += 1
+                new_d = descriptor
+            else:
+                counter +=1
+                new_d += descriptor
+
+        print("DESCRIPTORS GOTTEN")
+
+        gradient_pyramid_x, gradient_pyramid_y = calc_gradient_pyramid(pixels_reshaped, h, w)
+        
+        all_descriptors = []
+        for keypt in all_keypoints:
+            _, _, octave, scale = keypt
+            if octave == 1 and scale == 1:
+                all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[0], gradient_pyramid_y[0])))
+            if octave == 1 and scale == 2:
+                all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[1], gradient_pyramid_y[1])))
+            if octave == 2 and scale == 1:
+                all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[3], gradient_pyramid_y[3])))
+            if octave == 2 and scale == 2:
+                all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[4], gradient_pyramid_y[4])))
+            if octave == 3 and scale == 1:
+                all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[6], gradient_pyramid_y[6])))
+            if octave == 3 and scale == 2:
+                all_descriptors.append(np.array(descriptor_gen(keypt, gradient_pyramid_x[7], gradient_pyramid_y[7])))
+        # print(all_descriptors)
+        all_descriptors_binary = [''.join([np.binary_repr(desc, width=3) for desc in descriptor]) for descriptor in all_descriptors]
+        print(all_descriptors_binary)
+        print(len(final_descriptors), len(all_descriptors_binary))

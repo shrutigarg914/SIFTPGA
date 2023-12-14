@@ -214,6 +214,7 @@ histogram #(
   );
   // logic to switch handles used in the always_ff block depending on what octave we are in 
   logic histogram_ea;
+  logic final_wea;
 
 
   always_comb begin
@@ -222,8 +223,8 @@ histogram #(
     O2_histogram_ea = (octave==O2) ? histogram_ea : 0;
     O3_histogram_ea = (octave==O3) ? histogram_ea : 0;
 
-    desc_wea = (octave==O1) ? O1_histogram_done : (octave==O2) ? O2_histogram_done : (octave==O3) ? O3_histogram_done : 0;
-    desc_out = (octave==O1) ? O1_histogram_out : (octave==O2) ? O2_histogram_out : (octave==O3) ? O3_histogram_out : 0;
+    desc_wea = (state==FINISH)? final_wea : (octave==O1) ? O1_histogram_done : (octave==O2) ? O2_histogram_done : (octave==O3) ? O3_histogram_done : 0;
+    desc_out = (state==FINISH)? 0 : (octave==O1) ? O1_histogram_out : (octave==O2) ? O2_histogram_out : (octave==O3) ? O3_histogram_out : 0;
     
     O1_x_coord = x;
     O1_y_coord = y;
@@ -244,6 +245,8 @@ histogram #(
           read_counter <= 0;
           histogram_ea <= 1'b0;
           desc_write_addr <= 0;
+          final_wea <= 0;
+          number_zero_bytes <= 0;
       end else begin
           case(state)
               IDLE : if (start) begin
@@ -253,9 +256,12 @@ histogram #(
                   octave <= O1;
                   histogram_ea <= 1'b0;
                   descriptors_done <= 0;
+                  final_wea <= 0;
+                  number_zero_bytes <= 0;
                   // set keypt address to zero, go read the keypt at the address
               end else begin
                 descriptors_done <= 0;
+                final_wea <= 0;
               end
               READ : if (read_counter==2'b10) begin
                   if (keypoint_read==13'd0) begin
@@ -333,17 +339,30 @@ histogram #(
                   read_counter <= 0;
                 end else begin
                   state <= FINISH;
+                  final_wea <= 0;
                 end
               end else begin
                 histogram_ea <= 1'b0;
               end
               FINISH : begin
-                descriptors_done <= 1'b1;
-                state <= IDLE;
+                if (number_zero_bytes<2) begin
+                  if (final_wea) begin
+                    descriptors_done <= 1'b1;
+                    final_wea <= 0;
+                    number_zero_bytes <= number_zero_bytes+ 1'b1;
+                  end else begin
+                    final_wea <= 1'b1;
+                  end
+                end else begin
+                  state <= IDLE;
+                  number_zero_bytes <= 0;
+                end
               end
           endcase
       end
   end
+
+  logic [1:0] number_zero_bytes;
 
 
 endmodule // find_keypoints
